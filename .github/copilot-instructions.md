@@ -32,10 +32,18 @@ These are the only system actions the launcher itself can perform:
 3. **Keep README.md and user-facing documentation up to date** as features are built
 4. **Do not write code** until requirements for that phase/feature are clearly understood
 
+## Tech Stack
+- **Runtime / native shell**: Tauri 2 (Rust)
+- **Frontend UI**: SvelteKit + TypeScript (rendered in the system webview via Tauri)
+- **Build tooling**: Vite
+- **Package manager**: npm
+- **Rust toolchain**: stable via rustup
+
 ## Tech & Platform Notes
 - Target: **cross-platform desktop** (macOS primary, Windows and Linux later)
 - Prefer native performance for the UI layer (launcher must feel instant)
-- Keep the core launcher and the plugin/script layer cleanly separated
+- Keep the core launcher (Rust/Tauri) and the plugin/script layer cleanly separated
+- Frontend lives in `src/`, Rust/Tauri backend in `src-tauri/`
 
 ## Security Constraints
 - Scripts/executables invoked by the launcher must be treated as **untrusted input processors only**
