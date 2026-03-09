@@ -19,3 +19,17 @@ export interface Command {
   title: string;
   action: Action;
 }
+
+export interface DuplicateWarning {
+  phrase: string;
+  /** Config-dir-relative path of the file whose command was kept. */
+  kept: string;
+  /** Config-dir-relative path of the file whose command was ignored. */
+  ignored: string;
+}
+
+/** Payload returned by list_commands and emitted as commands://reloaded. */
+export interface CommandsPayload {
+  commands: Command[];
+  duplicates: DuplicateWarning[];
+}

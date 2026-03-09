@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 use walkdir::WalkDir;
@@ -38,6 +39,25 @@ pub struct Command {
 
 fn default_true() -> bool {
     true
+}
+
+/// A warning produced when two YAML files define the same command phrase.
+/// The older file (by mtime) wins; the newer file is ignored.
+#[derive(Debug, Clone, Serialize)]
+pub struct DuplicateWarning {
+    /// The conflicting phrase (lowercased).
+    pub phrase: String,
+    /// Config-dir-relative path of the file whose command was kept.
+    pub kept: String,
+    /// Config-dir-relative path of the file whose command was ignored.
+    pub ignored: String,
+}
+
+/// The result of loading commands from the config directory.
+#[derive(Debug, Clone, Serialize)]
+pub struct LoadResult {
+    pub commands: Vec<Command>,
+    pub duplicates: Vec<DuplicateWarning>,
 }
 
 // ── Seed files written on first launch ────────────────────────────────────────
@@ -125,9 +145,11 @@ fn collect_yaml_files(config_dir: &Path) -> Vec<std::path::PathBuf> {
 /// Ensure `config_dir` exists. If no YAML files are found, seed the example
 /// commands. Then walk the tree, parse every `.yaml`/`.yml` file as a single
 /// `Command`, and return the collected list.
-/// Files that fail to parse are skipped (with an eprintln warning) so one
-/// malformed file does not prevent others from loading.
-pub fn load_from_dir(config_dir: &Path) -> Result<Vec<Command>, String> {
+/// Files are processed oldest-first (by mtime) so that the original command
+/// always wins when duplicates are present. Files that fail to parse are
+/// skipped (with an eprintln warning) so one malformed file does not prevent
+/// others from loading.
+pub fn load_from_dir(config_dir: &Path) -> Result<LoadResult, String> {
     fs::create_dir_all(config_dir)
         .map_err(|e| format!("Could not create config directory: {e}"))?;
 
@@ -144,17 +166,52 @@ pub fn load_from_dir(config_dir: &Path) -> Result<Vec<Command>, String> {
         }
     }
 
+    // Sort files oldest-first by mtime; use path as a stable tiebreaker.
+    let mut yaml_files = collect_yaml_files(config_dir);
+    yaml_files.sort_by(|a, b| {
+        let mtime_a = fs::metadata(a).and_then(|m| m.modified()).ok();
+        let mtime_b = fs::metadata(b).and_then(|m| m.modified()).ok();
+        mtime_a.cmp(&mtime_b).then_with(|| a.cmp(b))
+    });
+
     let mut commands = Vec::new();
-    for path in collect_yaml_files(config_dir) {
+    let mut duplicates = Vec::new();
+    // Maps lowercase phrase → relative path of the file that claimed it.
+    let mut seen: HashMap<String, String> = HashMap::new();
+
+    for path in yaml_files {
+        // Use a config-dir-relative path for human-readable warnings.
+        let display = path
+            .strip_prefix(config_dir)
+            .unwrap_or(&path)
+            .display()
+            .to_string();
+
         match fs::read_to_string(&path) {
             Err(e) => eprintln!("[contexts] could not read {}: {e}", path.display()),
             Ok(yaml) => match serde_yaml::from_str::<Command>(&yaml) {
                 Err(e) => eprintln!("[contexts] could not parse {}: {e}", path.display()),
-                Ok(cmd) if cmd.enabled => commands.push(cmd),
-                Ok(_) => {} // disabled — silently skip
+                Ok(cmd) if !cmd.enabled => {} // disabled — silently skip
+                Ok(cmd) => {
+                    let key = cmd.phrase.to_lowercase();
+                    if let Some(winner) = seen.get(&key) {
+                        eprintln!(
+                            "[contexts] duplicate phrase {:?} in {display}, kept {winner}",
+                            cmd.phrase
+                        );
+                        duplicates.push(DuplicateWarning {
+                            phrase: cmd.phrase.clone(),
+                            kept: winner.clone(),
+                            ignored: display,
+                        });
+                    } else {
+                        seen.insert(key, display);
+                        commands.push(cmd);
+                    }
+                }
             },
         }
     }
 
-    Ok(commands)
+    Ok(LoadResult { commands, duplicates })
 }

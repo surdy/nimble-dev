@@ -70,8 +70,8 @@ pub fn start(app: AppHandle, config_dir: PathBuf) {
 
             // Reload commands and emit to frontend
             match commands::load_from_dir(&config_dir) {
-                Ok(cmds) => {
-                    if let Err(e) = app.emit(COMMANDS_RELOADED_EVENT, &cmds) {
+                Ok(result) => {
+                    if let Err(e) = app.emit(COMMANDS_RELOADED_EVENT, &result) {
                         eprintln!("[contexts] could not emit reload event: {e}");
                     }
                 }

@@ -3,7 +3,7 @@
   import { invoke } from "@tauri-apps/api/core";
   import { getCurrentWindow, LogicalSize } from "@tauri-apps/api/window";
   import { listen } from "@tauri-apps/api/event";
-  import type { Command } from "$lib/types";
+  import type { Command, CommandsPayload, DuplicateWarning } from "$lib/types";
 
   // ── State ──────────────────────────────────────────────────────────────
   let input = $state("");
@@ -18,6 +18,11 @@
 
   // Command store — loaded once on mount
   let commands = $state<Command[]>([]);
+
+  // Duplicate-command warnings from the last load / reload cycle
+  let warnings = $state<DuplicateWarning[]>([]);
+  let warningsDismissed = $state(false);
+  const warningVisible = $derived(warnings.length > 0 && !warningsDismissed);
 
   // ── Filtering & navigation ─────────────────────────────────────────────
   const MAX_RESULTS = 8;
@@ -43,10 +48,12 @@
   $effect(() => {
     if (onboarding) return;
     const hasQuery = input.trim() !== "";
-    const height = !hasQuery ? 64
-      : filtered.length === 0 ? 64 + 44          // "no results" row
-      : 64 + filtered.length * ROW_H;
-    appWindow.setSize(new LogicalSize(640, height));
+    const WARNING_H = 40;
+    const warnExtra = warningVisible ? WARNING_H : 0;
+    const contentHeight = !hasQuery ? 0
+      : filtered.length === 0 ? 44          // "no results" row
+      : filtered.length * ROW_H;
+    appWindow.setSize(new LogicalSize(640, 64 + warnExtra + contentHeight));
   });
 
   // ── Highlight helper ──────────────────────────────────────────────────
@@ -173,7 +180,10 @@
         await invoke("register_shortcut", { shortcut: stored }).catch(() => {});
         await appWindow.setSize(LAUNCHER_SIZE);
         // Load commands from the config directory
-        commands = await invoke<Command[]>("list_commands").catch(() => []);
+        const result = await invoke<CommandsPayload>("list_commands").catch(() => ({ commands: [], duplicates: [] }));
+        commands = result.commands;
+        warnings = result.duplicates;
+        warningsDismissed = false;
         dismiss();
       } else {
         // First launch: show onboarding at the larger size
@@ -190,8 +200,10 @@
       });
 
       // Live-reload: backend emits this event when a YAML file changes
-      unlistenReload = await listen<Command[]>("commands://reloaded", (event) => {
-        commands = event.payload;
+      unlistenReload = await listen<CommandsPayload>("commands://reloaded", (event) => {
+        commands = event.payload.commands;
+        warnings = event.payload.duplicates;
+        warningsDismissed = false; // always surface new warnings
       });
     })();
 
@@ -242,6 +254,15 @@
       autocorrect="off"
       spellcheck="false"
     />
+
+    {#if warningVisible}
+      <div class="warnings-bar">
+        <span class="warnings-text">
+          ⚠ {warnings.length} duplicate command{warnings.length === 1 ? '' : 's'} ignored
+        </span>
+        <button class="warnings-dismiss" onclick={() => (warningsDismissed = true)} aria-label="Dismiss">&times;</button>
+      </div>
+    {/if}
 
     {#if input.trim() !== ""}
       <div class="results">
@@ -426,4 +447,35 @@
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     text-align: center;
   }
+
+  /* ── Duplicate warnings bar ─────────────────────────────────────────── */
+  .warnings-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    height: 40px;
+    background: rgba(255, 159, 10, 0.12);
+    border-top: 1px solid rgba(255, 159, 10, 0.25);
+  }
+
+  .warnings-text {
+    color: #ff9f0a;
+    font-size: 12px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+
+  .warnings-dismiss {
+    background: none;
+    border: none;
+    color: rgba(255, 159, 10, 0.6);
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 2px 4px;
+    border-radius: 4px;
+    transition: color .15s;
+  }
+
+  .warnings-dismiss:hover { color: #ff9f0a; }
 </style>

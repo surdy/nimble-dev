@@ -156,9 +156,10 @@ fn show_window(app: tauri::AppHandle, window: tauri::Window) {
     sync_tray(&app, true);
 }
 
-/// Return the full list of commands loaded from the user config directory.
+/// Return the full list of commands loaded from the user config directory,
+/// along with any duplicate warnings detected during loading.
 #[tauri::command]
-fn list_commands(app: tauri::AppHandle) -> Result<Vec<commands::Command>, String> {
+fn list_commands(app: tauri::AppHandle) -> Result<commands::LoadResult, String> {
     let config_dir = app
         .path()
         .app_config_dir()
