@@ -172,7 +172,38 @@ Iterative implementation plan for Contexts Launcher, from bare minimum working s
 
 ---
 
-## Stage 9 — Script Extensions
+## Stage 9 — Enhancements
+
+**Goal:** Quality-of-life improvements to the core command system, added one at a time.
+
+### Enhancement 1 — Enable / disable commands
+
+Users can set `enabled: false` in a command YAML file to temporarily disable the command without deleting the file. Disabled commands are filtered out by the Rust loader and never sent to the frontend — they do not appear in the results list and cannot be executed. All commands are enabled by default (omitting the `enabled` field is equivalent to `enabled: true`).
+
+**Schema change** (`commands.rs` and `types.ts`):
+```yaml
+phrase: open reddit
+title: Open Reddit
+enabled: false          # omit or set true to enable
+action:
+  type: open_url
+  config:
+    url: https://www.reddit.com
+```
+
+**Implementation:**
+- Add `#[serde(default = "default_true")] pub enabled: bool` to the `Command` struct in Rust
+- Filter disabled commands in `load_from_dir` before returning the list
+- The `enabled` field is purely a load-time gate; it is never forwarded to the frontend
+
+### Done when ✅
+- A command with `enabled: false` does not appear in the launcher
+- A command that omits `enabled` (or sets it to `true`) behaves exactly as before
+- Live reload respects the flag: toggling `enabled` in a YAML file updates the list immediately
+
+---
+
+## Stage 10 — Script Extensions
 
 **Goal:** Commands can be associated with external scripts that process input and return results for the launcher to act on.
 
@@ -224,4 +255,5 @@ Iterative implementation plan for Contexts Launcher, from bare minimum working s
 | 6 | Global hotkey | System-wide shortcut to summon/dismiss launcher |
 | 7 | Live config reload | Hot-reload commands when `commands.yaml` is edited |
 | 8 | Bug fixes | Fix issues found during real-world use of stages 1–7 |
-| 9 | Script extensions | External scripts return structured results; launcher executes built-in actions |
+| 9 | Enhancements | Quality-of-life improvements to the core command system |
+| 10 | Script extensions | External scripts return structured results; launcher executes built-in actions |

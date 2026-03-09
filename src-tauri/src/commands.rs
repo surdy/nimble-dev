@@ -28,7 +28,16 @@ pub enum Action {
 pub struct Command {
     pub phrase: String,
     pub title: String,
+    /// Whether this command is active. Omitting the field in YAML is the same
+    /// as `enabled: true`. Disabled commands are filtered out at load time and
+    /// never sent to the frontend.
+    #[serde(default = "default_true")]
+    pub enabled: bool,
     pub action: Action,
+}
+
+fn default_true() -> bool {
+    true
 }
 
 // ── Seed files written on first launch ────────────────────────────────────────
@@ -141,7 +150,8 @@ pub fn load_from_dir(config_dir: &Path) -> Result<Vec<Command>, String> {
             Err(e) => eprintln!("[contexts] could not read {}: {e}", path.display()),
             Ok(yaml) => match serde_yaml::from_str::<Command>(&yaml) {
                 Err(e) => eprintln!("[contexts] could not parse {}: {e}", path.display()),
-                Ok(cmd) => commands.push(cmd),
+                Ok(cmd) if cmd.enabled => commands.push(cmd),
+                Ok(_) => {} // disabled — silently skip
             },
         }
     }
