@@ -119,6 +119,11 @@
       localStorage.setItem("ctx_hotkey", capturedShortcut);
       onboarding = false;
       await appWindow.setSize(LAUNCHER_SIZE);
+      // Load commands now that onboarding is complete
+      const result = await invoke<CommandsPayload>("list_commands").catch(() => ({ commands: [], duplicates: [] }));
+      commands = result.commands;
+      warnings = result.duplicates;
+      warningsDismissed = false;
       dismiss();
     } catch (err) {
       shortcutError = `Could not register shortcut: ${err}`;
@@ -173,6 +178,13 @@
     let unlistenReload: (() => void) | null = null;
 
     (async () => {
+      // Migrate localStorage key from the old app name (Contexts -> Ctx)
+      const legacy = localStorage.getItem("contexts_hotkey");
+      if (legacy && !localStorage.getItem("ctx_hotkey")) {
+        localStorage.setItem("ctx_hotkey", legacy);
+        localStorage.removeItem("contexts_hotkey");
+      }
+
       const stored = localStorage.getItem("ctx_hotkey");
 
       if (stored) {
