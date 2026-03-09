@@ -27,13 +27,23 @@ A fast, cross-platform desktop launcher driven entirely by commands — think Al
 
 ---
 
+## Using Ctx
+
+| Guide | Description |
+|-------|-------------|
+| [First run](docs/using/first-run.md) | Onboarding walkthrough and choosing your global shortcut |
+| [Basic functionality](docs/using/basic-functionality.md) | Open URL and Paste Text — the two built-in actions |
+| [Tips & tricks](docs/using/tips-and-tricks.md) | App deep links, web search via param passing, frequently-pasted snippets |
+| [Configuring commands](docs/using/configuring-commands.md) | YAML schema, enable/disable, directory layout, live reload |
+| [Duplicate commands](docs/using/duplicate-commands.md) | How duplicate phrases are detected, resolved, and surfaced |
+
+---
+
 ## Getting Started
 
 For a full step-by-step guide see [docs/development-setup.md](docs/development-setup.md).
 
 For the implementation roadmap see [docs/development-plan.md](docs/development-plan.md).
-
-For the first-run experience see [docs/first-run.md](docs/first-run.md).
 
 ### Quick start
 
