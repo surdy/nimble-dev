@@ -85,8 +85,11 @@ fn write_clipboard_text(text: &str) -> Result<(), String> {
     }
 }
 
-/// Open a URL in the default browser.
-/// - Only http:// and https:// schemes are accepted.
+/// Open a URL in the default browser or the registered handler for its scheme.
+/// - Any well-formed URL scheme is accepted (e.g. http://, https://, slack://,
+///   obsidian://, mailto:, …). Schemes must start with a letter and contain
+///   only letters, digits, '+', '-', or '.' before the ':' — per RFC 3986.
+///   Plain strings with no scheme at all are rejected.
 /// - Occurrences of `{param}` in the URL are replaced with `param`
 ///   (URL-encoded) before opening.
 #[tauri::command]
@@ -107,9 +110,23 @@ fn open_url(app: tauri::AppHandle, url: String, param: Option<String>) -> Result
         url
     };
 
-    // Validate scheme — only http/https allowed
-    if !resolved.starts_with("http://") && !resolved.starts_with("https://") {
-        return Err(format!("Rejected non-http(s) URL: {resolved}"));
+    // Validate scheme — must match RFC 3986: letter *( letter / digit / "+" / "-" / "." ) ":"
+    // This accepts http://, https://, slack://, obsidian://, mailto:, etc.
+    // and rejects bare strings, relative paths, and malformed schemes.
+    let has_valid_scheme = resolved
+        .find(':')
+        .map(|colon| {
+            let scheme = &resolved[..colon];
+            !scheme.is_empty()
+                && scheme.starts_with(|c: char| c.is_ascii_alphabetic())
+                && scheme
+                    .chars()
+                    .all(|c| c.is_ascii_alphanumeric() || c == '+' || c == '-' || c == '.')
+        })
+        .unwrap_or(false);
+
+    if !has_valid_scheme {
+        return Err(format!("Rejected URL with missing or invalid scheme: {resolved}"));
     }
 
     app.opener()
