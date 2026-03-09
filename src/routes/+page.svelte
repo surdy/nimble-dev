@@ -200,7 +200,6 @@
       autocomplete="off"
       autocorrect="off"
       spellcheck="false"
-      onkeydown={handleKeydown}
     />
 
     {#if input.trim() !== ""}
