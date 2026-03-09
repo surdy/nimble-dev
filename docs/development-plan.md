@@ -25,9 +25,9 @@ Iterative implementation plan for Contexts Launcher, from bare minimum working s
 
 ---
 
-## Stage 2 — Command Data Model
+## Stage 2 — Command Data Model ✅
 
-**Goal:** Define what a command looks like in code and ship a small set of hard-coded example commands.
+**Goal:** Define what a command looks like in code, load commands from a user-editable YAML file in a platform-appropriate config directory, and expose them to the frontend via a Tauri command.
 
 ### Tasks
 - Define the command schema:
@@ -37,15 +37,21 @@ Iterative implementation plan for Contexts Launcher, from bare minimum working s
     title: string           // human-readable description shown as the result title
     action: {
       type: "open_url" | "paste_text"
-      config: { ... }       // action-specific fields
+      config: { … }         // action-specific fields
     }
   }
   ```
-- Create a static in-memory command store with 3–5 example commands covering both action types
-- Expose the store to the frontend via a Tauri command
+- User commands are stored in a YAML file (`commands.yaml`) in the platform config directory:
+  - **macOS**: `~/Library/Application Support/com.contexts.launcher/`
+  - **Linux**: `$XDG_CONFIG_HOME/com.contexts.launcher/` (falls back to `~/.config/com.contexts.launcher/`)
+  - **Windows**: `%APPDATA%\com.contexts.launcher\`
+- Seed `commands.yaml` with 5 example commands (covering both action types) on first launch if no file exists
+- Parse the YAML file into typed Rust structs (`Command`, `Action`, `OpenUrlConfig`, `PasteTextConfig`)
+- Expose the loaded command list to the frontend via a `list_commands` Tauri command
 
-### Done when
-- A Tauri command returns a list of example commands to the frontend
+### Done when ✅
+- `list_commands` Tauri command returns the parsed list of commands to the frontend
+- Config directory and `commands.yaml` are created automatically on first run
 
 ---
 
@@ -116,19 +122,17 @@ Iterative implementation plan for Contexts Launcher, from bare minimum working s
 
 ---
 
-## Stage 7 — User Command Configuration
+## Stage 7 — Live Config Reload
 
-**Goal:** Commands are loaded from a user-editable config file rather than being hard-coded.
+**Goal:** Commands hot-reload when the user edits `commands.yaml`, without requiring a restart.
 
 ### Tasks
-- Choose a config format (JSON or TOML — decision to be made)
-- Define the config file location: platform-appropriate app config directory (e.g. `~/Library/Application Support/contexts-launcher/commands.json` on macOS)
-- Load commands from the config file on startup; fall back to built-in examples if no file exists
-- Watch the config file for changes and hot-reload commands without restarting the launcher
-- Document the config file format in `docs/`
+- Watch `commands.yaml` for file-system change events (use `notify` crate)
+- On change, re-parse the file and emit a Tauri event to the frontend so the command list refreshes instantly
+- Document the config file format and location in `docs/`
 
 ### Done when
-- A user can add, edit, or remove commands by editing the config file and see changes reflected immediately
+- Editing `commands.yaml` and saving causes the launcher's results to update without restarting the app
 
 ---
 
@@ -177,10 +181,10 @@ Iterative implementation plan for Contexts Launcher, from bare minimum working s
 | Stage | Feature | Deliverable |
 |-------|---------|-------------|
 | 1 | Launcher window shell | Frameless window with input, closes on Escape |
-| 2 | Command data model | Typed schema + hard-coded example commands |
+| 2 | Command data model | Typed schema + YAML file loading from platform config dir |
 | 3 | Partial matching & results UI | Live filtering, keyboard navigation, title/subtext display |
 | 4 | Action: Open URL | Opens URLs in browser, supports `{param}` substitution |
 | 5 | Action: Paste Text | Pastes text into previously focused application |
 | 6 | Global hotkey | System-wide shortcut to summon/dismiss launcher |
-| 7 | User config file | Commands loaded from and hot-reloaded from a config file |
+| 7 | Live config reload | Hot-reload commands when `commands.yaml` is edited |
 | 8 | Script extensions | External scripts return structured results; launcher executes built-in actions |

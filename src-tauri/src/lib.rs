@@ -1,3 +1,5 @@
+mod commands;
+
 use std::sync::Arc;
 use tauri::{
     menu::{Menu, MenuItem, PredefinedMenuItem},
@@ -35,6 +37,16 @@ fn show_window(app: tauri::AppHandle, window: tauri::Window) {
     window.show().ok();
     window.set_focus().ok();
     sync_tray(&app, true);
+}
+
+/// Return the full list of commands loaded from the user config directory.
+#[tauri::command]
+fn list_commands(app: tauri::AppHandle) -> Result<Vec<commands::Command>, String> {
+    let config_dir = app
+        .path()
+        .app_config_dir()
+        .map_err(|e| e.to_string())?;
+    commands::load_from_dir(&config_dir)
 }
 
 /// Register (or replace) the global hotkey that summons the launcher.
@@ -123,7 +135,7 @@ pub fn run() {
 
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![hide_window, show_window, register_shortcut])
+        .invoke_handler(tauri::generate_handler![hide_window, show_window, register_shortcut, list_commands])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
