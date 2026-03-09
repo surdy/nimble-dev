@@ -1,6 +1,6 @@
 mod commands;
 
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use tauri::{
     menu::{Menu, MenuItem, PredefinedMenuItem},
     tray::TrayIconBuilder,
@@ -8,6 +8,81 @@ use tauri::{
 };
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, ShortcutState};
 use tauri_plugin_opener::OpenerExt;
+
+// ── Previous-app focus tracking ────────────────────────────────────────────────
+
+/// Holds the PID of the application that had focus before the launcher appeared.
+struct PreviousApp(Mutex<Option<i32>>);
+
+/// Record the frontmost application's PID before we show the launcher.
+/// Called in the global-shortcut handler and tray show/hide, so macOS knows
+/// where to return focus when paste_text is executed.
+#[cfg(target_os = "macos")]
+fn capture_previous_app(state: &PreviousApp) {
+    use objc2_app_kit::NSWorkspace;
+    let workspace = NSWorkspace::sharedWorkspace();
+    if let Some(app) = workspace.frontmostApplication() {
+        let pid = app.processIdentifier();
+        // Don't record ourselves
+        if pid != std::process::id() as i32 {
+            *state.0.lock().unwrap() = Some(pid);
+        }
+    }
+}
+
+#[cfg(not(target_os = "macos"))]
+fn capture_previous_app(_state: &PreviousApp) {}
+
+/// Activate the app identified by `pid` so it regains keyboard focus.
+#[cfg(target_os = "macos")]
+fn restore_previous_app(pid: i32) {
+    use objc2_app_kit::{NSApplicationActivationOptions, NSRunningApplication};
+    if let Some(app) =
+        NSRunningApplication::runningApplicationWithProcessIdentifier(pid)
+    {
+        // ActivateIgnoringOtherApps is deprecated in macOS 14 but still works;
+        // it has no replacement on NSRunningApplication in objc2-app-kit 0.3.
+        #[allow(deprecated)]
+        app.activateWithOptions(
+            NSApplicationActivationOptions::ActivateIgnoringOtherApps,
+        );
+    }
+}
+
+#[cfg(not(target_os = "macos"))]
+fn restore_previous_app(_pid: i32) {}
+
+// ── Clipboard helper ───────────────────────────────────────────────────────────
+
+/// Write `text` to the system clipboard.
+/// macOS: delegates to the `pbcopy` subprocess (no threading constraints).
+/// Other platforms: uses `arboard` (add the crate to Cargo.toml when targeting
+///                  Linux / Windows).
+fn write_clipboard_text(text: &str) -> Result<(), String> {
+    #[cfg(target_os = "macos")]
+    {
+        use std::io::Write;
+        let mut child = std::process::Command::new("pbcopy")
+            .stdin(std::process::Stdio::piped())
+            .spawn()
+            .map_err(|e| format!("Could not start pbcopy: {e}"))?;
+        if let Some(mut stdin) = child.stdin.take() {
+            stdin
+                .write_all(text.as_bytes())
+                .map_err(|e| format!("Could not write to pbcopy: {e}"))?;
+        }
+        child
+            .wait()
+            .map_err(|e| format!("pbcopy failed: {e}"))?;
+        Ok(())
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        // arboard is intentionally not yet in Cargo.toml for the macOS-only
+        // build; add it when targeting Linux / Windows.
+        Err("paste_text is not yet supported on this platform".to_string())
+    }
+}
 
 /// Open a URL in the default browser.
 /// - Only http:// and https:// schemes are accepted.
@@ -98,6 +173,9 @@ fn register_shortcut(app: tauri::AppHandle, shortcut: String) -> Result<(), Stri
                         window.hide().ok();
                         sync_tray(app, false);
                     } else {
+                        // Capture the frontmost app before we steal focus
+                        let prev = app.state::<PreviousApp>();
+                        capture_previous_app(&prev);
                         window.show().ok();
                         window.set_focus().ok();
                         sync_tray(app, true);
@@ -106,6 +184,61 @@ fn register_shortcut(app: tauri::AppHandle, shortcut: String) -> Result<(), Stri
             }
         })
         .map_err(|e| e.to_string())?;
+
+    Ok(())
+}
+
+/// Paste pre-defined plain text into the application that had focus before
+/// the launcher was invoked.
+///
+/// Flow:
+///   1. Validate the text (plain text only; reject NUL bytes).
+///   2. Hide the launcher window and update the tray label.
+///   3. Restore focus to the previously active application.
+///   4. Write the text to the clipboard.
+///   5. Simulate Cmd+V (macOS) / Ctrl+V (other) to trigger a paste.
+///
+/// Requires macOS Accessibility permission for the key-simulation step.
+#[tauri::command]
+fn paste_text(app: tauri::AppHandle, window: tauri::Window, text: String) -> Result<(), String> {
+    // Sanitise: plain text only — reject NUL bytes
+    if text.contains('\0') {
+        return Err("Text must not contain NUL bytes".to_string());
+    }
+
+    // 1. Hide launcher
+    window.hide().ok();
+    sync_tray(&app, false);
+
+    // 2. Restore focus to the previous app
+    let prev_pid = app.state::<PreviousApp>().0.lock().unwrap().take();
+    if let Some(pid) = prev_pid {
+        restore_previous_app(pid);
+    }
+
+    // Brief pause so focus transfer completes before we write to the clipboard
+    // and simulate the keystroke.
+    std::thread::sleep(std::time::Duration::from_millis(80));
+
+    // 3. Write text to clipboard
+    write_clipboard_text(&text)?;
+
+    // 4. Simulate paste keystroke
+    use enigo::{Direction, Enigo, Key, Keyboard, Settings};
+    let mut enigo = Enigo::new(&Settings::default()).map_err(|e| e.to_string())?;
+
+    #[cfg(target_os = "macos")]
+    {
+        enigo.key(Key::Meta, Direction::Press).map_err(|e| e.to_string())?;
+        enigo.key(Key::Unicode('v'), Direction::Click).map_err(|e| e.to_string())?;
+        enigo.key(Key::Meta, Direction::Release).map_err(|e| e.to_string())?;
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        enigo.key(Key::Control, Direction::Press).map_err(|e| e.to_string())?;
+        enigo.key(Key::Unicode('v'), Direction::Click).map_err(|e| e.to_string())?;
+        enigo.key(Key::Control, Direction::Release).map_err(|e| e.to_string())?;
+    }
 
     Ok(())
 }
@@ -140,6 +273,9 @@ pub fn run() {
                 show_hide_item: Arc::new(show_hide),
             });
 
+            // Manage previous-app tracking for paste_text focus restoration
+            app.manage(PreviousApp(Mutex::new(None)));
+
             let icon = app
                 .default_window_icon()
                 .cloned()
@@ -155,6 +291,9 @@ pub fn run() {
                                 window.hide().ok();
                                 sync_tray(app, false);
                             } else {
+                                // Capture previous app before we steal focus
+                                let prev = app.state::<PreviousApp>();
+                                capture_previous_app(&prev);
                                 window.show().ok();
                                 window.set_focus().ok();
                                 sync_tray(app, true);
@@ -168,7 +307,7 @@ pub fn run() {
 
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![hide_window, show_window, register_shortcut, list_commands, open_url])
+        .invoke_handler(tauri::generate_handler![hide_window, show_window, register_shortcut, list_commands, open_url, paste_text])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

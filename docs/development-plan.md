@@ -93,21 +93,25 @@ Iterative implementation plan for Contexts Launcher, from bare minimum working s
 
 ---
 
-## Stage 5 — Action: Paste Text
+## Stage 5 — Action: Paste Text ✅
 
 **Goal:** Executing a selected command with type `paste_text` pastes a predefined string into the app that had focus before the launcher was invoked.
 
 ### Tasks
-- Record which application/window had focus immediately before the launcher window was shown
-- Implement the `paste_text` built-in action in the Rust/Tauri layer:
-  1. Close/hide the launcher window
-  2. Restore focus to the previously active application
-  3. Write the configured text to the system clipboard
-  4. Programmatically trigger a paste (Cmd+V on macOS)
-- Sanitise the text to paste (plain text only; no executable content)
+- Track the previously focused application's PID in `PreviousApp(Mutex<Option<i32>>)` state, captured
+  in the global-shortcut handler and tray Show/Hide handler before the launcher window is shown
+- Implement `paste_text` Tauri command:
+  1. Validate text (plain text only; reject NUL bytes)
+  2. Hide launcher window and update tray label
+  3. Restore focus to previous app via `NSRunningApplication.activateWithOptions` (macOS)
+  4. Sleep 80 ms to let focus transfer complete
+  5. Write text to clipboard via `pbcopy` subprocess (macOS); `arboard` for other platforms (future)
+  6. Simulate Cmd+V (macOS) or Ctrl+V via `enigo 0.2`
+- Frontend `executeCommand()` calls `invoke("paste_text", { text })` and clears input
+- **Requires macOS Accessibility permission** for key simulation (standard for all launcher apps)
 
-### Done when
-- Selecting a paste_text command inserts the configured text at the cursor position in the previously focused app
+### Done when ✅
+- Executing a `paste_text` command pastes the configured text into the previously active application
 
 ---
 

@@ -123,8 +123,12 @@
         param: after !== "" ? after : null,
       });
       dismiss();
+    } else if (cmd.action.type === "paste_text") {
+      // Rust command handles window hide + focus restore + clipboard + keystroke.
+      // We clear input here so the bar is clean when the launcher is next shown.
+      input = "";
+      await invoke("paste_text", { text: cmd.action.config.text });
     }
-    // paste_text handled in Stage 5
   }
 
   // ── Launcher key handling ──────────────────────────────────────────────
