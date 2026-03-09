@@ -1,17 +1,22 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import { invoke } from "@tauri-apps/api/core";
   import { getCurrentWindow } from "@tauri-apps/api/window";
 
   let input = $state("");
   let inputEl: HTMLInputElement;
   const appWindow = getCurrentWindow();
 
+  function dismiss() {
+    invoke("close_window").catch(() => appWindow.close());
+  }
+
   onMount(() => {
     inputEl.focus();
 
     // Close the launcher when it loses focus (user clicked elsewhere)
     const unlistenPromise = appWindow.onFocusChanged(({ payload: focused }) => {
-      if (!focused) appWindow.close();
+      if (!focused) dismiss();
     });
 
     return () => {
@@ -21,7 +26,8 @@
 
   function handleKeydown(e: KeyboardEvent) {
     if (e.key === "Escape") {
-      appWindow.close();
+      e.preventDefault();
+      dismiss();
     }
   }
 </script>
@@ -37,6 +43,7 @@
     autocomplete="off"
     autocorrect="off"
     spellcheck="false"
+    onkeydown={handleKeydown}
   />
 </div>
 
