@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "tauri-app",
+  "productName": "Contexts",
   "version": "0.1.0",
   "identifier": "com.contexts.launcher",
   "build": {
@@ -12,9 +12,14 @@
   "app": {
     "windows": [
       {
-        "title": "tauri-app",
-        "width": 800,
-        "height": 600
+        "title": "Contexts",
+        "width": 640,
+        "height": 64,
+        "center": true,
+        "decorations": false,
+        "alwaysOnTop": true,
+        "resizable": false,
+        "transparent": true
       }
     ],
     "security": {
