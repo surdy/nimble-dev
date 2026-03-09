@@ -135,15 +135,16 @@ Iterative implementation plan for Contexts Launcher, from bare minimum working s
 
 ## Stage 7 — Live Config Reload
 
-**Goal:** Commands hot-reload when the user edits `commands.yaml`, without requiring a restart.
+**Goal:** Commands hot-reload when any YAML file in the config directory tree is added, changed, or removed — without requiring a restart.
 
 ### Tasks
-- Watch `commands.yaml` for file-system change events (use `notify` crate)
-- On change, re-parse the file and emit a Tauri event to the frontend so the command list refreshes instantly
-- Document the config file format and location in `docs/`
+- Watch the entire config directory **recursively** for file-system events (use `notify` crate with a debounce)
+- On any `.yaml`/`.yml` change (create / modify / delete / rename), re-run `load_from_dir` and emit a Tauri event (`commands://reloaded`) carrying the new command list to the frontend
+- Frontend listens for `commands://reloaded` and updates the `commands` state in place
+- Document the config directory location and the per-file format in `docs/`
 
 ### Done when
-- Editing `commands.yaml` and saving causes the launcher's results to update without restarting the app
+- Adding, editing, or deleting any command YAML file causes the launcher's results to update without restarting the app
 
 ---
 
