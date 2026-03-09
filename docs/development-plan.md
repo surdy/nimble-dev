@@ -115,18 +115,21 @@ Iterative implementation plan for Contexts Launcher, from bare minimum working s
 
 ---
 
-## Stage 6 — Global Hotkey
+## Stage 6 — Global Hotkey ✅
 
 **Goal:** The user can open and dismiss the launcher from any application using a keyboard shortcut.
 
 ### Tasks
-- Register a global hotkey (default: `Cmd+Space` or a configurable alternative) using Tauri's global shortcut plugin
-- Pressing the hotkey while the launcher is hidden: show and focus it
-- Pressing the hotkey while the launcher is visible (or pressing Escape): hide it and restore focus to the previous app
-- Ensure the hotkey is released cleanly when the app quits
+- Global hotkey registered via `tauri-plugin-global-shortcut` (user-chosen during onboarding, re-registered on every launch from `localStorage`) ✅
+- Pressing the hotkey while hidden: capture frontmost app PID → show and focus launcher ✅
+- Pressing the hotkey while visible: hide launcher → restore focus to previous app ✅
+- Pressing Escape: hide launcher via `dismiss_launcher` command → restore focus to previous app ✅
+- Blur dismiss (window loses focus because user clicked elsewhere): `hide_window` only — OS already transferred focus, no explicit restore needed ✅
+- Tray Show/Hide: captures previous app on show; restores focus on hide ✅
+- Global shortcut is unregistered cleanly on app quit by `tauri-plugin-global-shortcut` automatically ✅
 
-### Done when
-- The launcher can be summoned and dismissed system-wide without switching apps manually
+### Done when ✅
+- The launcher is summoned and dismissed system-wide; focus always returns to the correct app
 
 ---
 

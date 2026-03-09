@@ -157,6 +157,20 @@ fn list_commands(app: tauri::AppHandle) -> Result<Vec<commands::Command>, String
     commands::load_from_dir(&config_dir)
 }
 
+/// Dismiss the launcher intentionally (Escape key, hotkey while visible, tray Hide).
+/// Hides the window, updates the tray, and restores focus to the previously
+/// active application. Distinct from `hide_window` which is used for blur
+/// dismissal where the OS already transferred focus to the new frontmost app.
+#[tauri::command]
+fn dismiss_launcher(app: tauri::AppHandle, window: tauri::Window) {
+    window.hide().ok();
+    sync_tray(&app, false);
+    let prev_pid = app.state::<PreviousApp>().0.lock().unwrap().take();
+    if let Some(pid) = prev_pid {
+        restore_previous_app(pid);
+    }
+}
+
 /// Register (or replace) the global hotkey that summons the launcher.
 #[tauri::command]
 fn register_shortcut(app: tauri::AppHandle, shortcut: String) -> Result<(), String> {
@@ -172,6 +186,11 @@ fn register_shortcut(app: tauri::AppHandle, shortcut: String) -> Result<(), Stri
                     if window.is_visible().unwrap_or(false) {
                         window.hide().ok();
                         sync_tray(app, false);
+                        // Restore focus to the app that was active before we appear
+                        let prev_pid = app.state::<PreviousApp>().0.lock().unwrap().take();
+                        if let Some(pid) = prev_pid {
+                            restore_previous_app(pid);
+                        }
                     } else {
                         // Capture the frontmost app before we steal focus
                         let prev = app.state::<PreviousApp>();
@@ -290,6 +309,11 @@ pub fn run() {
                             if window.is_visible().unwrap_or(false) {
                                 window.hide().ok();
                                 sync_tray(app, false);
+                                // Restore focus to the app that was active before we appeared
+                                let prev_pid = app.state::<PreviousApp>().0.lock().unwrap().take();
+                                if let Some(pid) = prev_pid {
+                                    restore_previous_app(pid);
+                                }
                             } else {
                                 // Capture previous app before we steal focus
                                 let prev = app.state::<PreviousApp>();
@@ -307,7 +331,7 @@ pub fn run() {
 
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![hide_window, show_window, register_shortcut, list_commands, open_url, paste_text])
+        .invoke_handler(tauri::generate_handler![hide_window, show_window, dismiss_launcher, register_shortcut, list_commands, open_url, paste_text])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

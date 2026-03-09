@@ -64,9 +64,18 @@
   const ONBOARDING_SIZE = new LogicalSize(480, 240);
 
   // ── Helpers ────────────────────────────────────────────────────────────
+  // Used for blur and programmatic hides (no focus restoration needed —
+  // either the OS already moved focus elsewhere, or there is no previous app).
   function dismiss() {
     input = "";
     invoke("hide_window").catch(() => appWindow.hide());
+  }
+
+  // Used for intentional user dismissal via Escape.
+  // Hides the window AND restores focus to the previously active application.
+  function dismissWithFocusRestore() {
+    input = "";
+    invoke("dismiss_launcher").catch(() => appWindow.hide());
   }
 
   // Build a Tauri-compatible accelerator string from a KeyboardEvent
@@ -136,7 +145,7 @@
     if (onboarding) return; // handled by the onboarding div
     if (e.key === "Escape") {
       e.preventDefault();
-      dismiss();
+      dismissWithFocusRestore();
     } else if (e.key === "ArrowDown") {
       e.preventDefault();
       if (filtered.length > 0) selectedIndex = (selectedIndex + 1) % filtered.length;
