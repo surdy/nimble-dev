@@ -28,7 +28,8 @@ These are the only system actions the launcher itself can perform:
 
 ## Development Workflow Rules
 1. **Commit after every meaningful step** with a clear, descriptive commit message
-2. **Ask questions instead of making assumptions** whenever requirements are ambiguous
+2. **Push to remote after every commit** — run `git push` immediately after each `git commit`
+3. **Ask questions instead of making assumptions** whenever requirements are ambiguous
 3. **Keep README.md and user-facing documentation up to date** as features are built
 4. **Do not write code** until requirements for that phase/feature are clearly understood
 5. **Keep `docs/using/basic-functionality.md` up to date** whenever a new built-in action type is added to the launcher (currently: `open_url`, `paste_text`). Add a dedicated section covering the YAML schema, a minimal example, any parameter behaviour, and platform-specific requirements.
