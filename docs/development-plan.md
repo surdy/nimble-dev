@@ -236,7 +236,27 @@ mv ~/Library/Application\ Support/com.contexts.launcher \
 
 ---
 
-## Stage 11 — Script Extensions
+## Stage 11 — Documentation ✅
+
+**Goal:** Write comprehensive user-facing documentation covering how to use the launcher, configure commands, and get the most out of the built-in functionality.
+
+### Deliverables
+
+| File | Content |
+|------|---------|
+| `docs/using/first-run.md` | Onboarding walkthrough and shortcut setup |
+| `docs/using/basic-functionality.md` | Core actions: Open URL and Paste Text |
+| `docs/using/tips-and-tricks.md` | Deep links, web search via param passing, frequently-pasted text examples |
+| `docs/using/configuring-commands.md` | YAML schema, enable/disable, directory layout, live reload |
+| `docs/using/duplicate-commands.md` | How duplicate phrases are detected, resolved, and surfaced |
+
+### Done when ✅
+- All five docs are written, accurate, and cross-referenced
+- Configuration reference covers the full YAML schema and all valid action types
+
+---
+
+## Stage 12 — Script Extensions
 
 **Goal:** Commands can be associated with external scripts that process input and return results for the launcher to act on.
 
@@ -276,7 +296,7 @@ mv ~/Library/Application\ Support/com.contexts.launcher \
 
 ---
 
-## Stage 12 — Contexts: Core Model & Built-in Commands
+## Stage 13 — Contexts: Core Model & Built-in Commands
 
 **Goal:** Introduce the concept of a *context* — a phrase prefix that is silently prepended to the user's input, letting them reach a group of related commands with less typing. This stage covers the data model, the built-in commands that manage context, and the reserved `ctx` namespace.
 
@@ -315,7 +335,7 @@ When a context `C` is active, a user's raw input `I` is matched against command 
 
 ---
 
-## Stage 13 — Contexts: UI Indicators & Tray Integration
+## Stage 14 — Contexts: UI Indicators & Tray Integration
 
 **Goal:** Make the active context visible at all times — both inside the launcher window and in the system tray — so the user always knows which context is in effect.
 
@@ -360,6 +380,7 @@ When a context `C` is active, a user's raw input `I` is matched against command 
 | 8 | Bug fixes | Fix issues found during real-world use of stages 1–7 |
 | 9 | Enhancements | Quality-of-life improvements to the core command system |
 | 10 | App rename | Rename Contexts → Ctx; update identifier, config dir, localStorage keys |
-| 11 | Script extensions | External scripts return structured results; launcher executes built-in actions |
-| 12 | Contexts: core model | Reserved `ctx` namespace, built-in set/reset commands, context-aware matching |
-| 13 | Contexts: UI & tray | Context chip in launcher bar, tray label, localStorage persistence |
+| 11 | Documentation | User-facing docs: first run, core actions, tips & tricks, configuration, duplicates |
+| 12 | Script extensions | External scripts return structured results; launcher executes built-in actions |
+| 13 | Contexts: core model | Reserved `ctx` namespace, built-in set/reset commands, context-aware matching |
+| 14 | Contexts: UI & tray | Context chip in launcher bar, tray label, localStorage persistence |

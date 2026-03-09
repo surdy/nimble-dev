@@ -1,0 +1,138 @@
+# Configuring Commands
+
+Commands are stored as individual YAML files in a platform-specific config directory. Ctx watches this directory recursively and reloads commands automatically whenever a file is added, changed, or removed — no restart required.
+
+---
+
+## Config directory location
+
+| Platform | Path |
+|----------|------|
+| macOS | `~/Library/Application Support/com.ctx.launcher/` |
+| Linux | `$XDG_CONFIG_HOME/com.ctx.launcher/` (falls back to `~/.config/com.ctx.launcher/`) |
+| Windows | `%APPDATA%\com.ctx.launcher\` |
+
+> **Tip:** open a new command file in your editor directly from shell:  
+> `code ~/Library/Application\ Support/com.ctx.launcher/my-command.yaml`
+
+---
+
+## One command per file
+
+Each `.yaml` (or `.yml`) file contains exactly one command. Files can be nested in any subdirectory structure you like — Ctx discovers them all recursively.
+
+```
+com.ctx.launcher/
+  open-github.yaml
+  search-google.yaml
+  snippets/
+    email-signature.yaml
+    legal-disclaimer.yaml
+  work/
+    open-jira.yaml
+    paste-standup-template.yaml
+```
+
+---
+
+## Full command schema
+
+```yaml
+# Required fields
+phrase: <string>         # multi-word phrase users type to trigger this command
+title: <string>          # human-readable label shown as the result title
+
+# Optional fields
+enabled: true            # set to false to disable without deleting the file (default: true)
+
+# Required: one action block
+action:
+  type: open_url | paste_text
+  config:
+    # --- open_url ---
+    url: <string>        # any valid URL; use {param} for user-supplied input
+
+    # --- paste_text ---
+    text: <string>       # the text to paste (multi-line supported with YAML | block scalar)
+```
+
+### Open URL example
+
+```yaml
+phrase: open github
+title: Open GitHub
+action:
+  type: open_url
+  config:
+    url: https://github.com
+```
+
+### Open URL with parameter
+
+```yaml
+phrase: search npm
+title: Search npm packages
+action:
+  type: open_url
+  config:
+    url: https://www.npmjs.com/search?q={param}
+```
+
+Type `search npm svelte` → opens `https://www.npmjs.com/search?q=svelte`.
+
+### Paste Text example
+
+```yaml
+phrase: paste signature
+title: Paste email signature
+action:
+  type: paste_text
+  config:
+    text: |
+      Best regards,
+      Jane Smith
+      jane@example.com
+```
+
+---
+
+## Enabling and disabling commands
+
+Set `enabled: false` to temporarily hide a command from the launcher without deleting the file.
+
+```yaml
+phrase: open staging site
+title: Open staging environment
+enabled: false          # command is hidden until you change this back to true
+action:
+  type: open_url
+  config:
+    url: https://staging.example.com
+```
+
+- Omitting the `enabled` field is equivalent to `enabled: true`
+- Changing the value in an open file and saving it takes effect within ~300 ms (live reload)
+- Disabled commands are filtered out entirely on load — they never reach the frontend
+
+---
+
+## Live reload
+
+Ctx watches your config directory with a file-system watcher. After you save any `.yaml` file the launcher updates itself within 300 ms. You do **not** need to restart the app.
+
+Events that trigger a reload:
+- Creating a new `.yaml`/`.yml` file anywhere in the config tree
+- Editing and saving an existing file
+- Deleting or moving a file
+
+---
+
+## Supported URL schemes
+
+`open_url` accepts any URL that follows RFC 3986 — including `http://`, `https://`, `slack://`, `obsidian://`, `mailto:`, `tel:`, and other app deep-link schemes. See [Tips & Tricks](tips-and-tricks.md#app-deep-links) for examples.
+
+---
+
+## Reserved phrase prefix
+
+The phrase prefix `ctx` (case-insensitive) is reserved for built-in launcher commands. Any command file whose `phrase` starts with `ctx` followed by a space (or is exactly `ctx`) will be rejected at load time and a warning will appear in the launcher. Rename the phrase to avoid the conflict.
