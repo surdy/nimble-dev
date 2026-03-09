@@ -13,8 +13,8 @@
     "windows": [
       {
         "title": "Contexts",
-        "width": 640,
-        "height": 64,
+        "width": 480,
+        "height": 240,
         "center": true,
         "decorations": false,
         "alwaysOnTop": true,
