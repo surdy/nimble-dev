@@ -41,11 +41,12 @@ Iterative implementation plan for Contexts Launcher, from bare minimum working s
     }
   }
   ```
-- User commands are stored in a YAML file (`commands.yaml`) in the platform config directory:
+- User commands are stored as individual YAML files in the platform config directory (one command per file):
   - **macOS**: `~/Library/Application Support/com.contexts.launcher/`
   - **Linux**: `$XDG_CONFIG_HOME/com.contexts.launcher/` (falls back to `~/.config/com.contexts.launcher/`)
   - **Windows**: `%APPDATA%\com.contexts.launcher\`
-- Seed `commands.yaml` with 5 example commands (covering both action types) on first launch if no file exists
+  - Files are discovered **recursively** — commands can be organised into subdirectories
+- Seed an `examples/` subdirectory with 5 individual command files on first launch if no YAML files exist
 - Parse the YAML file into typed Rust structs (`Command`, `Action`, `OpenUrlConfig`, `PasteTextConfig`)
 - Expose the loaded command list to the frontend via a `list_commands` Tauri command
 

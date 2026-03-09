@@ -1,60 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::Path;
-
-// Seeded into commands.yaml on first launch if no file exists.
-const DEFAULT_COMMANDS_YAML: &str = r#"# Contexts Launcher — commands.yaml
-#
-# Define your personal commands here. Each entry requires:
-#   phrase  – the words you type in the launcher to match this command
-#   title   – the human-readable label shown as the result title
-#   action  – what happens when you execute the command
-#
-# Action types:
-#   open_url
-#     config:
-#       url: <URL>          Use {param} anywhere in the URL to substitute text
-#                           the user types after the command phrase.
-#
-#   paste_text
-#     config:
-#       text: <string>      Pasted into the previously focused application.
-
-- phrase: open google
-  title: Open Google
-  action:
-    type: open_url
-    config:
-      url: https://www.google.com
-
-- phrase: search google
-  title: Search Google for…
-  action:
-    type: open_url
-    config:
-      url: https://www.google.com/search?q={param}
-
-- phrase: open github
-  title: Open GitHub
-  action:
-    type: open_url
-    config:
-      url: https://github.com
-
-- phrase: paste email
-  title: Paste email address
-  action:
-    type: paste_text
-    config:
-      text: hello@example.com
-
-- phrase: paste greeting
-  title: Paste polite greeting
-  action:
-    type: paste_text
-    config:
-      text: "Hi,\n\nThank you for reaching out.\n\nBest regards"
-"#;
+use walkdir::WalkDir;
 
 // ── Schema ─────────────────────────────────────────────────────────────────────
 
@@ -84,24 +31,120 @@ pub struct Command {
     pub action: Action,
 }
 
+// ── Seed files written on first launch ────────────────────────────────────────
+// Each entry is (relative path inside config dir, YAML content).
+// Paths may include subdirectories — they mirror the kind of structure a user
+// would organise their own commands into.
+
+static SEED_FILES: &[(&str, &str)] = &[
+    (
+        "examples/open-google.yaml",
+        r#"phrase: open google
+title: Open Google
+action:
+  type: open_url
+  config:
+    url: https://www.google.com
+"#,
+    ),
+    (
+        "examples/search-google.yaml",
+        r#"phrase: search google
+title: Search Google for…
+action:
+  type: open_url
+  config:
+    url: https://www.google.com/search?q={param}
+"#,
+    ),
+    (
+        "examples/open-github.yaml",
+        r#"phrase: open github
+title: Open GitHub
+action:
+  type: open_url
+  config:
+    url: https://github.com
+"#,
+    ),
+    (
+        "examples/paste-email.yaml",
+        r#"phrase: paste email
+title: Paste email address
+action:
+  type: paste_text
+  config:
+    text: hello@example.com
+"#,
+    ),
+    (
+        "examples/paste-greeting.yaml",
+        r#"phrase: paste greeting
+title: Paste polite greeting
+action:
+  type: paste_text
+  config:
+    text: |
+      Hi,
+
+      Thank you for reaching out.
+
+      Best regards
+"#,
+    ),
+];
+
 // ── Loader ─────────────────────────────────────────────────────────────────────
 
-/// Ensure `config_dir` exists, seed `commands.yaml` if absent, then parse and
-/// return the command list.
+/// Collect all `.yaml` / `.yml` file paths under `config_dir` recursively.
+fn collect_yaml_files(config_dir: &Path) -> Vec<std::path::PathBuf> {
+    WalkDir::new(config_dir)
+        .follow_links(false)
+        .into_iter()
+        .filter_map(|e| e.ok())
+        .filter(|e| e.file_type().is_file())
+        .filter(|e| {
+            matches!(
+                e.path().extension().and_then(|x| x.to_str()),
+                Some("yaml") | Some("yml")
+            )
+        })
+        .map(|e| e.into_path())
+        .collect()
+}
+
+/// Ensure `config_dir` exists. If no YAML files are found, seed the example
+/// commands. Then walk the tree, parse every `.yaml`/`.yml` file as a single
+/// `Command`, and return the collected list.
+/// Files that fail to parse are skipped (with an eprintln warning) so one
+/// malformed file does not prevent others from loading.
 pub fn load_from_dir(config_dir: &Path) -> Result<Vec<Command>, String> {
     fs::create_dir_all(config_dir)
         .map_err(|e| format!("Could not create config directory: {e}"))?;
 
-    let commands_path = config_dir.join("commands.yaml");
-
-    if !commands_path.exists() {
-        fs::write(&commands_path, DEFAULT_COMMANDS_YAML)
-            .map_err(|e| format!("Could not write default commands.yaml: {e}"))?;
+    // Seed examples if the directory contains no YAML files yet.
+    if collect_yaml_files(config_dir).is_empty() {
+        for (rel_path, content) in SEED_FILES {
+            let dest = config_dir.join(rel_path);
+            if let Some(parent) = dest.parent() {
+                fs::create_dir_all(parent)
+                    .map_err(|e| format!("Could not create {}: {e}", parent.display()))?;
+            }
+            fs::write(&dest, content)
+                .map_err(|e| format!("Could not write {}: {e}", dest.display()))?;
+        }
     }
 
-    let yaml = fs::read_to_string(&commands_path)
-        .map_err(|e| format!("Could not read commands.yaml: {e}"))?;
+    let mut commands = Vec::new();
+    for path in collect_yaml_files(config_dir) {
+        match fs::read_to_string(&path) {
+            Err(e) => eprintln!("[contexts] could not read {}: {e}", path.display()),
+            Ok(yaml) => match serde_yaml::from_str::<Command>(&yaml) {
+                Err(e) => eprintln!("[contexts] could not parse {}: {e}", path.display()),
+                Ok(cmd) => commands.push(cmd),
+            },
+        }
+    }
 
-    serde_yaml::from_str::<Vec<Command>>(&yaml)
-        .map_err(|e| format!("Could not parse commands.yaml: {e}"))
+    Ok(commands)
 }
