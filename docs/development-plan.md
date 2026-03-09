@@ -4,17 +4,24 @@ Iterative implementation plan for Contexts Launcher, from bare minimum working s
 
 ---
 
-## Stage 1 — Launcher Window Shell
+## Stage 1 — Launcher Window Shell ✅
 
-**Goal:** A minimal window that can be opened and closed. No functionality, just the skeleton.
+**Goal:** A minimal window that can be opened and closed, runs persistently in the background, and is summoned via a user-chosen global hotkey.
 
 ### Tasks
-- Configure Tauri window to be frameless, floating, and centered on screen
-- Build the basic Svelte UI shell: a single text input (the command bar) and an empty results area
-- Launcher closes when the Escape key is pressed or it loses focus
+- Configure Tauri window: frameless, transparent, always-on-top, centered, fixed size
+- Enable `macOSPrivateApi` for native window transparency
+- First-run onboarding screen: prompt user to press a key combination; register it as the global hotkey
+- Save the chosen hotkey to `localStorage`; re-register it automatically on every subsequent launch
+- App runs in the background after onboarding — window is **hidden** (not closed) on dismiss
+- Global hotkey toggles the window: press once to show, press again to hide
+- Dismiss the launcher on Escape key or when the window loses focus
+- Resize the window dynamically: 480×240 for onboarding, 640×64 for the launcher bar
 
-### Done when
-- The window opens on app launch, shows the input field, and dismisses on Escape
+### Done when ✅
+- First launch shows onboarding; user picks a shortcut; app hides and stays running
+- The chosen shortcut summons and dismisses the launcher from any application
+- Escape and focus-loss also hide the window
 
 ---
 

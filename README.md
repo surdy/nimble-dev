@@ -33,6 +33,8 @@ For a full step-by-step guide see [docs/development-setup.md](docs/development-s
 
 For the implementation roadmap see [docs/development-plan.md](docs/development-plan.md).
 
+For the first-run experience see [docs/first-run.md](docs/first-run.md).
+
 ### Quick start
 
 ```bash
