@@ -148,7 +148,22 @@ Iterative implementation plan for Contexts Launcher, from bare minimum working s
 
 ---
 
-## Stage 8 — Script Extensions
+## Stage 8 — Bug Fixes
+
+**Goal:** Address reported issues discovered during real-world use of stages 1–7.
+
+### Fix 1 — Deleting a command file does not update the launcher
+
+**Root cause:** `is_yaml_event()` in `watcher.rs` filters events by checking whether the affected path has a `.yaml`/`.yml` extension. On macOS, FSEvents can report a file-deletion event with the **parent directory path** rather than the deleted file's path — so the extension check fails and no reload is triggered.
+
+**Fix:** Relax the extension check for `EventKind::Remove` events. Any removal inside the watched config directory should trigger a reload; since the file is already gone it cannot be inspected, and the config dir is low-churn enough that false-positive reloads are harmless.
+
+### Done when ✅
+- Deleting a `.yaml` command file causes the command to disappear from the launcher immediately (within the 300 ms debounce window), without restarting the app
+
+---
+
+## Stage 9 — Script Extensions
 
 **Goal:** Commands can be associated with external scripts that process input and return results for the launcher to act on.
 
@@ -199,4 +214,5 @@ Iterative implementation plan for Contexts Launcher, from bare minimum working s
 | 5 | Action: Paste Text | Pastes text into previously focused application |
 | 6 | Global hotkey | System-wide shortcut to summon/dismiss launcher |
 | 7 | Live config reload | Hot-reload commands when `commands.yaml` is edited |
-| 8 | Script extensions | External scripts return structured results; launcher executes built-in actions |
+| 8 | Bug fixes | Fix issues found during real-world use of stages 1–7 |
+| 9 | Script extensions | External scripts return structured results; launcher executes built-in actions |

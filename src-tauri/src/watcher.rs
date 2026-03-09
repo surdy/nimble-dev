@@ -83,17 +83,23 @@ pub fn start(app: AppHandle, config_dir: PathBuf) {
     });
 }
 
-/// Returns true if the event involves a .yaml or .yml file and is a kind we
-/// care about (create, modify, remove). Renames count as a remove + create pair
-/// which notify surfaces individually.
+/// Returns true if the event is one we should react to:
+/// - Create / Modify: only when a .yaml or .yml file is affected.
+/// - Remove: any removal inside the watched config dir. On macOS, FSEvents can
+///   report a deletion with the *parent directory path* rather than the deleted
+///   file's path, so the extension check would incorrectly filter it out.
+///   The config dir is low-churn, so reloading on any removal is harmless.
 fn is_yaml_event(event: &notify::Event) -> bool {
-    matches!(
-        event.kind,
-        EventKind::Create(_) | EventKind::Modify(_) | EventKind::Remove(_)
-    ) && event.paths.iter().any(|p| {
-        matches!(
-            p.extension().and_then(|e| e.to_str()),
-            Some("yaml") | Some("yml")
-        )
-    })
+    match event.kind {
+        EventKind::Create(_) | EventKind::Modify(_) => {
+            event.paths.iter().any(|p| {
+                matches!(
+                    p.extension().and_then(|e| e.to_str()),
+                    Some("yaml") | Some("yml")
+                )
+            })
+        }
+        EventKind::Remove(_) => !event.paths.is_empty(),
+        _ => false,
+    }
 }
