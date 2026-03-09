@@ -76,19 +76,20 @@ Iterative implementation plan for Contexts Launcher, from bare minimum working s
 
 ---
 
-## Stage 4 — Action: Open URL
+## Stage 4 — Action: Open URL ✅
 
 **Goal:** Executing a selected command with type `open_url` opens a URL in the default browser.
 
 ### Tasks
-- Implement the `open_url` built-in action in the Rust/Tauri layer
-- Support an optional `param` variable: if the config URL contains `{param}`, substitute the text the user typed after the command phrase
-  - Example: command phrase `"search google"`, URL `"https://google.com/search?q={param}"`, user types `"search google rust programming"` → opens `https://google.com/search?q=rust+programming`
-- Validate the URL before opening (must be http/https); reject anything else
-- After executing, close the launcher window
+- Implement the `open_url` Tauri command in Rust using `tauri-plugin-opener`
+- Support an optional `param` variable: text typed after the command phrase is URL-encoded and substituted for `{param}` in the configured URL
+  - Example: phrase `"search google"`, URL `"https://google.com/search?q={param}"`, user types `"search google rust programming"` → opens `https://google.com/search?q=rust+programming`
+- Validate scheme before opening — only `http://` and `https://` are accepted; anything else returns an error
+- Frontend `executeCommand()` helper extracts the param from the typed input, invokes `open_url`, then dismisses the launcher
+- Enter key on a selected result triggers execution
 
-### Done when
-- Selecting an open_url command opens the correct URL in the browser; param substitution works; window closes
+### Done when ✅
+- Selecting an `open_url` command opens the correct URL in the browser; param substitution works; window hides after execution
 
 ---
 

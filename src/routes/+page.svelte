@@ -109,6 +109,24 @@
     }
   }
 
+  // ── Action execution ──────────────────────────────────────────────────
+  async function executeCommand(cmd: Command) {
+    if (cmd.action.type === "open_url") {
+      // Extract any text typed after the command phrase as the param
+      const phrase = cmd.phrase.toLowerCase();
+      const typed  = input.trim();
+      const after  = typed.toLowerCase().startsWith(phrase)
+        ? typed.slice(phrase.length).trim()
+        : "";
+      await invoke("open_url", {
+        url:   cmd.action.config.url,
+        param: after !== "" ? after : null,
+      });
+      dismiss();
+    }
+    // paste_text handled in Stage 5
+  }
+
   // ── Launcher key handling ──────────────────────────────────────────────
   function handleKeydown(e: KeyboardEvent) {
     if (onboarding) return; // handled by the onboarding div
@@ -123,7 +141,8 @@
       if (filtered.length > 0) selectedIndex = (selectedIndex - 1 + filtered.length) % filtered.length;
     } else if (e.key === "Enter") {
       e.preventDefault();
-      // TODO Stage 4/5: execute filtered[selectedIndex]?.action
+      const cmd = filtered[selectedIndex];
+      if (cmd) executeCommand(cmd);
     }
   }
 

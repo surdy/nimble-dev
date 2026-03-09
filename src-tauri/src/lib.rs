@@ -7,6 +7,39 @@ use tauri::{
     Manager,
 };
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, ShortcutState};
+use tauri_plugin_opener::OpenerExt;
+
+/// Open a URL in the default browser.
+/// - Only http:// and https:// schemes are accepted.
+/// - Occurrences of `{param}` in the URL are replaced with `param`
+///   (URL-encoded) before opening.
+#[tauri::command]
+fn open_url(app: tauri::AppHandle, url: String, param: Option<String>) -> Result<(), String> {
+    // Substitute {param} if present
+    let resolved = if let Some(p) = param {
+        let encoded: String = p
+            .bytes()
+            .flat_map(|b| match b {
+                b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9'
+                | b'-' | b'_' | b'.' | b'~' => vec![b as char],
+                b' ' => vec!['+'],
+                _ => format!("%{:02X}", b).chars().collect(),
+            })
+            .collect();
+        url.replace("{param}", &encoded)
+    } else {
+        url
+    };
+
+    // Validate scheme — only http/https allowed
+    if !resolved.starts_with("http://") && !resolved.starts_with("https://") {
+        return Err(format!("Rejected non-http(s) URL: {resolved}"));
+    }
+
+    app.opener()
+        .open_url(resolved, None::<&str>)
+        .map_err(|e| e.to_string())
+}
 
 struct TrayMenuState {
     show_hide_item: Arc<MenuItem<tauri::Wry>>,
@@ -135,7 +168,7 @@ pub fn run() {
 
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![hide_window, show_window, register_shortcut, list_commands])
+        .invoke_handler(tauri::generate_handler![hide_window, show_window, register_shortcut, list_commands, open_url])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
