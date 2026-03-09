@@ -141,8 +141,16 @@ fn hide_window(app: tauri::AppHandle, window: tauri::Window) {
 }
 
 /// Show and focus the launcher window.
+///
+/// Resets to the base 640×64 size and re-centers on the active monitor before
+/// making the window visible. This corrects drift caused by macOS anchoring
+/// `setSize` calls from the bottom-left while the window is hidden: shrinking
+/// from a tall (results-visible) state moves the window top downward, so we
+/// must correct the position on every show.
 #[tauri::command]
 fn show_window(app: tauri::AppHandle, window: tauri::Window) {
+    window.set_size(tauri::LogicalSize::new(640_f64, 64_f64)).ok();
+    window.center().ok();
     window.show().ok();
     window.set_focus().ok();
     sync_tray(&app, true);
@@ -196,6 +204,8 @@ fn register_shortcut(app: tauri::AppHandle, shortcut: String) -> Result<(), Stri
                         // Capture the frontmost app before we steal focus
                         let prev = app.state::<PreviousApp>();
                         capture_previous_app(&prev);
+                        window.set_size(tauri::LogicalSize::new(640_f64, 64_f64)).ok();
+                        window.center().ok();
                         window.show().ok();
                         window.set_focus().ok();
                         sync_tray(app, true);
@@ -323,6 +333,8 @@ pub fn run() {
                                 // Capture previous app before we steal focus
                                 let prev = app.state::<PreviousApp>();
                                 capture_previous_app(&prev);
+                                window.set_size(tauri::LogicalSize::new(640_f64, 64_f64)).ok();
+                                window.center().ok();
                                 window.show().ok();
                                 window.set_focus().ok();
                                 sync_tray(app, true);

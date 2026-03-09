@@ -161,6 +161,15 @@ Iterative implementation plan for Contexts Launcher, from bare minimum working s
 ### Done when ✅
 - Deleting a `.yaml` command file causes the command to disappear from the launcher immediately (within the 300 ms debounce window), without restarting the app
 
+### Fix 2 — Launcher window drifts lower on screen after each command execution
+
+**Root cause:** The frontend `$effect` calls `setSize` (to shrink the window back to 64 px after results disappear) on a window that is already hidden. On macOS, `setSize` on a hidden window anchors from the **bottom-left corner** (the native coordinate origin), so shrinking the height by `Δ` moves the window's top-left position **down** by `Δ` pixels. The drift accumulates with every invocation.
+
+**Fix:** Before every `window.show()` call (global-hotkey path, tray path, and `show_window` command), first call `window.set_size(640×64)` then `window.center()`. This resets any accumulated drift and places the launcher in the center of the screen on each invocation.
+
+### Done when ✅
+- Invoking the launcher repeatedly after running commands always shows it in the same centered position, never drifting
+
 ---
 
 ## Stage 9 — Script Extensions
