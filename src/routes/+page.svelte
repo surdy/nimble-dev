@@ -2,6 +2,7 @@
   import { onMount } from "svelte";
   import { invoke } from "@tauri-apps/api/core";
   import { getCurrentWindow, LogicalSize } from "@tauri-apps/api/window";
+  import type { Command } from "$lib/types";
 
   // ── State ──────────────────────────────────────────────────────────────
   let input = $state("");
@@ -13,6 +14,9 @@
   let onboarding = $state(false);
   let capturedShortcut = $state("");
   let shortcutError = $state("");
+
+  // Command store — loaded once on mount, filtered in Stage 3
+  let commands = $state<Command[]>([]);
 
   const LAUNCHER_SIZE  = new LogicalSize(640, 64);
   const ONBOARDING_SIZE = new LogicalSize(480, 240);
@@ -83,6 +87,8 @@
         // Re-register saved shortcut, resize to launcher bar, then hide
         await invoke("register_shortcut", { shortcut: stored }).catch(() => {});
         await appWindow.setSize(LAUNCHER_SIZE);
+        // Load commands from the config directory
+        commands = await invoke<Command[]>("list_commands").catch(() => []);
         dismiss();
       } else {
         // First launch: show onboarding at the larger size
