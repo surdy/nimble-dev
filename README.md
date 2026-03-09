@@ -31,6 +31,8 @@ A fast, cross-platform desktop launcher driven entirely by commands — think Al
 
 For a full step-by-step guide see [docs/development-setup.md](docs/development-setup.md).
 
+For the implementation roadmap see [docs/development-plan.md](docs/development-plan.md).
+
 ### Quick start
 
 ```bash
