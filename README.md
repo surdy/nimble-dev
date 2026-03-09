@@ -1,4 +1,4 @@
-# Contexts Launcher
+# Ctx Launcher
 
 A fast, cross-platform desktop launcher driven entirely by commands — think Alfred or Raycast, built around multi-word phrase commands with real-time partial matching and extensibility through sandboxed scripts.
 

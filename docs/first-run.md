@@ -1,6 +1,6 @@
 # First Run
 
-When you launch Contexts for the first time, you will be greeted by the onboarding screen before the launcher is usable. This only happens once.
+When you launch Ctx for the first time, you will be greeted by the onboarding screen before the launcher is usable. This only happens once.
 
 ---
 
@@ -8,7 +8,7 @@ When you launch Contexts for the first time, you will be greeted by the onboardi
 
 The onboarding screen asks you to press the key combination you want to use to open the launcher from anywhere on your Mac.
 
-![Onboarding screen showing "Welcome to Contexts" with a shortcut capture area](../static/favicon.png)
+![Onboarding screen showing "Welcome to Ctx" with a shortcut capture area](../static/favicon.png)
 
 **How it works:**
 
@@ -47,7 +47,7 @@ Press your shortcut at any time to summon the command bar. Press it again (or pr
 To change your shortcut, open the browser DevTools console within the app window and run:
 
 ```js
-localStorage.removeItem('contexts_hotkey')
+localStorage.removeItem('ctx_hotkey')
 ```
 
 Then relaunch the app — the onboarding screen will appear again.

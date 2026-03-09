@@ -29,18 +29,18 @@ pub fn start(app: AppHandle, config_dir: PathBuf) {
         ) {
             Ok(w) => w,
             Err(e) => {
-                eprintln!("[contexts] could not create file watcher: {e}");
+                eprintln!("[ctx] could not create file watcher: {e}");
                 return;
             }
         };
 
         if let Err(e) = watcher.watch(&config_dir, RecursiveMode::Recursive) {
-            eprintln!("[contexts] could not watch config dir: {e}");
+            eprintln!("[ctx] could not watch config dir: {e}");
             return;
         }
 
         eprintln!(
-            "[contexts] watching config dir for changes: {}",
+            "[ctx] watching config dir for changes: {}",
             config_dir.display()
         );
 
@@ -72,11 +72,11 @@ pub fn start(app: AppHandle, config_dir: PathBuf) {
             match commands::load_from_dir(&config_dir) {
                 Ok(result) => {
                     if let Err(e) = app.emit(COMMANDS_RELOADED_EVENT, &result) {
-                        eprintln!("[contexts] could not emit reload event: {e}");
+                        eprintln!("[ctx] could not emit reload event: {e}");
                     }
                 }
                 Err(e) => {
-                    eprintln!("[contexts] reload failed: {e}");
+                    eprintln!("[ctx] reload failed: {e}");
                 }
             }
         }

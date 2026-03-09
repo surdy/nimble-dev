@@ -1,7 +1,7 @@
 [package]
-name = "contexts-launcher"
+name = "ctx-launcher"
 version = "0.1.0"
-description = "Contexts - A cross-platform command-driven desktop launcher"
+description = "Ctx - A cross-platform command-driven desktop launcher"
 authors = ["Harpreet Singh Gulati"]
 edition = "2021"
 
@@ -11,7 +11,7 @@ edition = "2021"
 # The `_lib` suffix may seem redundant but it is necessary
 # to make the lib name unique and wouldn't conflict with the bin name.
 # This seems to be only an issue on Windows, see https://github.com/rust-lang/cargo/issues/8519
-name = "contexts_launcher_lib"
+name = "ctx_launcher_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]

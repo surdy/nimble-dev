@@ -1,6 +1,6 @@
 # Development Plan
 
-Iterative implementation plan for Contexts Launcher, from bare minimum working shell to full feature set. Each stage produces a working, committable increment.
+Iterative implementation plan for Ctx, from bare minimum working shell to full feature set. Each stage produces a working, committable increment.
 
 ---
 
@@ -42,9 +42,9 @@ Iterative implementation plan for Contexts Launcher, from bare minimum working s
   }
   ```
 - User commands are stored as individual YAML files in the platform config directory (one command per file):
-  - **macOS**: `~/Library/Application Support/com.contexts.launcher/`
-  - **Linux**: `$XDG_CONFIG_HOME/com.contexts.launcher/` (falls back to `~/.config/com.contexts.launcher/`)
-  - **Windows**: `%APPDATA%\com.contexts.launcher\`
+  - **macOS**: `~/Library/Application Support/com.ctx.launcher/`
+  - **Linux**: `$XDG_CONFIG_HOME/com.ctx.launcher/` (falls back to `~/.config/com.ctx.launcher/`)
+  - **Windows**: `%APPDATA%\com.ctx.launcher\`
   - Files are discovered **recursively** — commands can be organised into subdirectories
 - Seed an `examples/` subdirectory with 5 individual command files on first launch if no YAML files exist
 - Parse the YAML file into typed Rust structs (`Command`, `Action`, `OpenUrlConfig`, `PasteTextConfig`)
@@ -203,7 +203,40 @@ action:
 
 ---
 
-## Stage 10 — Script Extensions
+## Stage 10 — App Rename: Contexts → Ctx
+
+**Goal:** Rename the application from *Contexts* to *Ctx* everywhere — product name, bundle identifier, config directory, localStorage keys, log prefixes, and all documentation. This is a breaking change to the config directory path; existing users must migrate their command files.
+
+### Changes
+
+| Location | Before | After |
+|----------|--------|-------|
+| Product name (`tauri.conf.json`) | `Contexts` | `Ctx` |
+| Bundle identifier | `com.contexts.launcher` | `com.ctx.launcher` |
+| Cargo package name | `contexts-launcher` | `ctx-launcher` |
+| Cargo lib name | `contexts_launcher_lib` | `ctx_launcher_lib` |
+| npm package name | `contexts-launcher` | `ctx-launcher` |
+| Config dir (macOS) | `~/Library/Application Support/com.contexts.launcher/` | `~/Library/Application Support/com.ctx.launcher/` |
+| localStorage hotkey key | `contexts_hotkey` | `ctx_hotkey` |
+| Log prefix | `[contexts]` | `[ctx]` |
+| Onboarding title | `Welcome to Contexts` | `Welcome to Ctx` |
+| Tray menu items | `Contexts vX.Y.Z` / `Quit Contexts` | `Ctx vX.Y.Z` / `Quit Ctx` |
+
+### Migration note
+Because the bundle identifier changes, Tauri will use a new config directory. Users upgrading from the *Contexts* build must manually move their command files:
+```bash
+mv ~/Library/Application\ Support/com.contexts.launcher \
+   ~/Library/Application\ Support/com.ctx.launcher
+```
+
+### Done when ✅
+- App builds and runs under the new name and identifier
+- Config directory is `com.ctx.launcher`; command files load correctly
+- No references to the old name remain in source, config, or docs
+
+---
+
+## Stage 11 — Script Extensions
 
 **Goal:** Commands can be associated with external scripts that process input and return results for the launcher to act on.
 
@@ -243,7 +276,7 @@ action:
 
 ---
 
-## Stage 11 — Contexts: Core Model & Built-in Commands
+## Stage 12 — Contexts: Core Model & Built-in Commands
 
 **Goal:** Introduce the concept of a *context* — a phrase prefix that is silently prepended to the user's input, letting them reach a group of related commands with less typing. This stage covers the data model, the built-in commands that manage context, and the reserved `ctx` namespace.
 
@@ -282,7 +315,7 @@ When a context `C` is active, a user's raw input `I` is matched against command 
 
 ---
 
-## Stage 12 — Contexts: UI Indicators & Tray Integration
+## Stage 13 — Contexts: UI Indicators & Tray Integration
 
 **Goal:** Make the active context visible at all times — both inside the launcher window and in the system tray — so the user always knows which context is in effect.
 
@@ -298,12 +331,12 @@ When a context `C` is active, a user's raw input `I` is matched against command 
 - Account for the chip row height in the dynamic window-resize `$effect` when a context is active and the chip is shown.
 
 #### System tray
-- When a context is active, append the context name to the tray tooltip / app-info menu item, e.g. `"Contexts — reddit"`.
-- When no context is active, show the default `"Contexts vX.Y.Z"` label.
+- When a context is active, append the context name to the tray tooltip / app-info menu item, e.g. `"Ctx — reddit"`.
+- When no context is active, show the default `"Ctx vX.Y.Z"` label.
 - The tray label update must happen on the same thread that manages the `TrayMenuState`.
 
 #### Persistence
-- Active context is stored in `localStorage` under the key `contexts_active_context` so it survives launcher restarts.
+- Active context is stored in `localStorage` under the key `ctx_active_context` so it survives launcher restarts.
 - On mount, restore the saved context (if any) before the first filter pass.
 
 ### Done when
@@ -326,6 +359,7 @@ When a context `C` is active, a user's raw input `I` is matched against command 
 | 7 | Live config reload | Hot-reload commands when `commands.yaml` is edited |
 | 8 | Bug fixes | Fix issues found during real-world use of stages 1–7 |
 | 9 | Enhancements | Quality-of-life improvements to the core command system |
-| 10 | Script extensions | External scripts return structured results; launcher executes built-in actions |
-| 11 | Contexts: core model | Reserved `ctx` namespace, built-in set/reset commands, context-aware matching |
-| 12 | Contexts: UI & tray | Context chip in launcher bar, tray label, localStorage persistence |
+| 10 | App rename | Rename Contexts → Ctx; update identifier, config dir, localStorage keys |
+| 11 | Script extensions | External scripts return structured results; launcher executes built-in actions |
+| 12 | Contexts: core model | Reserved `ctx` namespace, built-in set/reset commands, context-aware matching |
+| 13 | Contexts: UI & tray | Context chip in launcher bar, tray label, localStorage persistence |

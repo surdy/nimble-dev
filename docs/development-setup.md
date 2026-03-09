@@ -1,6 +1,6 @@
 # Development Environment Setup
 
-This guide walks you through setting up your machine to build and run Contexts Launcher locally.
+This guide walks you through setting up your machine to build and run Ctx locally.
 
 ---
 

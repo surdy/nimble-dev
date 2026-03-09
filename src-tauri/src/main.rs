@@ -2,5 +2,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
-    contexts_launcher_lib::run()
+    ctx_launcher_lib::run()
 }

@@ -480,23 +480,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "contexts-launcher"
-version = "0.1.0"
-dependencies = [
- "enigo",
- "notify",
- "objc2-app-kit",
- "serde",
- "serde_json",
- "serde_yaml",
- "tauri",
- "tauri-build",
- "tauri-plugin-global-shortcut",
- "tauri-plugin-opener",
- "walkdir",
-]
-
-[[package]]
 name = "convert_case"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -664,6 +647,23 @@ checksum = "32a2785755761f3ddc1492979ce1e48d2c00d09311c39e4466429188f3dd6501"
 dependencies = [
  "quote",
  "syn 2.0.117",
+]
+
+[[package]]
+name = "ctx-launcher"
+version = "0.1.0"
+dependencies = [
+ "enigo",
+ "notify",
+ "objc2-app-kit",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-global-shortcut",
+ "tauri-plugin-opener",
+ "walkdir",
 ]
 
 [[package]]

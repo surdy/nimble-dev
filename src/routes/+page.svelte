@@ -116,7 +116,7 @@
     if (!capturedShortcut) return;
     try {
       await invoke("register_shortcut", { shortcut: capturedShortcut });
-      localStorage.setItem("contexts_hotkey", capturedShortcut);
+      localStorage.setItem("ctx_hotkey", capturedShortcut);
       onboarding = false;
       await appWindow.setSize(LAUNCHER_SIZE);
       dismiss();
@@ -173,7 +173,7 @@
     let unlistenReload: (() => void) | null = null;
 
     (async () => {
-      const stored = localStorage.getItem("contexts_hotkey");
+      const stored = localStorage.getItem("ctx_hotkey");
 
       if (stored) {
         // Re-register saved shortcut, resize to launcher bar, then hide
@@ -227,7 +227,7 @@
     tabindex="-1"
     onkeydown={handleOnboardingKeydown}
   >
-    <p class="ob-title">Welcome to Contexts</p>
+    <p class="ob-title">Welcome to Ctx</p>
     <p class="ob-sub">Press the key combination you want to use<br>to open the launcher from anywhere.</p>
 
     <div class="shortcut-preview" class:active={!!capturedShortcut}>

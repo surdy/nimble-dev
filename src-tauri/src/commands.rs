@@ -188,15 +188,15 @@ pub fn load_from_dir(config_dir: &Path) -> Result<LoadResult, String> {
             .to_string();
 
         match fs::read_to_string(&path) {
-            Err(e) => eprintln!("[contexts] could not read {}: {e}", path.display()),
+            Err(e) => eprintln!("[ctx] could not read {}: {e}", path.display()),
             Ok(yaml) => match serde_yaml::from_str::<Command>(&yaml) {
-                Err(e) => eprintln!("[contexts] could not parse {}: {e}", path.display()),
+                Err(e) => eprintln!("[ctx] could not parse {}: {e}", path.display()),
                 Ok(cmd) if !cmd.enabled => {} // disabled — silently skip
                 Ok(cmd) => {
                     let key = cmd.phrase.to_lowercase();
                     if let Some(winner) = seen.get(&key) {
                         eprintln!(
-                            "[contexts] duplicate phrase {:?} in {display}, kept {winner}",
+                            "[ctx] duplicate phrase {:?} in {display}, kept {winner}",
                             cmd.phrase
                         );
                         duplicates.push(DuplicateWarning {
