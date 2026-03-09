@@ -284,11 +284,13 @@
           {#each filtered as cmd, i}
             {@const hl = highlight(cmd.phrase, input)}
             <!-- svelte-ignore a11y_no_static_element_interactions -->
+            <!-- svelte-ignore a11y_click_events_have_key_events -->
             <div
               class="result-row"
               class:selected={i === selectedIndex}
               onmouseenter={() => (selectedIndex = i)}
               onmousedown={(e) => { e.preventDefault(); selectedIndex = i; }}
+              onclick={() => executeCommand(cmd)}
             >
               <span class="result-title">{cmd.title}</span>
               <span class="result-subtext">{hl.before}<mark>{hl.match}</mark>{hl.after}</span>
