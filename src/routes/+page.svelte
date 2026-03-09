@@ -15,8 +15,50 @@
   let capturedShortcut = $state("");
   let shortcutError = $state("");
 
-  // Command store — loaded once on mount, filtered in Stage 3
+  // Command store — loaded once on mount
   let commands = $state<Command[]>([]);
+
+  // ── Filtering & navigation ─────────────────────────────────────────────
+  const MAX_RESULTS = 8;
+  const ROW_H = 56; // px per result row
+
+  const filtered = $derived(
+    input.trim() === ""
+      ? []
+      : commands
+          .filter(cmd => cmd.phrase.toLowerCase().includes(input.trim().toLowerCase()))
+          .slice(0, MAX_RESULTS)
+  );
+
+  let selectedIndex = $state(0);
+
+  // Reset selection whenever the result list changes
+  $effect(() => {
+    void filtered;
+    selectedIndex = 0;
+  });
+
+  // Resize window to fit current results (skip during onboarding)
+  $effect(() => {
+    if (onboarding) return;
+    const hasQuery = input.trim() !== "";
+    const height = !hasQuery ? 64
+      : filtered.length === 0 ? 64 + 44          // "no results" row
+      : 64 + filtered.length * ROW_H;
+    appWindow.setSize(new LogicalSize(640, height));
+  });
+
+  // ── Highlight helper ──────────────────────────────────────────────────
+  function highlight(phrase: string, query: string) {
+    const q = query.trim().toLowerCase();
+    const idx = phrase.toLowerCase().indexOf(q);
+    if (idx === -1 || q === "") return { before: phrase, match: "", after: "" };
+    return {
+      before: phrase.slice(0, idx),
+      match:  phrase.slice(idx, idx + q.length),
+      after:  phrase.slice(idx + q.length),
+    };
+  }
 
   const LAUNCHER_SIZE  = new LogicalSize(640, 64);
   const ONBOARDING_SIZE = new LogicalSize(480, 240);
@@ -73,6 +115,15 @@
     if (e.key === "Escape") {
       e.preventDefault();
       dismiss();
+    } else if (e.key === "ArrowDown") {
+      e.preventDefault();
+      if (filtered.length > 0) selectedIndex = (selectedIndex + 1) % filtered.length;
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      if (filtered.length > 0) selectedIndex = (selectedIndex - 1 + filtered.length) % filtered.length;
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      // TODO Stage 4/5: execute filtered[selectedIndex]?.action
     }
   }
 
@@ -101,6 +152,7 @@
       // Hide on blur, but never during onboarding
       const unlistenPromise = appWindow.onFocusChanged(({ payload: focused }) => {
         if (!focused && !onboarding) dismiss();
+        if (focused && !onboarding) setTimeout(() => inputEl?.focus(), 0);
       });
       unlistenFn = await unlistenPromise;
     })();
@@ -150,6 +202,28 @@
       spellcheck="false"
       onkeydown={handleKeydown}
     />
+
+    {#if input.trim() !== ""}
+      <div class="results">
+        {#if filtered.length === 0}
+          <div class="no-results">No results</div>
+        {:else}
+          {#each filtered as cmd, i}
+            {@const hl = highlight(cmd.phrase, input)}
+            <!-- svelte-ignore a11y_no_static_element_interactions -->
+            <div
+              class="result-row"
+              class:selected={i === selectedIndex}
+              onmouseenter={() => (selectedIndex = i)}
+              onmousedown={(e) => { e.preventDefault(); selectedIndex = i; }}
+            >
+              <span class="result-title">{cmd.title}</span>
+              <span class="result-subtext">{hl.before}<mark>{hl.match}</mark>{hl.after}</span>
+            </div>
+          {/each}
+        {/if}
+      </div>
+    {/if}
   </div>
 {/if}
 
@@ -256,4 +330,60 @@
   }
 
   .ob-confirm:disabled { opacity: .35; cursor: default; }
+
+  /* ── Results list ────────────────────────────────────────────────────── */
+  .results {
+    border-top: 1px solid rgba(255,255,255,.07);
+    padding: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .result-row {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: 10px 16px;
+    border-radius: 8px;
+    cursor: default;
+    transition: background .1s;
+  }
+
+  .result-row.selected {
+    background: rgba(255,255,255,.09);
+  }
+
+  .result-title {
+    color: #f5f5f7;
+    font-size: 14px;
+    font-weight: 500;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .result-subtext {
+    color: rgba(245,245,247,.4);
+    font-size: 12px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .result-subtext mark {
+    background: transparent;
+    color: #0a84ff;
+    font-weight: 600;
+  }
+
+  .no-results {
+    padding: 12px 16px;
+    color: rgba(245,245,247,.3);
+    font-size: 13px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    text-align: center;
+  }
 </style>

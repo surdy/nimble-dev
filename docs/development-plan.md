@@ -56,21 +56,23 @@ Iterative implementation plan for Contexts Launcher, from bare minimum working s
 
 ---
 
-## Stage 3 — Partial Matching & Results UI
+## Stage 3 — Partial Matching & Results UI ✅
 
 **Goal:** As the user types, filter commands in real time and display matching results.
 
 ### Tasks
-- Implement partial/prefix matching: a typed string matches any command whose phrase contains it as a contiguous substring (case-insensitive)
+- Implement partial matching: a typed string matches any command whose phrase contains it as a contiguous substring (case-insensitive); up to 8 results shown
 - Display each match as a result row:
   - **Title** (main line): the command's `title` field
-  - **Subtext** (secondary line): the full command phrase, showing what the user's input completes to
-- Highlight the matching portion of the phrase in the subtext
-- Keyboard navigation: Up/Down arrows to move selection, Enter to confirm
-- Show a "no results" state when nothing matches
+  - **Subtext** (secondary line): the full command phrase
+- Highlight the matching portion of the phrase in the subtext (blue, bold)
+- Keyboard navigation: Up/Down arrows move selection; Enter reserved for Stage 4/5
+- Show a "No results" row when input is non-empty but nothing matches
+- Window resizes dynamically: 64px (empty) → 64 + n×56px (results) → 64 + 44px (no results)
+- Input refocused automatically when the launcher window regains focus
 
-### Done when
-- Typing partial phrases filters the list live; keyboard navigation and selection work
+### Done when ✅
+- Typing partial phrases filters the list live; keyboard and mouse selection work; window grows/shrinks with results
 
 ---
 
