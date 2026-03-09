@@ -2,6 +2,7 @@
   import { onMount } from "svelte";
   import { invoke } from "@tauri-apps/api/core";
   import { getCurrentWindow, LogicalSize } from "@tauri-apps/api/window";
+  import { listen } from "@tauri-apps/api/event";
   import type { Command } from "$lib/types";
 
   // ── State ──────────────────────────────────────────────────────────────
@@ -161,7 +162,8 @@
 
   // ── Lifecycle ─────────────────────────────────────────────────────────
   onMount(() => {
-    let unlistenFn: (() => void) | null = null;
+    let unlistenFocus: (() => void) | null = null;
+    let unlistenReload: (() => void) | null = null;
 
     (async () => {
       const stored = localStorage.getItem("contexts_hotkey");
@@ -182,14 +184,21 @@
       }
 
       // Hide on blur, but never during onboarding
-      const unlistenPromise = appWindow.onFocusChanged(({ payload: focused }) => {
+      unlistenFocus = await appWindow.onFocusChanged(({ payload: focused }) => {
         if (!focused && !onboarding) dismiss();
         if (focused && !onboarding) setTimeout(() => inputEl?.focus(), 0);
       });
-      unlistenFn = await unlistenPromise;
+
+      // Live-reload: backend emits this event when a YAML file changes
+      unlistenReload = await listen<Command[]>("commands://reloaded", (event) => {
+        commands = event.payload;
+      });
     })();
 
-    return () => { unlistenFn?.(); };
+    return () => {
+      unlistenFocus?.();
+      unlistenReload?.();
+    };
   });
 </script>
 

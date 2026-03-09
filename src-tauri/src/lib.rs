@@ -1,4 +1,5 @@
 mod commands;
+mod watcher;
 
 use std::sync::{Arc, Mutex};
 use tauri::{
@@ -294,6 +295,10 @@ pub fn run() {
 
             // Manage previous-app tracking for paste_text focus restoration
             app.manage(PreviousApp(Mutex::new(None)));
+
+            // Start watching the config directory for live command reloads
+            let config_dir = app.path().app_config_dir().map_err(|e| e.to_string())?;
+            watcher::start(app.handle().clone(), config_dir);
 
             let icon = app
                 .default_window_icon()
