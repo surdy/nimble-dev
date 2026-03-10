@@ -181,7 +181,7 @@ fn list_commands(app: tauri::AppHandle) -> Result<commands::LoadResult, String> 
         .path()
         .app_config_dir()
         .map_err(|e| e.to_string())?;
-    commands::load_from_dir(&config_dir)
+    commands::load_from_dir(&config_dir.join("commands"))
 }
 
 /// Dismiss the launcher intentionally (Escape key, hotkey while visible, tray Hide).
@@ -342,9 +342,9 @@ pub fn run() {
             // Manage previous-app tracking for paste_text focus restoration
             app.manage(PreviousApp(Mutex::new(None)));
 
-            // Start watching the config directory for live command reloads
+            // Start watching the commands subdirectory for live command reloads
             let config_dir = app.path().app_config_dir().map_err(|e| e.to_string())?;
-            watcher::start(app.handle().clone(), config_dir);
+            watcher::start(app.handle().clone(), config_dir.join("commands"));
 
             let icon = app
                 .default_window_icon()

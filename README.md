@@ -62,6 +62,7 @@ Planned for a future release. Build from source in the meantime — see [docs/de
 | [First run](docs/using/first-run.md) | Onboarding walkthrough and choosing your global shortcut |
 | [Basic functionality](docs/using/basic-functionality.md) | Open URL and Paste Text — the two built-in actions |
 | [Tips & tricks](docs/using/tips-and-tricks.md) | App deep links, web search via param passing, frequently-pasted snippets |
+| [Config directory structure](docs/using/config-directory.md) | Overview of the config directory layout and its subdirectories |
 | [Configuring commands](docs/using/configuring-commands.md) | YAML schema, enable/disable, directory layout, live reload |
 | [Duplicate commands](docs/using/duplicate-commands.md) | How duplicate phrases are detected, resolved, and surfaced |
 

@@ -256,7 +256,7 @@ mv ~/Library/Application\ Support/com.contexts.launcher \
 
 ---
 
-## Stage 12 — Action: Copy Text ✅
+## Stage 12 — Action: Copy Text
 
 **Goal:** Executing a selected command with type `copy_text` writes a predefined string to the clipboard without pasting it — the launcher simply dismisses and the text is ready to paste manually.
 
@@ -402,7 +402,7 @@ When a context `C` is active, a user's raw input `I` is matched against command 
 | 9 ✅ | Enhancements | Quality-of-life improvements to the core command system |
 | 10 ✅ | App rename | Rename Contexts → Ctx; update identifier, config dir, localStorage keys |
 | 11 ✅ | Documentation | User-facing docs: first run, core actions, tips & tricks, configuration, duplicates |
-| 12 ✅ | Action: Copy Text | Copies predefined text to clipboard without pasting |
+| 12 | Action: Copy Text | Copies predefined text to clipboard without pasting |
 | 13 | Script extensions | External scripts return structured results; launcher executes built-in actions |
 | 14 | Contexts: core model | Reserved `ctx` namespace, built-in set/reset commands, context-aware matching |
 | 15 | Contexts: UI & tray | Context chip in launcher bar, tray label, localStorage persistence |
