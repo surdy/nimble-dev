@@ -291,6 +291,24 @@ fn paste_text(app: tauri::AppHandle, window: tauri::Window, text: String) -> Res
     Ok(())
 }
 
+/// Copy text to the clipboard without pasting it.
+/// The launcher is hidden and the text is written to the clipboard;
+/// no focus restoration or keystroke simulation is performed.
+#[tauri::command]
+fn copy_text(window: tauri::Window, app: tauri::AppHandle, text: String) -> Result<(), String> {
+    // Sanitise: plain text only — reject NUL bytes
+    if text.contains('\0') {
+        return Err("Text must not contain NUL bytes".to_string());
+    }
+
+    window.hide().ok();
+    sync_tray(&app, false);
+
+    write_clipboard_text(&text)?;
+
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -366,7 +384,7 @@ pub fn run() {
 
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![hide_window, show_window, dismiss_launcher, register_shortcut, list_commands, open_url, paste_text])
+        .invoke_handler(tauri::generate_handler![hide_window, show_window, dismiss_launcher, register_shortcut, list_commands, open_url, paste_text, copy_text])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

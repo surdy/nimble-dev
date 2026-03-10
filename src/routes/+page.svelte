@@ -156,6 +156,11 @@
       // We clear input here so the bar is clean when the launcher is next shown.
       input = "";
       await invoke("paste_text", { text: cmd.action.config.text });
+    } else if (cmd.action.type === "copy_text") {
+      // Rust command writes to clipboard and hides the launcher.
+      // No paste keystroke — the user pastes manually.
+      input = "";
+      await invoke("copy_text", { text: cmd.action.config.text });
     }
   }
 

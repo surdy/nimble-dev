@@ -133,7 +133,7 @@ Iterative implementation plan for Ctx, from bare minimum working shell to full f
 
 ---
 
-## Stage 7 — Live Config Reload
+## Stage 7 — Live Config Reload ✅
 
 **Goal:** Commands hot-reload when any YAML file in the config directory tree is added, changed, or removed — without requiring a restart.
 
@@ -148,7 +148,7 @@ Iterative implementation plan for Ctx, from bare minimum working shell to full f
 
 ---
 
-## Stage 8 — Bug Fixes
+## Stage 8 — Bug Fixes ✅
 
 **Goal:** Address reported issues discovered during real-world use of stages 1–7.
 
@@ -172,7 +172,7 @@ Iterative implementation plan for Ctx, from bare minimum working shell to full f
 
 ---
 
-## Stage 9 — Enhancements
+## Stage 9 — Enhancements ✅
 
 **Goal:** Quality-of-life improvements to the core command system, added one at a time.
 
@@ -203,7 +203,7 @@ action:
 
 ---
 
-## Stage 10 — App Rename: Contexts → Ctx
+## Stage 10 — App Rename: Contexts → Ctx ✅
 
 **Goal:** Rename the application from *Contexts* to *Ctx* everywhere — product name, bundle identifier, config directory, localStorage keys, log prefixes, and all documentation. This is a breaking change to the config directory path; existing users must migrate their command files.
 
@@ -256,7 +256,28 @@ mv ~/Library/Application\ Support/com.contexts.launcher \
 
 ---
 
-## Stage 12 — Script Extensions
+## Stage 12 — Action: Copy Text ✅
+
+**Goal:** Executing a selected command with type `copy_text` writes a predefined string to the clipboard without pasting it — the launcher simply dismisses and the text is ready to paste manually.
+
+### Tasks
+- Add `CopyTextConfig { text: String }` struct and `CopyText(CopyTextConfig)` variant to the `Action` enum in `commands.rs`
+- Add corresponding `CopyTextConfig` interface and `copy_text` action type to `types.ts`
+- Implement the `copy_text` Tauri command in Rust:
+  1. Validate text (plain text only; reject NUL bytes)
+  2. Write text to clipboard via `pbcopy` subprocess (macOS); `arboard` for other platforms (future)
+  3. Hide the launcher window (no focus restoration needed — the user will paste manually)
+- Frontend `executeCommand()` handles the `copy_text` case: invoke `copy_text`, clear input, dismiss
+- Update the command schema documentation and add an example YAML file to the seeded `examples/` directory
+- Update `docs/using/basic-functionality.md` with a Copy Text section (YAML schema + example)
+
+### Done when
+- Executing a `copy_text` command writes the configured text to the clipboard and dismisses the launcher, ready to be pasted anywhere
+- A command with `paste_text` still pastes automatically; `copy_text` only copies
+
+---
+
+## Stage 13 — Script Extensions
 
 **Goal:** Commands can be associated with external scripts that process input and return results for the launcher to act on.
 
@@ -296,7 +317,7 @@ mv ~/Library/Application\ Support/com.contexts.launcher \
 
 ---
 
-## Stage 13 — Contexts: Core Model & Built-in Commands
+## Stage 14 — Contexts: Core Model & Built-in Commands
 
 **Goal:** Introduce the concept of a *context* — a phrase prefix that is silently prepended to the user's input, letting them reach a group of related commands with less typing. This stage covers the data model, the built-in commands that manage context, and the reserved `ctx` namespace.
 
@@ -335,7 +356,7 @@ When a context `C` is active, a user's raw input `I` is matched against command 
 
 ---
 
-## Stage 14 — Contexts: UI Indicators & Tray Integration
+## Stage 15 — Contexts: UI Indicators & Tray Integration
 
 **Goal:** Make the active context visible at all times — both inside the launcher window and in the system tray — so the user always knows which context is in effect.
 
@@ -376,11 +397,12 @@ When a context `C` is active, a user's raw input `I` is matched against command 
 | 4 | Action: Open URL | Opens URLs in browser, supports `{param}` substitution |
 | 5 | Action: Paste Text | Pastes text into previously focused application |
 | 6 | Global hotkey | System-wide shortcut to summon/dismiss launcher |
-| 7 | Live config reload | Hot-reload commands when `commands.yaml` is edited |
-| 8 | Bug fixes | Fix issues found during real-world use of stages 1–7 |
-| 9 | Enhancements | Quality-of-life improvements to the core command system |
-| 10 | App rename | Rename Contexts → Ctx; update identifier, config dir, localStorage keys |
-| 11 | Documentation | User-facing docs: first run, core actions, tips & tricks, configuration, duplicates |
-| 12 | Script extensions | External scripts return structured results; launcher executes built-in actions |
-| 13 | Contexts: core model | Reserved `ctx` namespace, built-in set/reset commands, context-aware matching |
-| 14 | Contexts: UI & tray | Context chip in launcher bar, tray label, localStorage persistence |
+| 7 ✅ | Live config reload | Hot-reload commands when `commands.yaml` is edited |
+| 8 ✅ | Bug fixes | Fix issues found during real-world use of stages 1–7 |
+| 9 ✅ | Enhancements | Quality-of-life improvements to the core command system |
+| 10 ✅ | App rename | Rename Contexts → Ctx; update identifier, config dir, localStorage keys |
+| 11 ✅ | Documentation | User-facing docs: first run, core actions, tips & tricks, configuration, duplicates |
+| 12 ✅ | Action: Copy Text | Copies predefined text to clipboard without pasting |
+| 13 | Script extensions | External scripts return structured results; launcher executes built-in actions |
+| 14 | Contexts: core model | Reserved `ctx` namespace, built-in set/reset commands, context-aware matching |
+| 15 | Contexts: UI & tray | Context chip in launcher bar, tray label, localStorage persistence |

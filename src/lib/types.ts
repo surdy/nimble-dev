@@ -10,9 +10,14 @@ export interface PasteTextConfig {
   text: string;
 }
 
+export interface CopyTextConfig {
+  text: string;
+}
+
 export type Action =
   | { type: "open_url"; config: OpenUrlConfig }
-  | { type: "paste_text"; config: PasteTextConfig };
+  | { type: "paste_text"; config: PasteTextConfig }
+  | { type: "copy_text"; config: CopyTextConfig };
 
 export interface Command {
   phrase: string;

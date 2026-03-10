@@ -16,13 +16,19 @@ pub struct PasteTextConfig {
     pub text: String,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CopyTextConfig {
+    pub text: String,
+}
+
 /// The action executed when a command is selected.
-/// Serialised as `{ type: "open_url"|"paste_text", config: { … } }`.
+/// Serialised as `{ type: "open_url"|"paste_text"|"copy_text", config: { … } }`.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type", content = "config", rename_all = "snake_case")]
 pub enum Action {
     OpenUrl(OpenUrlConfig),
     PasteText(PasteTextConfig),
+    CopyText(CopyTextConfig),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -119,6 +125,16 @@ action:
       Thank you for reaching out.
 
       Best regards
+"#,
+    ),
+    (
+        "examples/copy-email.yaml",
+        r#"phrase: copy email
+title: Copy email address
+action:
+  type: copy_text
+  config:
+    text: hello@example.com
 "#,
     ),
 ];
