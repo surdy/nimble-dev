@@ -287,7 +287,7 @@ mv ~/Library/Application\ Support/com.contexts.launcher \
 
 ---
 
-## Stage 13 — Backend Testing
+## Stage 13 — Backend Testing ✅
 
 **Goal:** Add automated tests for the Rust backend covering the logic most likely to regress: YAML parsing, deduplication, URL validation, `{param}` encoding, and text sanitisation. Tests run with `cargo test` — no Tauri runtime required.
 
@@ -320,7 +320,93 @@ mv ~/Library/Application\ Support/com.contexts.launcher \
 
 ---
 
-## Stage 14 — Script Extensions
+## Stage 14 — Action: Show List
+
+**Goal:** Commands can reference a named list stored in the `lists/` config subdirectory. As soon as the user's typed input exactly matches the command phrase, the full list of items is shown immediately — no Enter key required. Selecting an item pastes its value into the previously focused application.
+
+### List file format
+
+List files live in `config_dir/lists/` and use a plain YAML array. Each entry has a required `title` and an optional `subtext`. Blank lines between items and `#` comments are supported to aid readability.
+
+**Example** — `lists/team-emails.yaml`:
+```yaml
+# Team email addresses
+- title: Alice Smith
+  subtext: alice@example.com
+
+- title: Bob Jones
+  subtext: bob@example.com
+
+- title: Carol White
+  subtext: carol@example.com
+```
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `title` | ✅ | Display label shown as the result title |
+| `subtext` | No | Secondary display line; also the value pasted on selection. Falls back to `title` if absent. |
+
+### Command schema
+
+A command references a list by filename (without extension). The file is resolved relative to `config_dir/lists/`.
+
+```yaml
+phrase: team emails
+title: Team email addresses
+action:
+  type: show_list
+  config:
+    list: team-emails    # resolves to lists/team-emails.yaml
+```
+
+### Behaviour
+- **Partial match:** typing part of the phrase (e.g. `"team"`) shows the command as a single result row, identical to any other command type.
+- **Exact match trigger:** the moment the typed text equals the phrase exactly (e.g. `"team emails"`), the single result row is replaced by the full list of items — no Enter required.
+- **Return to normal:** if the user edits the input so it no longer exactly matches, the list collapses and standard partial-match results are shown again.
+- **Selection:** pressing Enter or clicking an item runs `paste_text` with the item's `subtext` (or `title` if `subtext` is absent), then dismisses the launcher.
+- **Window resize:** the window grows to accommodate the list, capped at 8 visible items (same resize logic as the existing results list).
+
+### Tasks
+
+#### Rust backend (`commands.rs`)
+- Add `ShowListConfig { list: String }` struct and `ShowList(ShowListConfig)` variant to the `Action` enum
+- Add `ListItem { title: String, subtext: Option<String> }` struct (serialisable + deserialisable)
+- Add `pub(crate) fn load_list(config_dir: &Path, list_name: &str) -> Result<Vec<ListItem>, String>`:
+  - Reject `list_name` values containing `/`, `\`, or `..` components (path traversal prevention)
+  - Read and parse `config_dir/lists/<list_name>.yaml`
+  - Return `Err` with a clear message if the file is missing or malformed
+- Expose `load_list` as a Tauri command so the frontend can invoke it
+- Extend the file watcher in `watcher.rs` to also watch `config_dir/lists/` and emit the same `commands://reloaded` event on changes
+
+#### Frontend (`types.ts`, `+page.svelte`)
+- Add `ShowListConfig`, `show_list` action variant, and `ListItem` interface to `types.ts`
+- In `+page.svelte`, add reactive logic to detect an exact phrase match for a `show_list` command:
+  - Invoke `load_list` with the list name; store result in a `listItems` state variable
+  - Render the `listItems` list instead of the standard results list
+  - On `commands://reloaded`, re-invoke `load_list` if a list is currently displayed
+- Selecting a list item invokes `paste_text` with `item.subtext ?? item.title`; clears input and dismisses
+
+#### Config & docs
+- Add seed files: `lists/team-emails.yaml` and `commands/examples/show-team-emails.yaml`
+- Update `docs/using/config-directory.md` to document the `lists/` subdirectory
+- Update `docs/using/basic-functionality.md` with a Show List section
+- Update `copilot-instructions.md` rule 5 to include `show_list` in the list of action types
+
+#### Backend tests (`commands.rs`)
+- `load_list` with a valid YAML file returns the correct `Vec<ListItem>`
+- Items containing only `title` (no `subtext`) deserialise correctly
+- A non-existent list name returns `Err`
+- A list name containing `..` or `/` is rejected with `Err`
+
+### Done when
+- Typing a `show_list` phrase exactly causes the list items to appear without pressing Enter
+- Partial typing still shows the command as a single result row
+- Selecting a list item pastes its subtext (or title if absent) into the previously active application
+- Editing a list file hot-reloads the displayed items within the debounce window
+
+---
+
+## Stage 15 — Script Extensions
 
 **Goal:** Commands can be associated with external scripts that process input and return results for the launcher to act on.
 
@@ -360,7 +446,7 @@ mv ~/Library/Application\ Support/com.contexts.launcher \
 
 ---
 
-## Stage 15 — Contexts: Core Model & Built-in Commands
+## Stage 16 — Contexts: Core Model & Built-in Commands
 
 **Goal:** Introduce the concept of a *context* — a phrase prefix that is silently prepended to the user's input, letting them reach a group of related commands with less typing. This stage covers the data model, the built-in commands that manage context, and the reserved `ctx` namespace.
 
@@ -399,7 +485,7 @@ When a context `C` is active, a user's raw input `I` is matched against command 
 
 ---
 
-## Stage 16 — Contexts: UI Indicators & Tray Integration
+## Stage 17 — Contexts: UI Indicators & Tray Integration
 
 **Goal:** Make the active context visible at all times — both inside the launcher window and in the system tray — so the user always knows which context is in effect.
 
@@ -446,7 +532,8 @@ When a context `C` is active, a user's raw input `I` is matched against command 
 | 10 ✅ | App rename | Rename Contexts → Ctx; update identifier, config dir, localStorage keys |
 | 11 ✅ | Documentation | User-facing docs: first run, core actions, tips & tricks, configuration, duplicates |
 | 12 ✅ | Action: Copy Text & Config Directory Restructure | `copy_text` action; commands moved to `commands/` subdir |
-| 13 | Backend testing | `cargo test` suite: YAML parsing, dedup, URL validation, param encoding, text sanitisation |
-| 14 | Script extensions | External scripts return structured results; launcher executes built-in actions |
-| 15 | Contexts: core model | Reserved `ctx` namespace, built-in set/reset commands, context-aware matching |
-| 16 | Contexts: UI & tray | Context chip in launcher bar, tray label, localStorage persistence |
+| 13 ✅ | Backend testing | `cargo test` suite: YAML parsing, dedup, URL validation, param encoding, text sanitisation |
+| 14 | Action: Show List | Keyword-triggered inline list expansion from `lists/` config subdir |
+| 15 | Script extensions | External scripts return structured results; launcher executes built-in actions |
+| 16 | Contexts: core model | Reserved `ctx` namespace, built-in set/reset commands, context-aware matching |
+| 17 | Contexts: UI & tray | Context chip in launcher bar, tray label, localStorage persistence |

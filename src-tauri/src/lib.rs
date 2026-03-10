@@ -193,6 +193,16 @@ fn list_commands(app: tauri::AppHandle) -> Result<commands::LoadResult, String> 
     commands::load_from_dir(&config_dir.join("commands"))
 }
 
+/// Load a named list from `config_dir/lists/<list_name>.yaml` and return its items.
+#[tauri::command]
+fn load_list(app: tauri::AppHandle, list_name: String) -> Result<Vec<commands::ListItem>, String> {
+    let config_dir = app
+        .path()
+        .app_config_dir()
+        .map_err(|e| e.to_string())?;
+    commands::load_list(&config_dir, &list_name)
+}
+
 /// Dismiss the launcher intentionally (Escape key, hotkey while visible, tray Hide).
 /// Hides the window, updates the tray, and restores focus to the previously
 /// active application. Distinct from `hide_window` which is used for blur
@@ -388,7 +398,7 @@ pub fn run() {
 
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![hide_window, show_window, dismiss_launcher, register_shortcut, list_commands, open_url, paste_text, copy_text])
+        .invoke_handler(tauri::generate_handler![hide_window, show_window, dismiss_launcher, register_shortcut, list_commands, load_list, open_url, paste_text, copy_text])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

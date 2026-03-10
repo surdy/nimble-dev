@@ -21,6 +21,7 @@ com.ctx.launcher/
   commands/         ← YAML command files (watched and hot-reloaded by Ctx)
     examples/       ← seeded on first launch if commands/ is empty
     …               ← your own files and subdirectories
+  lists/            ← named list files for the show_list action type
 ```
 
 Each subdirectory holds a distinct type of data. New subdirectories will be introduced in future releases as new features are added; each will be documented in this file.
@@ -49,7 +50,25 @@ For the full command YAML schema, action types, and live-reload details see [Con
 
 ---
 
+## `lists/`
+
+Contains named list files used by the `show_list` action type. Each file is a YAML array of items that the launcher can display inline when the corresponding command phrase is typed.
+
+File names (without the `.yaml` extension) are how commands reference their list:
+```yaml
+action:
+  type: show_list
+  config:
+    list: team-emails    # reads lists/team-emails.yaml
+```
+
+Changes to files in `lists/` are detected by the file watcher and will refresh any list currently displayed in the launcher within the ~300 ms debounce window.
+
+For the full list file schema and behaviour details see [Basic Functionality — Show List](basic-functionality.md#show-list).
+
+---
+
 ## Related docs
 
 - [Configuring Commands](configuring-commands.md) — YAML schema, enable/disable, live reload
-- [Basic Functionality](basic-functionality.md) — Open URL, Paste Text, Copy Text action reference
+- [Basic Functionality](basic-functionality.md) — Open URL, Paste Text, Copy Text, Show List action reference

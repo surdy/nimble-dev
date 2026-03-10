@@ -3,7 +3,7 @@
   import { invoke } from "@tauri-apps/api/core";
   import { getCurrentWindow, LogicalSize } from "@tauri-apps/api/window";
   import { listen } from "@tauri-apps/api/event";
-  import type { Command, CommandsPayload, DuplicateWarning } from "$lib/types";
+  import type { Command, CommandsPayload, DuplicateWarning, ListItem } from "$lib/types";
 
   // ── State ──────────────────────────────────────────────────────────────
   let input = $state("");
@@ -24,6 +24,10 @@
   let warningsDismissed = $state(false);
   const warningVisible = $derived(warnings.length > 0 && !warningsDismissed);
 
+  // List expansion state — populated when input exactly matches a show_list phrase
+  let listItems = $state<ListItem[]>([]);
+  let activeListCmd = $state<Command | null>(null);
+
   // ── Filtering & navigation ─────────────────────────────────────────────
   const MAX_RESULTS = 8;
   const ROW_H = 56; // px per result row
@@ -42,12 +46,35 @@
           .slice(0, MAX_RESULTS)
   );
 
+  // True when the typed input exactly equals a show_list command phrase.
+  // In this mode we show list items instead of the normal results list.
+  const showingList = $derived(activeListCmd !== null && listItems.length > 0);
+
   let selectedIndex = $state(0);
 
   // Reset selection whenever the result list changes
   $effect(() => {
     void filtered;
     selectedIndex = 0;
+  });
+
+  // Detect exact-phrase match for show_list commands and load the list.
+  $effect(() => {
+    const typed = input.trim().toLowerCase();
+    const match = commands.find(
+      cmd => cmd.action.type === "show_list" && cmd.phrase.toLowerCase() === typed
+    ) ?? null;
+
+    if (match && match.action.type === "show_list") {
+      const listName = match.action.config.list;
+      activeListCmd = match;
+      invoke<ListItem[]>("load_list", { listName })
+        .then(items => { listItems = items; selectedIndex = 0; })
+        .catch(() => { listItems = []; });
+    } else {
+      activeListCmd = null;
+      listItems = [];
+    }
   });
 
   // Resize window to fit current results (skip during onboarding)
@@ -57,6 +84,7 @@
     const WARNING_H = 40;
     const warnExtra = warningVisible ? WARNING_H : 0;
     const contentHeight = !hasQuery ? 0
+      : showingList ? Math.min(listItems.length, MAX_RESULTS) * ROW_H
       : filtered.length === 0 ? 44          // "no results" row
       : filtered.length * ROW_H;
     appWindow.setSize(new LogicalSize(640, 64 + warnExtra + contentHeight));
@@ -138,6 +166,12 @@
   }
 
   // ── Action execution ──────────────────────────────────────────────────
+  async function executeListItem(item: ListItem) {
+    const text = item.subtext ?? item.title;
+    input = "";
+    await invoke("paste_text", { text });
+  }
+
   async function executeCommand(cmd: Command) {
     if (cmd.action.type === "open_url") {
       // Extract any text typed after the command phrase as the param
@@ -172,14 +206,21 @@
       dismissWithFocusRestore();
     } else if (e.key === "ArrowDown") {
       e.preventDefault();
-      if (filtered.length > 0) selectedIndex = (selectedIndex + 1) % filtered.length;
+      const len = showingList ? listItems.length : filtered.length;
+      if (len > 0) selectedIndex = (selectedIndex + 1) % len;
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
-      if (filtered.length > 0) selectedIndex = (selectedIndex - 1 + filtered.length) % filtered.length;
+      const len = showingList ? listItems.length : filtered.length;
+      if (len > 0) selectedIndex = (selectedIndex - 1 + len) % len;
     } else if (e.key === "Enter") {
       e.preventDefault();
-      const cmd = filtered[selectedIndex];
-      if (cmd) executeCommand(cmd);
+      if (showingList) {
+        const item = listItems[selectedIndex];
+        if (item) executeListItem(item);
+      } else {
+        const cmd = filtered[selectedIndex];
+        if (cmd) executeCommand(cmd);
+      }
     }
   }
 
@@ -227,6 +268,13 @@
         commands = event.payload.commands;
         warnings = event.payload.duplicates;
         warningsDismissed = false; // always surface new warnings
+        // If a list is currently displayed, refresh it in case its file changed
+        if (activeListCmd && activeListCmd.action.type === "show_list") {
+          const listName = activeListCmd.action.config.list;
+          invoke<ListItem[]>("load_list", { listName })
+            .then(items => { listItems = items; })
+            .catch(() => { listItems = []; });
+        }
       });
     })();
 
@@ -289,7 +337,24 @@
 
     {#if input.trim() !== ""}
       <div class="results">
-        {#if filtered.length === 0}
+        {#if showingList}
+          {#each listItems as item, i}
+            <!-- svelte-ignore a11y_no_static_element_interactions -->
+            <!-- svelte-ignore a11y_click_events_have_key_events -->
+            <div
+              class="result-row"
+              class:selected={i === selectedIndex}
+              onmouseenter={() => (selectedIndex = i)}
+              onmousedown={(e) => { e.preventDefault(); selectedIndex = i; }}
+              onclick={() => executeListItem(item)}
+            >
+              <span class="result-title">{item.title}</span>
+              {#if item.subtext}
+                <span class="result-subtext">{item.subtext}</span>
+              {/if}
+            </div>
+          {/each}
+        {:else if filtered.length === 0}
           <div class="no-results">No results</div>
         {:else}
           {#each filtered as cmd, i}

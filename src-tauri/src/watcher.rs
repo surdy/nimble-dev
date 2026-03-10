@@ -8,13 +8,16 @@ use crate::commands;
 /// The Tauri event name emitted to the frontend when commands are reloaded.
 pub const COMMANDS_RELOADED_EVENT: &str = "commands://reloaded";
 
-/// Start a background thread that watches `config_dir` recursively for YAML
-/// file changes. On any relevant event the command list is reloaded and
-/// emitted to all windows as `commands://reloaded`.
+/// Start a background thread that watches `commands_dir` and the sibling
+/// `lists/` directory for YAML file changes. On any relevant event the command
+/// list is reloaded and emitted to all windows as `commands://reloaded`.
+///
+/// `commands_dir` is `config_dir/commands/`; the function derives
+/// `config_dir/lists/` automatically.
 ///
 /// The watcher runs for the lifetime of the app — Tauri will clean up the
 /// thread when the process exits.
-pub fn start(app: AppHandle, config_dir: PathBuf) {
+pub fn start(app: AppHandle, commands_dir: PathBuf) {
     thread::spawn(move || {
         // Channel for raw notify events
         let (tx, rx) = mpsc::channel();
@@ -34,14 +37,27 @@ pub fn start(app: AppHandle, config_dir: PathBuf) {
             }
         };
 
-        if let Err(e) = watcher.watch(&config_dir, RecursiveMode::Recursive) {
-            eprintln!("[ctx] could not watch config dir: {e}");
+        if let Err(e) = watcher.watch(&commands_dir, RecursiveMode::Recursive) {
+            eprintln!("[ctx] could not watch commands dir: {e}");
             return;
         }
 
+        // Also watch the sibling lists/ directory so edits to list files
+        // trigger a commands://reloaded event (the frontend will re-invoke
+        // load_list if a list is currently displayed).
+        let lists_dir = commands_dir
+            .parent()
+            .map(|p| p.join("lists"))
+            .unwrap_or_else(|| commands_dir.join("../lists"));
+        // Ensure the lists directory exists so the watcher can be registered.
+        let _ = std::fs::create_dir_all(&lists_dir);
+        if let Err(e) = watcher.watch(&lists_dir, RecursiveMode::Recursive) {
+            eprintln!("[ctx] could not watch lists dir: {e}");
+        }
+
         eprintln!(
-            "[ctx] watching config dir for changes: {}",
-            config_dir.display()
+            "[ctx] watching for changes: {}",
+            commands_dir.display()
         );
 
         // Debounce: after a relevant event, wait this long before reloading
@@ -69,7 +85,7 @@ pub fn start(app: AppHandle, config_dir: PathBuf) {
             }
 
             // Reload commands and emit to frontend
-            match commands::load_from_dir(&config_dir) {
+            match commands::load_from_dir(&commands_dir) {
                 Ok(result) => {
                     if let Err(e) = app.emit(COMMANDS_RELOADED_EVENT, &result) {
                         eprintln!("[ctx] could not emit reload event: {e}");

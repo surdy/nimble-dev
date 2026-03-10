@@ -21,14 +21,28 @@ pub struct CopyTextConfig {
     pub text: String,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ShowListConfig {
+    /// Name of the list file (without extension) inside `config_dir/lists/`.
+    pub list: String,
+}
+
 /// The action executed when a command is selected.
-/// Serialised as `{ type: "open_url"|"paste_text"|"copy_text", config: { … } }`.
+/// Serialised as `{ type: "open_url"|"paste_text"|"copy_text"|"show_list", config: { … } }`.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type", content = "config", rename_all = "snake_case")]
 pub enum Action {
     OpenUrl(OpenUrlConfig),
     PasteText(PasteTextConfig),
     CopyText(CopyTextConfig),
+    ShowList(ShowListConfig),
+}
+
+/// A single item in a named list.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ListItem {
+    pub title: String,
+    pub subtext: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -137,9 +151,38 @@ action:
     text: hello@example.com
 "#,
     ),
+    (
+        "examples/show-team-emails.yaml",
+        r#"phrase: team emails
+title: Team email addresses
+action:
+  type: show_list
+  config:
+    list: team-emails
+"#,
+    ),
 ];
 
-// ── Loader ─────────────────────────────────────────────────────────────────────
+// ── List loader ────────────────────────────────────────────────────────────────
+
+/// Load a named list from `config_dir/lists/<list_name>.yaml`.
+///
+/// `list_name` must be a plain filename (no path separators or `..` components).
+/// Returns `Err` if the name is unsafe, the file is missing, or parsing fails.
+pub fn load_list(config_dir: &Path, list_name: &str) -> Result<Vec<ListItem>, String> {
+    // Security: reject names that could escape the lists/ directory.
+    if list_name.contains('/') || list_name.contains('\\') || list_name.contains("..") {
+        return Err(format!("Invalid list name: {list_name:?}"));
+    }
+
+    let path = config_dir.join("lists").join(format!("{list_name}.yaml"));
+    let yaml = fs::read_to_string(&path)
+        .map_err(|e| format!("Could not read list {:?}: {e}", path.display()))?;
+    serde_yaml::from_str::<Vec<ListItem>>(&yaml)
+        .map_err(|e| format!("Could not parse list {:?}: {e}", path.display()))
+}
+
+// ── Command loader ─────────────────────────────────────────────────────────────
 
 /// Collect all `.yaml` / `.yml` file paths under `config_dir` recursively.
 fn collect_yaml_files(config_dir: &Path) -> Vec<std::path::PathBuf> {
@@ -341,5 +384,56 @@ mod tests {
         );
         let result = load_from_dir(dir.path()).unwrap();
         assert_eq!(result.commands.len(), 1, "only the valid command should load");
+    }
+
+    // ── load_list ─────────────────────────────────────────────────────────────
+
+    fn write_list(dir: &TempDir, name: &str, content: &str) {
+        let path = dir.path().join("lists").join(format!("{name}.yaml"));
+        fs::create_dir_all(path.parent().unwrap()).unwrap();
+        fs::write(path, content).unwrap();
+    }
+
+    #[test]
+    fn load_list_returns_items() {
+        let dir = TempDir::new().unwrap();
+        write_list(
+            &dir,
+            "emails",
+            "- title: Alice\n  subtext: alice@example.com\n- title: Bob\n  subtext: bob@example.com\n",
+        );
+        let items = load_list(dir.path(), "emails").unwrap();
+        assert_eq!(items.len(), 2);
+        assert_eq!(items[0].title, "Alice");
+        assert_eq!(items[0].subtext.as_deref(), Some("alice@example.com"));
+        assert_eq!(items[1].title, "Bob");
+    }
+
+    #[test]
+    fn load_list_item_without_subtext() {
+        let dir = TempDir::new().unwrap();
+        write_list(&dir, "names", "- title: Alice\n- title: Bob\n");
+        let items = load_list(dir.path(), "names").unwrap();
+        assert_eq!(items.len(), 2);
+        assert!(items[0].subtext.is_none());
+    }
+
+    #[test]
+    fn load_list_missing_file_returns_err() {
+        let dir = TempDir::new().unwrap();
+        fs::create_dir_all(dir.path().join("lists")).unwrap();
+        assert!(load_list(dir.path(), "nonexistent").is_err());
+    }
+
+    #[test]
+    fn load_list_rejects_path_traversal_dotdot() {
+        let dir = TempDir::new().unwrap();
+        assert!(load_list(dir.path(), "../secret").is_err());
+    }
+
+    #[test]
+    fn load_list_rejects_path_with_slash() {
+        let dir = TempDir::new().unwrap();
+        assert!(load_list(dir.path(), "sub/file").is_err());
     }
 }

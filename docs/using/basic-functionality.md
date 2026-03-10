@@ -1,6 +1,6 @@
 # Basic Functionality
 
-Ctx currently supports three built-in actions: **Open URL**, **Paste Text**, and **Copy Text**. Every command you define in a YAML file must use one of these action types.
+Ctx currently supports four built-in actions: **Open URL**, **Paste Text**, **Copy Text**, and **Show List**. Every command you define in a YAML file must use one of these action types.
 
 ---
 
@@ -98,6 +98,58 @@ action:
   config:
     text: hello@example.com
 ```
+
+---
+
+## Show List
+
+Displays a named list of items inline in the launcher the moment the typed phrase matches exactly. No `Enter` is needed to expand the list — it appears as soon as the full phrase is typed. Selecting an item pastes its value into your previously focused application.
+
+### List file format
+
+List files live in the `lists/` subdirectory of your config directory (see [Config Directory](config-directory.md)). Each file is a YAML array of items with a required `title` and an optional `subtext`.
+
+**`lists/team-emails.yaml`:**
+```yaml
+# Team email addresses
+- title: Alice Smith
+  subtext: alice@example.com
+
+- title: Bob Jones
+  subtext: bob@example.com
+
+- title: Carol White
+  subtext: carol@example.com
+```
+
+| Field | Required | Notes |
+|-------|----------|-------|
+| `title` | ✅ | Displayed as the result title; used as the paste value if `subtext` is absent |
+| `subtext` | No | Secondary display line; also the value pasted when the item is selected |
+
+Blank lines between items and `#` comments are valid YAML and are encouraged for readability.
+
+### Command YAML
+
+Reference the list file by name (without the `.yaml` extension):
+
+```yaml
+phrase: team emails
+title: Team email addresses
+action:
+  type: show_list
+  config:
+    list: team-emails    # resolves to lists/team-emails.yaml
+```
+
+### Behaviour
+
+| Phase | What happens |
+|-------|--------------|
+| Partial match (e.g. `team`) | Command appears as a single result row, like any other command |
+| Exact phrase match (`team emails`) | List items replace the result row immediately — no `Enter` required |
+| Backspace past exact match | List collapses; standard partial-match results return |
+| Select an item (`Enter` / click) | Item's `subtext` (or `title` if absent) is pasted into your previous app |
 
 ---
 

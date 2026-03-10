@@ -14,10 +14,20 @@ export interface CopyTextConfig {
   text: string;
 }
 
+export interface ShowListConfig {
+  list: string;
+}
+
+export interface ListItem {
+  title: string;
+  subtext?: string;
+}
+
 export type Action =
   | { type: "open_url"; config: OpenUrlConfig }
   | { type: "paste_text"; config: PasteTextConfig }
-  | { type: "copy_text"; config: CopyTextConfig };
+  | { type: "copy_text"; config: CopyTextConfig }
+  | { type: "show_list"; config: ShowListConfig };
 
 export interface Command {
   phrase: string;
