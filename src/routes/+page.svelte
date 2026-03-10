@@ -32,7 +32,13 @@
     input.trim() === ""
       ? []
       : commands
-          .filter(cmd => cmd.phrase.toLowerCase().includes(input.trim().toLowerCase()))
+          .filter(cmd => {
+            const phrase = cmd.phrase.toLowerCase();
+            const typed  = input.trim().toLowerCase();
+            // Standard partial/substring match (discovery while typing)
+            // OR param mode: user has typed the full phrase + space + param text
+            return phrase.includes(typed) || typed.startsWith(phrase + " ");
+          })
           .slice(0, MAX_RESULTS)
   );
 
@@ -282,7 +288,10 @@
           <div class="no-results">No results</div>
         {:else}
           {#each filtered as cmd, i}
-            {@const hl = highlight(cmd.phrase, input)}
+            {@const typed     = input.trim()}
+            {@const isParamMode = typed.toLowerCase().startsWith(cmd.phrase.toLowerCase() + " ")}
+            {@const paramText  = isParamMode ? typed.slice(cmd.phrase.length + 1) : ""}
+            {@const hl        = highlight(cmd.phrase, typed)}
             <!-- svelte-ignore a11y_no_static_element_interactions -->
             <!-- svelte-ignore a11y_click_events_have_key_events -->
             <div
@@ -293,7 +302,13 @@
               onclick={() => executeCommand(cmd)}
             >
               <span class="result-title">{cmd.title}</span>
-              <span class="result-subtext">{hl.before}<mark>{hl.match}</mark>{hl.after}</span>
+              <span class="result-subtext">
+                {#if isParamMode}
+                  {cmd.phrase}<span class="param-hint"> → {paramText}</span>
+                {:else}
+                  {hl.before}<mark>{hl.match}</mark>{hl.after}
+                {/if}
+              </span>
             </div>
           {/each}
         {/if}
@@ -452,6 +467,11 @@
     background: transparent;
     color: #0a84ff;
     font-weight: 600;
+  }
+
+  .param-hint {
+    color: #0a84ff;
+    font-weight: 500;
   }
 
   .no-results {

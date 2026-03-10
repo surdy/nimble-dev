@@ -27,6 +27,34 @@ A fast, cross-platform desktop launcher driven entirely by commands — think Al
 
 ---
 
+## Installation
+
+### macOS
+
+1. Download the latest `.dmg` from the [Releases page](https://github.com/your-org/contexts-launcher/releases)
+2. Open the `.dmg`, drag **Ctx.app** into **Applications**, then eject the disk image
+
+**Gatekeeper warning** — because Ctx is not yet notarized by Apple, macOS will block the first launch. To allow it:
+
+1. Open **System Settings → Privacy & Security**
+2. Scroll to the **Security** section and click **Open Anyway**
+3. Confirm by clicking **Open** in the dialog
+
+> **Alternative:** Right-click **Ctx.app** in Finder and choose **Open** — the dialog will include an **Open** button even for unsigned apps.
+
+**Accessibility permission** — required for the Paste Text action to simulate `⌘V`:
+
+1. Open **System Settings → Privacy & Security → Accessibility**
+2. Click **+** and add **Ctx.app**, then enable its toggle
+
+Without this, paste commands write to the clipboard but skip the keystroke simulation.
+
+### Windows & Linux
+
+Planned for a future release. Build from source in the meantime — see [docs/development-setup.md](docs/development-setup.md).
+
+---
+
 ## Using Ctx
 
 | Guide | Description |
