@@ -256,11 +256,13 @@ mv ~/Library/Application\ Support/com.contexts.launcher \
 
 ---
 
-## Stage 12 — Action: Copy Text
+## Stage 12 — Action: Copy Text & Config Directory Restructure ✅
 
-**Goal:** Executing a selected command with type `copy_text` writes a predefined string to the clipboard without pasting it — the launcher simply dismisses and the text is ready to paste manually.
+**Goal:** Add the `copy_text` built-in action, and reorganise the config directory so that command files live in a dedicated `commands/` subdirectory, leaving room for other data types in the config root in future stages.
 
 ### Tasks
+
+#### Copy Text action
 - Add `CopyTextConfig { text: String }` struct and `CopyText(CopyTextConfig)` variant to the `Action` enum in `commands.rs`
 - Add corresponding `CopyTextConfig` interface and `copy_text` action type to `types.ts`
 - Implement the `copy_text` Tauri command in Rust:
@@ -268,16 +270,57 @@ mv ~/Library/Application\ Support/com.contexts.launcher \
   2. Write text to clipboard via `pbcopy` subprocess (macOS); `arboard` for other platforms (future)
   3. Hide the launcher window (no focus restoration needed — the user will paste manually)
 - Frontend `executeCommand()` handles the `copy_text` case: invoke `copy_text`, clear input, dismiss
-- Update the command schema documentation and add an example YAML file to the seeded `examples/` directory
-- Update `docs/using/basic-functionality.md` with a Copy Text section (YAML schema + example)
+- Add `examples/copy-email.yaml` seed file; update `docs/using/basic-functionality.md` with Copy Text section
+
+#### Config directory restructure
+- Move command loading (`list_commands`) and file watcher to use `config_dir/commands/` instead of `config_dir` directly
+- Migrate existing live command files: `examples/` → `commands/examples/`
+- Add `docs/using/config-directory.md` documenting the root layout and each subdirectory
+- Update `configuring-commands.md` and README to reference the new `commands/` path
+- Add copilot instruction to keep `docs/using/config-directory.md` current as new subdirs are added
 
 ### Done when
-- Executing a `copy_text` command writes the configured text to the clipboard and dismisses the launcher, ready to be pasted anywhere
+- Executing a `copy_text` command writes the configured text to the clipboard and dismisses the launcher
 - A command with `paste_text` still pastes automatically; `copy_text` only copies
+- Command files are loaded from and watched in `config_dir/commands/`
+- `docs/using/config-directory.md` exists and accurately describes the layout
 
 ---
 
-## Stage 13 — Script Extensions
+## Stage 13 — Backend Testing
+
+**Goal:** Add automated tests for the Rust backend covering the logic most likely to regress: YAML parsing, deduplication, URL validation, `{param}` encoding, and text sanitisation. Tests run with `cargo test` — no Tauri runtime required.
+
+### Test modules
+
+#### `commands.rs` — YAML loading & deduplication
+- Valid single-command YAML file parses correctly into a `Command` struct
+- All three action types (`open_url`, `paste_text`, `copy_text`) deserialise correctly
+- `enabled: false` command is filtered out by `load_from_dir`
+- Command that omits `enabled` defaults to `true`
+- Two files with the same phrase produce one command and one `DuplicateWarning`; the older file wins
+- Malformed YAML in one file does not prevent other files from loading
+- Phrase starting with `ctx` is rejected if reserved-namespace enforcement is added
+
+#### `lib.rs` — URL validation & param encoding
+- Plain string with no scheme is rejected
+- `http://` and `https://` URLs are accepted
+- Deep link schemes (`slack://`, `obsidian://`, `mailto:`) are accepted
+- `{param}` is replaced with URL-encoded text: spaces become `+`, special chars become `%XX`
+- URL with no `{param}` and a `Some(param)` value is opened unchanged (param is ignored)
+- URL with `{param}` and `param = None` is opened with the literal `{param}` in place
+
+#### `lib.rs` — text sanitisation
+- Text containing a NUL byte (`\0`) returns `Err` from `paste_text` / `copy_text`
+- Plain text (no NUL) returns `Ok`
+
+### Done when
+- `cargo test` in `src-tauri/` passes with all tests green
+- No Tauri `AppHandle` / `Window` mocking required (pure-logic functions only)
+
+---
+
+## Stage 14 — Script Extensions
 
 **Goal:** Commands can be associated with external scripts that process input and return results for the launcher to act on.
 
@@ -317,7 +360,7 @@ mv ~/Library/Application\ Support/com.contexts.launcher \
 
 ---
 
-## Stage 14 — Contexts: Core Model & Built-in Commands
+## Stage 15 — Contexts: Core Model & Built-in Commands
 
 **Goal:** Introduce the concept of a *context* — a phrase prefix that is silently prepended to the user's input, letting them reach a group of related commands with less typing. This stage covers the data model, the built-in commands that manage context, and the reserved `ctx` namespace.
 
@@ -356,7 +399,7 @@ When a context `C` is active, a user's raw input `I` is matched against command 
 
 ---
 
-## Stage 15 — Contexts: UI Indicators & Tray Integration
+## Stage 16 — Contexts: UI Indicators & Tray Integration
 
 **Goal:** Make the active context visible at all times — both inside the launcher window and in the system tray — so the user always knows which context is in effect.
 
@@ -402,7 +445,8 @@ When a context `C` is active, a user's raw input `I` is matched against command 
 | 9 ✅ | Enhancements | Quality-of-life improvements to the core command system |
 | 10 ✅ | App rename | Rename Contexts → Ctx; update identifier, config dir, localStorage keys |
 | 11 ✅ | Documentation | User-facing docs: first run, core actions, tips & tricks, configuration, duplicates |
-| 12 | Action: Copy Text | Copies predefined text to clipboard without pasting |
-| 13 | Script extensions | External scripts return structured results; launcher executes built-in actions |
-| 14 | Contexts: core model | Reserved `ctx` namespace, built-in set/reset commands, context-aware matching |
-| 15 | Contexts: UI & tray | Context chip in launcher bar, tray label, localStorage persistence |
+| 12 ✅ | Action: Copy Text & Config Directory Restructure | `copy_text` action; commands moved to `commands/` subdir |
+| 13 | Backend testing | `cargo test` suite: YAML parsing, dedup, URL validation, param encoding, text sanitisation |
+| 14 | Script extensions | External scripts return structured results; launcher executes built-in actions |
+| 15 | Contexts: core model | Reserved `ctx` namespace, built-in set/reset commands, context-aware matching |
+| 16 | Contexts: UI & tray | Context chip in launcher bar, tray label, localStorage persistence |

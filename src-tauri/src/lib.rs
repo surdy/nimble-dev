@@ -53,6 +53,55 @@ fn restore_previous_app(pid: i32) {
 #[cfg(not(target_os = "macos"))]
 fn restore_previous_app(_pid: i32) {}
 
+// ── Pure helpers (no Tauri runtime needed — fully testable) ──────────────────
+
+/// URL-encode `param` and substitute it for every `{param}` token in `url`,
+/// then validate the resulting URL has a well-formed scheme (RFC 3986).
+/// Returns the resolved URL string on success.
+pub(crate) fn resolve_url(url: String, param: Option<String>) -> Result<String, String> {
+    let resolved = if let Some(p) = param {
+        let encoded: String = p
+            .bytes()
+            .flat_map(|b| match b {
+                b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9'
+                | b'-' | b'_' | b'.' | b'~' => vec![b as char],
+                b' ' => vec!['+'],
+                _ => format!("%{:02X}", b).chars().collect(),
+            })
+            .collect();
+        url.replace("{param}", &encoded)
+    } else {
+        url
+    };
+
+    let has_valid_scheme = resolved
+        .find(':')
+        .map(|colon| {
+            let scheme = &resolved[..colon];
+            !scheme.is_empty()
+                && scheme.starts_with(|c: char| c.is_ascii_alphabetic())
+                && scheme
+                    .chars()
+                    .all(|c| c.is_ascii_alphanumeric() || c == '+' || c == '-' || c == '.')
+        })
+        .unwrap_or(false);
+
+    if !has_valid_scheme {
+        return Err(format!("Rejected URL with missing or invalid scheme: {resolved}"));
+    }
+
+    Ok(resolved)
+}
+
+/// Validate that `text` is safe to place on the clipboard or simulate as a paste.
+/// Currently rejects text containing NUL bytes.
+pub(crate) fn validate_text(text: &str) -> Result<(), String> {
+    if text.contains('\0') {
+        return Err("Text must not contain NUL bytes".to_string());
+    }
+    Ok(())
+}
+
 // ── Clipboard helper ───────────────────────────────────────────────────────────
 
 /// Write `text` to the system clipboard.
@@ -86,49 +135,9 @@ fn write_clipboard_text(text: &str) -> Result<(), String> {
 }
 
 /// Open a URL in the default browser or the registered handler for its scheme.
-/// - Any well-formed URL scheme is accepted (e.g. http://, https://, slack://,
-///   obsidian://, mailto:, …). Schemes must start with a letter and contain
-///   only letters, digits, '+', '-', or '.' before the ':' — per RFC 3986.
-///   Plain strings with no scheme at all are rejected.
-/// - Occurrences of `{param}` in the URL are replaced with `param`
-///   (URL-encoded) before opening.
 #[tauri::command]
 fn open_url(app: tauri::AppHandle, url: String, param: Option<String>) -> Result<(), String> {
-    // Substitute {param} if present
-    let resolved = if let Some(p) = param {
-        let encoded: String = p
-            .bytes()
-            .flat_map(|b| match b {
-                b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9'
-                | b'-' | b'_' | b'.' | b'~' => vec![b as char],
-                b' ' => vec!['+'],
-                _ => format!("%{:02X}", b).chars().collect(),
-            })
-            .collect();
-        url.replace("{param}", &encoded)
-    } else {
-        url
-    };
-
-    // Validate scheme — must match RFC 3986: letter *( letter / digit / "+" / "-" / "." ) ":"
-    // This accepts http://, https://, slack://, obsidian://, mailto:, etc.
-    // and rejects bare strings, relative paths, and malformed schemes.
-    let has_valid_scheme = resolved
-        .find(':')
-        .map(|colon| {
-            let scheme = &resolved[..colon];
-            !scheme.is_empty()
-                && scheme.starts_with(|c: char| c.is_ascii_alphabetic())
-                && scheme
-                    .chars()
-                    .all(|c| c.is_ascii_alphanumeric() || c == '+' || c == '-' || c == '.')
-        })
-        .unwrap_or(false);
-
-    if !has_valid_scheme {
-        return Err(format!("Rejected URL with missing or invalid scheme: {resolved}"));
-    }
-
+    let resolved = resolve_url(url, param)?;
     app.opener()
         .open_url(resolved, None::<&str>)
         .map_err(|e| e.to_string())
@@ -249,10 +258,7 @@ fn register_shortcut(app: tauri::AppHandle, shortcut: String) -> Result<(), Stri
 /// Requires macOS Accessibility permission for the key-simulation step.
 #[tauri::command]
 fn paste_text(app: tauri::AppHandle, window: tauri::Window, text: String) -> Result<(), String> {
-    // Sanitise: plain text only — reject NUL bytes
-    if text.contains('\0') {
-        return Err("Text must not contain NUL bytes".to_string());
-    }
+    validate_text(&text)?;
 
     // 1. Hide launcher
     window.hide().ok();
@@ -296,10 +302,8 @@ fn paste_text(app: tauri::AppHandle, window: tauri::Window, text: String) -> Res
 /// no focus restoration or keystroke simulation is performed.
 #[tauri::command]
 fn copy_text(window: tauri::Window, app: tauri::AppHandle, text: String) -> Result<(), String> {
-    // Sanitise: plain text only — reject NUL bytes
-    if text.contains('\0') {
-        return Err("Text must not contain NUL bytes".to_string());
-    }
+    validate_text(&text)?
+;
 
     window.hide().ok();
     sync_tray(&app, false);
@@ -387,4 +391,83 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![hide_window, show_window, dismiss_launcher, register_shortcut, list_commands, open_url, paste_text, copy_text])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // ── resolve_url ────────────────────────────────────────────────────────────
+
+    #[test]
+    fn bare_string_rejected() {
+        assert!(resolve_url("google.com".into(), None).is_err());
+    }
+
+    #[test]
+    fn accepts_https() {
+        assert!(resolve_url("https://example.com".into(), None).is_ok());
+    }
+
+    #[test]
+    fn accepts_http() {
+        assert!(resolve_url("http://example.com".into(), None).is_ok());
+    }
+
+    #[test]
+    fn accepts_deep_link() {
+        assert!(resolve_url("slack://open".into(), None).is_ok());
+    }
+
+    #[test]
+    fn accepts_mailto() {
+        assert!(resolve_url("mailto:a@b.com".into(), None).is_ok());
+    }
+
+    #[test]
+    fn param_substitution_encodes_spaces() {
+        let r = resolve_url(
+            "https://g.com/search?q={param}".into(),
+            Some("hello world".into()),
+        )
+        .unwrap();
+        assert_eq!(r, "https://g.com/search?q=hello+world");
+    }
+
+    #[test]
+    fn param_substitution_encodes_special_chars() {
+        let r = resolve_url(
+            "https://g.com/search?q={param}".into(),
+            Some("a&b".into()),
+        )
+        .unwrap();
+        assert!(r.contains("%26"), "expected %26 in {r}");
+    }
+
+    #[test]
+    fn url_without_placeholder_ignores_param() {
+        let r = resolve_url(
+            "https://example.com".into(),
+            Some("ignored".into()),
+        )
+        .unwrap();
+        assert_eq!(r, "https://example.com");
+    }
+
+    // ── validate_text ──────────────────────────────────────────────────────────
+
+    #[test]
+    fn nul_byte_rejected() {
+        assert!(validate_text("hello\0world").is_err());
+    }
+
+    #[test]
+    fn plain_text_accepted() {
+        assert!(validate_text("Hello, world!").is_ok());
+    }
+
+    #[test]
+    fn empty_string_accepted() {
+        assert!(validate_text("").is_ok());
+    }
 }

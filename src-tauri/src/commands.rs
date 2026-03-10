@@ -231,3 +231,115 @@ pub fn load_from_dir(config_dir: &Path) -> Result<LoadResult, String> {
 
     Ok(LoadResult { commands, duplicates })
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
+    use tempfile::TempDir;
+
+    fn write_yaml(dir: &TempDir, relative: &str, content: &str) {
+        let path = dir.path().join(relative);
+        if let Some(parent) = path.parent() {
+            fs::create_dir_all(parent).unwrap();
+        }
+        fs::write(path, content).unwrap();
+    }
+
+    // ── YAML parsing ──────────────────────────────────────────────────────────
+
+    #[test]
+    fn parses_open_url_command() {
+        let dir = TempDir::new().unwrap();
+        write_yaml(
+            &dir,
+            "open-google.yaml",
+            "phrase: open google\ntitle: Open Google\naction:\n  type: open_url\n  config:\n    url: https://www.google.com\n",
+        );
+        let result = load_from_dir(dir.path()).unwrap();
+        assert_eq!(result.commands.len(), 1);
+        assert_eq!(result.commands[0].phrase, "open google");
+        assert!(matches!(result.commands[0].action, Action::OpenUrl(_)));
+    }
+
+    #[test]
+    fn parses_paste_text_command() {
+        let dir = TempDir::new().unwrap();
+        write_yaml(
+            &dir,
+            "paste.yaml",
+            "phrase: paste email\ntitle: Paste email\naction:\n  type: paste_text\n  config:\n    text: hello@example.com\n",
+        );
+        let result = load_from_dir(dir.path()).unwrap();
+        assert_eq!(result.commands.len(), 1);
+        assert!(matches!(result.commands[0].action, Action::PasteText(_)));
+    }
+
+    #[test]
+    fn parses_copy_text_command() {
+        let dir = TempDir::new().unwrap();
+        write_yaml(
+            &dir,
+            "copy.yaml",
+            "phrase: copy email\ntitle: Copy email\naction:\n  type: copy_text\n  config:\n    text: hello@example.com\n",
+        );
+        let result = load_from_dir(dir.path()).unwrap();
+        assert_eq!(result.commands.len(), 1);
+        assert!(matches!(result.commands[0].action, Action::CopyText(_)));
+    }
+
+    // ── Deduplication ─────────────────────────────────────────────────────────
+
+    #[test]
+    fn duplicate_phrase_emits_warning_and_keeps_first() {
+        let dir = TempDir::new().unwrap();
+        // Write two files with identical phrases; the oldest-mtime file wins.
+        // Easiest way to guarantee mtime ordering is to sleep briefly, but that
+        // is fragile in CI. Instead we rely on alphabetical sort as a tiebreaker
+        // by naming them a.yaml (kept) and b.yaml (ignored).
+        write_yaml(
+            &dir,
+            "a.yaml",
+            "phrase: open google\ntitle: First\naction:\n  type: open_url\n  config:\n    url: https://www.google.com\n",
+        );
+        write_yaml(
+            &dir,
+            "b.yaml",
+            "phrase: open google\ntitle: Second\naction:\n  type: open_url\n  config:\n    url: https://duckduckgo.com\n",
+        );
+        let result = load_from_dir(dir.path()).unwrap();
+        assert_eq!(result.commands.len(), 1, "only one command should survive");
+        assert_eq!(result.duplicates.len(), 1, "one duplicate warning expected");
+        assert_eq!(result.duplicates[0].phrase, "open google");
+    }
+
+    // ── Disabled commands ─────────────────────────────────────────────────────
+
+    #[test]
+    fn disabled_command_is_skipped() {
+        let dir = TempDir::new().unwrap();
+        write_yaml(
+            &dir,
+            "disabled.yaml",
+            "phrase: hidden cmd\ntitle: Hidden\nenabled: false\naction:\n  type: open_url\n  config:\n    url: https://example.com\n",
+        );
+        let result = load_from_dir(dir.path()).unwrap();
+        assert!(result.commands.is_empty(), "disabled command must be filtered out");
+    }
+
+    // ── Malformed YAML ────────────────────────────────────────────────────────
+
+    #[test]
+    fn malformed_yaml_is_skipped_without_panic() {
+        let dir = TempDir::new().unwrap();
+        write_yaml(&dir, "bad.yaml", "this: is: not: valid: yaml: ::::\n");
+        // A second, valid file should still load fine
+        write_yaml(
+            &dir,
+            "good.yaml",
+            "phrase: open google\ntitle: Open Google\naction:\n  type: open_url\n  config:\n    url: https://www.google.com\n",
+        );
+        let result = load_from_dir(dir.path()).unwrap();
+        assert_eq!(result.commands.len(), 1, "only the valid command should load");
+    }
+}
