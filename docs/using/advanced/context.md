@@ -104,13 +104,13 @@ cp -r example-config/* ~/Library/Application\ Support/com.ctx.launcher/
 
 ### Test 3 — Context as a static list trigger
 
-1. Run `ctx set team emails` → **Enter**.
-2. Type nothing else (or just a space) — effective input is `"team emails"`.  
-   The `team-emails` static list expands immediately.
+The context supplies the *end* of a phrase, so you type the beginning and the context completes it. For the `team emails` static list (phrase: `team emails`):
 
-Alternatively, type `team` and the effective input `"team emails"` exactly matches the phrase, so the list expands from just one word.
-
-### Test 4 — Context bypassed for `ctx` commands
+1. Run `ctx set emails` → **Enter**.
+2. Type `team`.
+   `effectiveInput = "team" + " " + "emails" = "team emails"` — an exact match with the phrase.
+   The `team-emails` static list expands immediately, without pressing Enter.
+3. Select an item to paste its value.
 
 Regardless of what context is active, typing `ctx` always works normally. Effective input is not applied when the raw input starts with `ctx`.
 

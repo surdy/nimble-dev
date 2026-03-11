@@ -264,9 +264,11 @@ Type `open` → matches the `open reddit` command immediately. No need to type t
 
 ### Scoped to a sub-phrase of a long command
 
-Any substring of a command phrase can be typed when the context supplies the rest. For example, with context `github` and a `search github` command:
+The context supplies the *end* of a phrase; you type the beginning. For example, with context `github` and a `search github` command:
 
 - Type `search` — effective input is `"search github"` — the command matches.
 - Press Enter with a `{param}` URL → the context word becomes the query.
+
+For a static list with phrase `team emails`, set context to `emails` and type `team` — effective input is `"team emails"` — the list auto-expands.
 
 For the full reference including the built-in `ctx set / reset / show` commands see [Contexts](advanced/context.md).

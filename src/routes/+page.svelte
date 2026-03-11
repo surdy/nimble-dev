@@ -58,8 +58,10 @@
 
   // When a context is active and the user is not typing a ctx command, append
   // the context to raw input so commands are matched against the full phrase.
+  // Requires non-empty raw input: an empty input must always produce no results,
+  // regardless of context, to avoid unexpected matches on launcher open.
   const effectiveInput = $derived(
-    activeContext && !input.trim().toLowerCase().startsWith("ctx")
+    activeContext && input.trim() !== "" && !input.trim().toLowerCase().startsWith("ctx")
       ? input.trim() + " " + activeContext
       : input.trim()
   );
