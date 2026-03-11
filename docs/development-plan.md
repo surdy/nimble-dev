@@ -669,7 +669,50 @@ With `prefix: "<" suffix: ">"` and output `["alice@example.com", "bob@example.co
 
 ---
 
-## Stage 18 — Contexts: Core Model & Built-in Commands
+## Stage 18 — Example Config Directory ✅
+
+**Goal:** Add an `example-config/` directory to the repository containing a complete, copy-pasteable reference config that exercises every action type. Users can copy it into their own config directory to get running immediately.
+
+### Structure
+
+```
+example-config/
+├── commands/
+│   └── examples/
+│       ├── open-google.yaml           # open_url — simple URL
+│       ├── open-github.yaml           # open_url — simple URL
+│       ├── open-reddit.yaml           # open_url — simple URL
+│       ├── open-slack.yaml            # open_url — deep link (Slack)
+│       ├── open-notes.yaml            # open_url — deep link (Obsidian)
+│       ├── open-morning-sites.yaml    # script_action / open_url — opens list of URLs
+│       ├── search-google.yaml         # open_url — {param} substitution
+│       ├── paste-email.yaml           # paste_text
+│       ├── paste-greeting.yaml        # paste_text — multi-line template
+│       ├── paste-team-emails.yaml     # script_action / paste_text — list with suffix
+│       ├── paste-team-emails-as-task.yaml  # script_action / paste_text — prefix + suffix
+│       ├── copy-email.yaml            # copy_text
+│       ├── copy-uuid.yaml             # script_action / copy_text
+│       ├── show-team-emails.yaml      # static_list
+│       ├── dynamic-list-example.yaml  # dynamic_list — filterable list
+│       └── script-action-example.yaml # script_action / paste_text — timestamp
+├── lists/
+│   └── team-emails.yaml
+└── scripts/
+    ├── hello.sh           # dynamic_list script — filterable greeting list
+    ├── timestamp.sh       # script_action script — current date/time
+    ├── uuid.sh            # script_action script — random UUID
+    ├── team-emails.sh     # script_action script — list of email strings
+    └── morning-sites.sh   # script_action script — list of URLs
+```
+
+### Done when
+- `example-config/` exists in the repository root with all files above
+- Every action type (`open_url`, `paste_text`, `copy_text`, `static_list`, `dynamic_list`, `script_action`) is represented by at least one command
+- `example-config/README.md` describes the structure and lists all commands
+
+---
+
+## Stage 19 — Contexts: Core Model & Built-in Commands
 
 **Goal:** Introduce the concept of a *context* — a phrase prefix that is silently prepended to the user's input, letting them reach a group of related commands with less typing. This stage covers the data model, the built-in commands that manage context, and the reserved `ctx` namespace.
 
@@ -708,7 +751,7 @@ When a context `C` is active, a user's raw input `I` is matched against command 
 
 ---
 
-## Stage 19 — Contexts: UI Indicators & Tray Integration
+## Stage 20 — Contexts: UI Indicators & Tray Integration
 
 **Goal:** Make the active context visible at all times — both inside the launcher window and in the system tray — so the user always knows which context is in effect.
 
@@ -760,5 +803,6 @@ When a context `C` is active, a user's raw input `I` is matched against command 
 | 15 ✅ | Action: Dynamic List | Script-backed dynamic list; three argument modes (`none` / `optional` / `required`) |
 | 16 ✅ | Docs restructure & cleanup | Per-action pages in `basic/` and `advanced/`; onboarding gaps filled; stale content removed |
 | 17 ✅ | Action: Script Action | On-Enter script execution; result applied via `open_url`, `paste_text`, or `copy_text`; optional arg; prefix/suffix for list results |
-| 18 | Contexts: core model | Reserved `ctx` namespace, built-in set/reset commands, context-aware matching |
-| 19 | Contexts: UI & tray | Context chip in launcher bar, tray label, localStorage persistence |
+| 18 ✅ | Example config directory | `example-config/` in repo root — one file per action type, ready to copy |
+| 19 | Contexts: core model | Reserved `ctx` namespace, built-in set/reset commands, context-aware matching |
+| 20 | Contexts: UI & tray | Context chip in launcher bar, tray label, localStorage persistence |
