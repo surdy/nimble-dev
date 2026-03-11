@@ -78,6 +78,8 @@ action:
 | `copy_text` | Item's `subtext` (or `title`) is copied to the clipboard |
 | `open_url` | Item's `subtext` (or `title`) is opened as a URL in the default browser |
 
+> **Note:** `subtext` serves a dual purpose — it's the secondary hint shown in the UI *and* the value used when the item is acted on. If `subtext` is absent, `title` is used instead.
+
 ---
 
 ## Behaviour

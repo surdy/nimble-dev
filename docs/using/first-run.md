@@ -53,3 +53,30 @@ Then quit and relaunch Ctx — the onboarding screen will appear again so you ca
 
 - **macOS** — primary target, fully supported
 - Windows and Linux — planned for a future release
+
+---
+
+## Your first command
+
+After the shortcut is set the launcher is ready to use. Out of the box, Ctx ships with a few example commands in your `commands/examples/` folder. Try invoking the launcher and typing `open` — you should see them appear.
+
+To create your own command, open your `commands/` directory:
+
+```
+~/Library/Application Support/com.ctx.launcher/commands/
+```
+
+Create a file — for example `open-github.yaml` — with this content:
+
+```yaml
+phrase: open github
+title: Open GitHub
+action:
+  type: open_url
+  config:
+    url: https://github.com
+```
+
+Save the file. Within 300 ms Ctx reloads automatically. Invoke the launcher and start typing `open github` — the result appears as you type. Press `Enter` or click it to open the URL in your browser.
+
+That one file is all it takes. Every other action type (`paste_text`, `copy_text`, `static_list`, `dynamic_list`) follows the same pattern — just a different `action` block. See [Basic Functionality](basic/README.md) to continue.

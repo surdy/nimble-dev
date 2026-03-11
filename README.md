@@ -4,6 +4,14 @@ A fast, cross-platform desktop launcher driven entirely by commands — think Al
 
 ---
 
+## How it works
+
+You define commands by dropping YAML files into a config directory on your machine. Each file maps a **phrase** (the words you type) to an **action** (open a URL, paste text, run a script, etc.). Ctx watches that directory and hot-reloads commands the moment you save a file — no restart needed.
+
+When you invoke the launcher and start typing, Ctx shows partial matches in real time. As you type more of the phrase the results narrow down; when you hit the full phrase of a list command the list expands automatically. Press `Enter` or click to execute.
+
+---
+
 ## Tech Stack
 
 - **[Tauri 2](https://tauri.app/)** — Rust-powered native shell (tiny binary, fast startup, strong sandboxing)
@@ -70,9 +78,30 @@ Planned for a future release. Build from source in the meantime — see [docs/de
 
 ---
 
-## Getting Started
+## Your first command
 
-For a full step-by-step guide see [docs/development-setup.md](docs/development-setup.md).
+Once Ctx is running and your shortcut is set, open the commands directory and create a file:
+
+```
+~/Library/Application Support/com.ctx.launcher/commands/open-github.yaml
+```
+
+```yaml
+phrase: open github
+title: Open GitHub
+action:
+  type: open_url
+  config:
+    url: https://github.com
+```
+
+Invoke the launcher with your shortcut, start typing `open github`, and the result appears instantly. Press `Enter` to open the URL. That's it — every other action type follows the same pattern. See [Basic Functionality](docs/using/basic/README.md) for next steps.
+
+---
+
+## Building from source
+
+For a full environment setup guide see [docs/development-setup.md](docs/development-setup.md).
 
 For the implementation roadmap see [docs/development-plan.md](docs/development-plan.md).
 
@@ -108,7 +137,6 @@ docs/          — User and developer documentation
 src/           — SvelteKit frontend source
 src-tauri/     — Rust/Tauri backend source
 static/        — Static frontend assets
-plugins/       — Example and built-in plugin definitions (Phase 2+)
 ```
 
 ---

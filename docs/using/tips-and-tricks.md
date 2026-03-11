@@ -1,6 +1,6 @@
 # Tips & Tricks
 
-The two built-in actions — **Open URL** and **Paste Text** — are deceptively powerful. Here are practical patterns that let you do a lot more than might be obvious at first glance.
+Ctx's built-in actions are deceptively powerful. Here are practical patterns that let you do a lot more than might be obvious at first glance.
 
 ---
 

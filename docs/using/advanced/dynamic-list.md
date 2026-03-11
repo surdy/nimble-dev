@@ -68,13 +68,13 @@ action:
 | `optional` | Exact match (immediately) **or** phrase + space + suffix | No arg on exact match; suffix when present |
 | `required` | Only when a non-empty suffix follows the phrase | The typed suffix as its first argument |
 
-For `optional` and `required` modes the script is re-invoked as the user types, with a 200 ms debounce to prevent excessive calls.
+For `optional` and `required` modes the script is re-invoked as the user types, with a 200 ms debounce to prevent excessive calls. For how to use arguments inside a script, see [Script Extensions](script-extensions.md#accepting-an-argument).
 
 ---
 
 ## `item_action`
 
-Works identically to `static_list`:
+When an item is selected, Ctx uses the item's **`subtext`** as the value for the action (falling back to `title` if `subtext` is absent). This means `subtext` serves a dual purpose: it's the secondary line shown in the UI *and* the payload that gets pasted, copied, or opened.
 
 | `item_action` value | What happens on selection |
 |---------------------|---------------------------|
