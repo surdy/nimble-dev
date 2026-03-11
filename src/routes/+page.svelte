@@ -409,6 +409,12 @@
     }
   }
 
+  // Persist active context to localStorage and keep the tray label in sync.
+  $effect(() => {
+    localStorage.setItem("ctx_active_context", activeContext);
+    invoke("update_tray_label", { context: activeContext || null }).catch(() => {});
+  });
+
   // ── Lifecycle ─────────────────────────────────────────────────────────
   onMount(() => {
     let unlistenFocus: (() => void) | null = null;
@@ -421,6 +427,10 @@
         localStorage.setItem("ctx_hotkey", legacy);
         localStorage.removeItem("contexts_hotkey");
       }
+
+      // Restore active context from the previous session.
+      const savedContext = localStorage.getItem("ctx_active_context");
+      if (savedContext) activeContext = savedContext;
 
       const stored = localStorage.getItem("ctx_hotkey");
 
@@ -511,15 +521,28 @@
 {:else}
   <!-- ── Launcher bar ───────────────────────────────────────────────────── -->
   <div class="launcher">
-    <input
-      bind:this={inputEl}
-      bind:value={input}
-      type="text"
-      placeholder="Type a command…"
-      autocomplete="off"
-      autocorrect="off"
-      spellcheck="false"
-    />
+    <div class="input-row">
+      <input
+        bind:this={inputEl}
+        bind:value={input}
+        type="text"
+        placeholder={activeContext ? "…" : "Type a command…"}
+        autocomplete="off"
+        autocorrect="off"
+        spellcheck="false"
+      />
+      {#if activeContext}
+        <div class="context-chip">
+          <span class="chip-label">{activeContext}</span>
+          <button
+            class="chip-clear"
+            onclick={() => { activeContext = ""; }}
+            onmousedown={(e) => e.preventDefault()}
+            aria-label="Clear context"
+          >&times;</button>
+        </div>
+      {/if}
+    </div>
 
     {#if warningVisible}
       <div class="warnings-bar">
@@ -605,8 +628,16 @@
     overflow: hidden;
   }
 
+  /* ── Input row (input + context chip) ─────────────────────────────── */
+  .input-row {
+    display: flex;
+    align-items: center;
+    padding: 0 16px 0 0;
+  }
+
   input {
-    width: 100%;
+    flex: 1;
+    min-width: 0;
     background: transparent;
     border: none;
     color: #f5f5f7;
@@ -618,6 +649,44 @@
   }
 
   input::placeholder { color: rgba(245,245,247,.35); }
+
+  /* ── Context chip ───────────────────────────────────────────────────── */
+  .context-chip {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(10, 132, 255, 0.18);
+    border: 1px solid rgba(10, 132, 255, 0.4);
+    border-radius: 20px;
+    padding: 3px 6px 3px 10px;
+    flex-shrink: 0;
+    max-width: 180px;
+  }
+
+  .chip-label {
+    color: #0a84ff;
+    font-size: 12px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .chip-clear {
+    background: none;
+    border: none;
+    color: rgba(10, 132, 255, 0.6);
+    font-size: 14px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0 2px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    transition: color .12s;
+  }
+
+  .chip-clear:hover { color: #0a84ff; }
 
   /* ── Onboarding ──────────────────────────────────────────────────────── */
   .onboarding {

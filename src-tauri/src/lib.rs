@@ -145,6 +145,23 @@ fn open_url(app: tauri::AppHandle, url: String, param: Option<String>) -> Result
 
 struct TrayMenuState {
     show_hide_item: Arc<MenuItem<tauri::Wry>>,
+    app_info_item: Arc<MenuItem<tauri::Wry>>,
+}
+
+/// Update the app-info tray label to reflect the active context.
+/// Called from the frontend whenever `activeContext` changes.
+#[tauri::command]
+fn update_tray_label(app: tauri::AppHandle, context: Option<String>) {
+    let item = {
+        let state = app.state::<TrayMenuState>();
+        Arc::clone(&state.app_info_item)
+    };
+    let version = app.package_info().version.to_string();
+    let text = match context {
+        Some(ctx) if !ctx.is_empty() => format!("Ctx \u{2014} {ctx}"),
+        _ => format!("Ctx v{}", version),
+    };
+    item.set_text(text).ok();
 }
 
 /// Update the tray Show/Hide item text to reflect current window visibility.
@@ -382,6 +399,7 @@ pub fn run() {
             // Manage state for updating the Show/Hide item label
             app.manage(TrayMenuState {
                 show_hide_item: Arc::new(show_hide),
+                app_info_item: Arc::new(app_info),
             });
 
             // Manage previous-app tracking for paste_text focus restoration
@@ -429,7 +447,7 @@ pub fn run() {
 
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![hide_window, show_window, dismiss_launcher, register_shortcut, list_commands, load_list, run_dynamic_list, run_script_action, open_url, paste_text, copy_text])
+        .invoke_handler(tauri::generate_handler![hide_window, show_window, dismiss_launcher, register_shortcut, list_commands, load_list, run_dynamic_list, run_script_action, open_url, paste_text, copy_text, update_tray_label])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
