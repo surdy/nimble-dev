@@ -13,16 +13,17 @@ Contexts is a cross-platform desktop launcher (similar to Alfred, Spotlight, Ray
   - **Subtext**: possible completions or hints for the matched command
 - The launcher does **not** launch desktop applications by default; app launching may be added later under a dedicated `launch` command
 
-### Core Built-in Functions (Phase 1)
-These are the only system actions the launcher itself can perform:
-1. **Open URL** — navigate to a webpage in the default browser; optionally accepts a query parameter passed as a `param` variable in the URL
+### Built-in Actions
+All system actions the launcher can perform:
+1. **Open URL** — navigate to a webpage in the default browser; optionally accepts a query parameter passed as a `{param}` placeholder in the URL
 2. **Paste Text** — paste a predefined text string into the application that had focus before the launcher was invoked
+3. **Copy Text** — copy a predefined text string to the clipboard without simulating a keystroke
+4. **Static List** — display a named YAML list of items inline; each item can trigger `paste_text`, `copy_text`, or `open_url`
+5. **Dynamic List** — run an external script and display its stdout as a list of items; supports `none`, `optional`, and `required` argument modes
 
-### Plugin / Script Extension System (Phase 2+)
-- Users can associate custom commands with external scripts or executables
-- Scripts may accept **input parameters** and must return either:
-  - Plain text
-  - Structured JSON representing a list of results (each result has a title, subtext, and an associated action)
+### Script Extension System
+- Users associate commands with executables in the `scripts/` config subdirectory (shell scripts, Python, Node.js, binaries, etc.)
+- Scripts return plain text or a JSON array of `{ title, subtext }` objects
 - The **action** tied to each result must be one of the launcher's built-in functions — scripts cannot directly perform system actions themselves
 - Scripts are sandboxed: they do **not** have permission to modify the system or trigger actions; that responsibility belongs solely to the launcher's built-in layer
 
@@ -30,11 +31,11 @@ These are the only system actions the launcher itself can perform:
 1. **Commit after every meaningful step** with a clear, descriptive commit message. After every commit, run `cargo test --manifest-path src-tauri/Cargo.toml` and confirm all tests pass before proceeding.
 2. **Add backend tests for every new Rust function**: whenever a new pure helper function or a new action type is added to the Rust backend, add corresponding `#[cfg(test)]` unit tests covering the happy path, edge cases, and expected error conditions. Tests for pure helpers go in `src-tauri/src/lib.rs`; tests for command loading / YAML parsing go in `src-tauri/src/commands.rs`.
 3. **Ask questions instead of making assumptions** whenever requirements are ambiguous
-3. **Keep README.md and user-facing documentation up to date** as features are built
-4. **Do not write code** until requirements for that phase/feature are clearly understood
-5. **Keep action docs up to date** whenever a new built-in action type is added to the launcher. Basic actions (`open_url`, `paste_text`, `copy_text`) each have a dedicated page in `docs/using/basic/`; advanced actions (`static_list`, `dynamic_list`) each have a dedicated page in `docs/using/advanced/`. Add a dedicated page covering the YAML schema, a minimal example, any parameter behaviour, and platform-specific requirements. Update the corresponding landing page (`docs/using/basic/index.md` or `docs/using/advanced/index.md`) to link to the new page.
-6. **Keep `docs/using/config-directory.md` up to date** whenever a new subdirectory is introduced in the config directory (e.g. for scripts, settings, or any future data type). Add a dedicated section describing the subdirectory's purpose and any relevant file format notes.
-7. **Keep `docs/using/advanced/script-extensions.md` up to date** whenever the `dynamic_list` script interface changes (output format, arg modes, security boundaries, or timeout behaviour). Also keep `docs/using/configuring-commands.md` current with the full YAML schema for all action types.
+4. **Keep README.md and user-facing documentation up to date** as features are built
+5. **Do not write code** until requirements for that phase/feature are clearly understood
+6. **Keep action docs up to date** whenever a new built-in action type is added to the launcher. Basic actions (`open_url`, `paste_text`, `copy_text`) each have a dedicated page in `docs/using/basic/`; advanced actions (`static_list`, `dynamic_list`) each have a dedicated page in `docs/using/advanced/`. Add a dedicated page covering the YAML schema, a minimal example, any parameter behaviour, and platform-specific requirements. Update the corresponding landing page (`docs/using/basic/README.md` or `docs/using/advanced/README.md`) to link to the new page.
+7. **Keep `docs/using/config-directory.md` up to date** whenever a new subdirectory is introduced in the config directory (e.g. for scripts, settings, or any future data type). Add a dedicated section describing the subdirectory's purpose and any relevant file format notes.
+8. **Keep `docs/using/advanced/script-extensions.md` up to date** whenever the `dynamic_list` script interface changes (output format, arg modes, security boundaries, or timeout behaviour). Also keep `docs/using/configuring-commands.md` current with the full YAML schema for all action types.
 
 ## Tech Stack
 - **Runtime / native shell**: Tauri 2 (Rust)
@@ -58,5 +59,5 @@ These are the only system actions the launcher itself can perform:
 ## File & Folder Conventions
 - `bootstrap/` — project bootstrap documents and initial planning notes
 - `docs/` — user-facing and developer documentation
-- `src/` — application source code (to be created when coding begins)
-- `plugins/` — example and built-in plugin/script definitions (Phase 2+)
+- `src/` — SvelteKit frontend source
+- `src-tauri/` — Rust/Tauri backend source
