@@ -55,13 +55,19 @@ export interface ListItem {
   subtext?: string;
 }
 
+/** Frontend-only built-in action config. Never appears in YAML files. */
+export interface BuiltinConfig {
+  action: "ctx_set" | "ctx_reset" | "ctx_show";
+}
+
 export type Action =
   | { type: "open_url"; config: OpenUrlConfig }
   | { type: "paste_text"; config: PasteTextConfig }
   | { type: "copy_text"; config: CopyTextConfig }
   | { type: "static_list"; config: StaticListConfig }
   | { type: "dynamic_list"; config: DynamicListConfig }
-  | { type: "script_action"; config: ScriptActionConfig };
+  | { type: "script_action"; config: ScriptActionConfig }
+  | { type: "builtin"; config: BuiltinConfig };
 
 export interface Command {
   phrase: string;

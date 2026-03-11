@@ -26,6 +26,28 @@
   const totalWarnings = $derived(warnings.length + reservedWarnings.length);
   const warningVisible = $derived(totalWarnings > 0 && !warningsDismissed);
 
+  // Active context — empty string means no context is set
+  let activeContext = $state("");
+
+  // Built-in ctx commands — always present, titles reflect current activeContext
+  const builtinCommands: Command[] = $derived([
+    {
+      phrase: "ctx set",
+      title: activeContext ? `Change context (current: "${activeContext}")` : "Set context",
+      action: { type: "builtin", config: { action: "ctx_set" } },
+    },
+    {
+      phrase: "ctx reset",
+      title: "Reset context",
+      action: { type: "builtin", config: { action: "ctx_reset" } },
+    },
+    {
+      phrase: "ctx show",
+      title: activeContext ? `Active context: "${activeContext}"` : "No context active",
+      action: { type: "builtin", config: { action: "ctx_show" } },
+    },
+  ]);
+
   // List expansion state — populated when input exactly matches a static_list phrase
   let listItems = $state<ListItem[]>([]);
   let activeListCmd = $state<Command | null>(null);
@@ -48,6 +70,20 @@
           .slice(0, MAX_RESULTS)
   );
 
+  // Built-in ctx commands filtered by the current raw input (only when input starts with "ctx")
+  const filteredBuiltins: Command[] = $derived(
+    input.trim().toLowerCase().startsWith("ctx")
+      ? builtinCommands.filter(cmd => {
+          const phrase = cmd.phrase.toLowerCase();
+          const typed  = input.trim().toLowerCase();
+          return phrase.includes(typed) || typed.startsWith(phrase + " ");
+        })
+      : []
+  );
+
+  // Combined results: built-ins first, then YAML commands
+  const allFiltered = $derived([...filteredBuiltins, ...filtered]);
+
   // True when the typed input exactly equals a static_list command phrase.
   // In this mode we show list items instead of the normal results list.
   const showingList = $derived(activeListCmd !== null && listItems.length > 0);
@@ -56,7 +92,7 @@
 
   // Reset selection whenever the result list changes
   $effect(() => {
-    void filtered;
+    void allFiltered;
     selectedIndex = 0;
   });
 
@@ -151,8 +187,8 @@
     const warnExtra = warningVisible ? WARNING_H : 0;
     const contentHeight = !hasQuery ? 0
       : showingList ? Math.min(listItems.length, MAX_RESULTS) * ROW_H
-      : filtered.length === 0 ? 44          // "no results" row
-      : filtered.length * ROW_H;
+      : allFiltered.length === 0 ? 44          // "no results" row
+      : allFiltered.length * ROW_H;
     appWindow.setSize(new LogicalSize(640, 64 + warnExtra + contentHeight));
   });
 
@@ -314,6 +350,23 @@
         input = "";
         await invoke(cfg.result_action === "paste_text" ? "paste_text" : "copy_text", { text });
       }
+    } else if (cmd.action.type === "builtin") {
+      const builtinAction = cmd.action.config.action;
+      if (builtinAction === "ctx_set") {
+        const suffix = input.trim().toLowerCase().startsWith("ctx set ")
+          ? input.trim().slice("ctx set ".length).trim()
+          : "";
+        if (suffix) activeContext = suffix;
+        input = "";
+        // do NOT dismiss — launcher stays open so the user sees the updated context
+      } else if (builtinAction === "ctx_reset") {
+        activeContext = "";
+        input = "";
+        // do NOT dismiss
+      } else if (builtinAction === "ctx_show") {
+        input = "";
+        // do NOT dismiss
+      }
     }
   }
 
@@ -325,11 +378,11 @@
       dismissWithFocusRestore();
     } else if (e.key === "ArrowDown") {
       e.preventDefault();
-      const len = showingList ? listItems.length : filtered.length;
+      const len = showingList ? listItems.length : allFiltered.length;
       if (len > 0) selectedIndex = (selectedIndex + 1) % len;
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
-      const len = showingList ? listItems.length : filtered.length;
+      const len = showingList ? listItems.length : allFiltered.length;
       if (len > 0) selectedIndex = (selectedIndex - 1 + len) % len;
     } else if (e.key === "Enter") {
       e.preventDefault();
@@ -337,7 +390,7 @@
         const item = listItems[selectedIndex];
         if (item) executeListItem(item);
       } else {
-        const cmd = filtered[selectedIndex];
+        const cmd = allFiltered[selectedIndex];
         if (cmd) executeCommand(cmd);
       }
     }
@@ -483,12 +536,14 @@
               {/if}
             </div>
           {/each}
-        {:else if filtered.length === 0}
+        {:else if allFiltered.length === 0}
           <div class="no-results">No results</div>
         {:else}
-          {#each filtered as cmd, i}
+          {#each allFiltered as cmd, i}
             {@const typed     = input.trim()}
-            {@const isParamMode = typed.toLowerCase().startsWith(cmd.phrase.toLowerCase() + " ")}
+            {@const builtinAction = cmd.action.type === "builtin" ? cmd.action.config.action : null}
+            {@const ctxSetValue = builtinAction === "ctx_set" && typed.toLowerCase().startsWith("ctx set ") ? typed.slice("ctx set ".length).trim() : ""}
+            {@const isParamMode = builtinAction === null && typed.toLowerCase().startsWith(cmd.phrase.toLowerCase() + " ")}
             {@const paramText  = isParamMode ? typed.slice(cmd.phrase.length + 1) : ""}
             {@const hl        = highlight(cmd.phrase, typed)}
             <!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -502,7 +557,9 @@
             >
               <span class="result-title">{cmd.title}</span>
               <span class="result-subtext">
-                {#if isParamMode}
+                {#if ctxSetValue}
+                  → set context to "{ctxSetValue}"
+                {:else if isParamMode}
                   {cmd.phrase}<span class="param-hint"> → {paramText}</span>
                 {:else}
                   {hl.before}<mark>{hl.match}</mark>{hl.after}
