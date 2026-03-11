@@ -76,7 +76,7 @@ action:
     item_action: paste_text # optional; same as static_list
 ```
 
-See [Basic Functionality — Dynamic List](basic-functionality.md#dynamic-list) for the full YAML schema and argument mode reference.
+See [Dynamic List](dynamic-list.md) for the full YAML schema and argument mode reference.
 
 ---
 

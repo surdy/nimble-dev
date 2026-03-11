@@ -65,7 +65,7 @@ action:
 
 Changes to files in `lists/` are detected by the file watcher and will refresh any list currently displayed in the launcher within the ~300 ms debounce window.
 
-For the full list file schema and behaviour details see [Basic Functionality — List Action](basic-functionality.md#list-action).
+For the full list file schema and behaviour details see [Advanced — Static List](advanced/static-list.md).
 
 ---
 
@@ -87,10 +87,10 @@ action:
 
 A seed example (`scripts/hello.sh`) is created automatically on first launch. Ctx watches this directory and re-runs the active script when any file in `scripts/` changes, so edits take effect immediately.
 
-For full details and examples see [Script Extensions](script-extensions.md).
+For full details and examples see [Script Extensions](advanced/script-extensions.md).
 
 ---
 
 - [Configuring Commands](configuring-commands.md) — YAML schema, enable/disable, live reload
-- [Basic Functionality](basic-functionality.md) — Open URL, Paste Text, Copy Text, Show List, Dynamic List action reference
-- [Script Extensions](script-extensions.md) — How to write and register `dynamic_list` scripts
+- [Basic Functionality](basic/index.md) — Open URL, Paste Text, Copy Text
+- [Advanced Features](advanced/index.md) — Static List, Dynamic List, Script Extensions
