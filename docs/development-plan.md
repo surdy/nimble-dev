@@ -406,43 +406,98 @@ action:
 
 ---
 
-## Stage 15 — Script Extensions
+## Stage 15 — Action: Dynamic List
 
-**Goal:** Commands can be associated with external scripts that process input and return results for the launcher to act on.
+**Goal:** Commands can execute an external script to dynamically generate a list of items. Like `static_list`, the list appears automatically when the phrase is matched — no Enter required. Scripts can optionally accept a user-typed argument to filter or parameterise their output in real time.
+
+### Script output format
+
+Scripts live in `config_dir/scripts/` and can be any executable (shell script, Python, Node.js binary, etc.). Each script must write to stdout either:
+
+- **Plain text** — treated as a single result with the output as the item title
+- **JSON array** — a list of items, each conforming to `{ "title": "string", "subtext": "string" }` (subtext is optional)
+
+Stdout is captured and parsed. Stderr is discarded. A 5-second timeout applies; if the script does not complete in time, an empty list is shown.
+
+### Command schema
+
+```yaml
+phrase: team emails
+title: Team email addresses
+action:
+  type: dynamic_list
+  config:
+    script: team-emails.sh    # resolves to scripts/team-emails.sh
+    arg: none                 # none | optional | required
+    item_action: paste_text   # optional; same semantics as static_list
+```
+
+### Argument modes
+
+| `arg` value | Trigger condition | Script invoked with |
+|-------------|-------------------|---------------------|
+| `none` | Input exactly equals phrase | No arguments |
+| `optional` | Input exactly equals phrase, **or** input starts with phrase + space | No argument (exact match) or the typed suffix (with suffix) |
+| `required` | Input starts with phrase + space and suffix is non-empty | The typed suffix as first argument |
+
+- **`none`:** Script runs once on exact match; typing extra text beyond the phrase collapses the list (identical behaviour to `static_list`).
+- **`optional`:** List appears immediately on exact match (no argument passed); as the user continues typing a suffix the script is re-invoked with that suffix — results update in real time. A 200 ms debounce prevents excessive invocations.
+- **`required`:** No results shown on exact match alone. The list appears only once the user has typed at least one character after the phrase (the suffix is passed as the script argument).
+
+### `item_action`
+
+Works identically to `static_list`: if omitted, selecting an item dismisses the launcher. Optional values: `paste_text`, `copy_text`, `open_url`.
+
+### Security boundaries (non-negotiable)
+- `script` field values containing `/`, `\`, or `..` are rejected at invocation time (path traversal prevention)
+- Scripts are resolved relative to `config_dir/scripts/` only and run with the same privileges as the launcher — never elevated
+- Script output is validated before any action is taken; malformed JSON is silently discarded (empty list shown)
+- Only `paste_text`, `copy_text`, and `open_url` (http/https only) are valid `item_action` values
 
 ### Tasks
-- Extend the command schema with a `script` action type:
-  ```
-  {
-    type: "script"
-    config: {
-      executable: string    // path to the script/binary
-      args?: string[]       // static arguments
-    }
-  }
-  ```
-- When a script command is selected (or as the user types a param), invoke the executable:
-  - Pass any user-supplied parameter as a command-line argument
-  - Capture stdout; stderr is logged but not shown
-  - Enforce a timeout (e.g. 5 seconds)
-- Parse the output: plain text → single result; valid JSON array → list of results
-- Each JSON result must conform to:
-  ```json
-  {
-    "title": "string",
-    "subtext": "string",
-    "action": { "type": "open_url" | "paste_text", "config": { ... } }
-  }
-  ```
-- **Security boundaries (non-negotiable):**
-  - Scripts may only return data; they cannot trigger actions directly
-  - Validate and sanitise all script output before rendering or acting on it
-  - Only allow `open_url` (http/https only) and `paste_text` as result actions — no arbitrary shell commands
-  - Never execute scripts with elevated privileges
-- Show results from the script in the launcher UI; user selects one; launcher executes the associated built-in action
+
+#### Rust backend (`commands.rs`, `lib.rs`)
+- Add `ArgMode` enum: `None`, `Optional`, `Required` (serde: `snake_case`)
+- Add `DynamicListConfig { script: String, arg: ArgMode, item_action: Option<ItemAction> }` struct and `DynamicList(DynamicListConfig)` variant to the `Action` enum
+- Add `pub fn run_script(config_dir: &Path, script_name: &str, arg: Option<&str>) -> Result<Vec<ListItem>, String>`:
+  - Reject `script_name` values containing `/`, `\`, or `..`
+  - Resolve to `config_dir/scripts/<script_name>`; return `Err` if the file does not exist
+  - Spawn subprocess; pass `arg` as a positional argument if `Some`; capture stdout; enforce 5 s timeout
+  - Parse stdout: try JSON array (`Vec<ListItem>`) first; fall back to a single `ListItem { title: trimmed_output, subtext: None }`
+  - Return `Err` with a clear message on timeout or malformed JSON
+- Expose as `run_dynamic_list` Tauri command in `lib.rs`
+- Extend `watcher.rs` to watch `config_dir/scripts/` (creating it eagerly if missing) alongside `commands/` and `lists/`
+
+#### Frontend (`types.ts`, `+page.svelte`)
+- Add `ArgMode`, `DynamicListConfig`, and `dynamic_list` action union member to `types.ts`
+- In `+page.svelte`, extend the exact-match `$effect` to handle `dynamic_list`:
+  - `none` / `optional` (exact match): invoke `run_dynamic_list` with no argument; populate `listItems`
+  - `optional` / `required` (phrase + space + suffix): invoke `run_dynamic_list` with the suffix; debounce 200 ms
+  - `required` (exact match only): do nothing — leave `listItems` empty so no list is shown
+- Reuse the existing `listItems`, `activeListCmd`, and `showingList` state from `static_list`
+- On `commands://reloaded`, re-invoke `run_dynamic_list` with the current argument if a dynamic list is displayed
+- Item selection uses the same `executeListItem` path as `static_list`
+
+#### Config & docs
+- Watcher creates `config_dir/scripts/` on startup if it does not exist
+- Add a seed example: `scripts/hello.sh` (echoes a JSON array) and `commands/examples/dynamic-list-example.yaml`
+- Update `docs/using/config-directory.md` to document the `scripts/` subdirectory
+- Update `docs/using/basic-functionality.md` with a Dynamic List section
+- Update `copilot-instructions.md` rule 5 to include `dynamic_list`
+
+#### Backend tests (`commands.rs`)
+- `run_script` with a valid JSON-outputting script returns the correct `Vec<ListItem>`
+- `run_script` with plain-text output wraps it in a single `ListItem`
+- A script name containing `..` or `/` is rejected with `Err`
+- A non-existent script name returns `Err`
+- `DynamicListConfig` with all three `arg` modes deserialises correctly
 
 ### Done when
-- A user can define a script command, the script returns JSON results, and selecting a result triggers the correct built-in action
+- `arg: none` — exact phrase match executes the script and shows results immediately; extra typing collapses the list
+- `arg: optional` — results appear on exact match; typing a suffix re-runs the script live with that suffix
+- `arg: required` — no results shown until the user types a non-empty suffix after the phrase
+- Selecting a list item executes the configured `item_action` (or dismisses if absent)
+- Scripts in `config_dir/scripts/` are watched; editing a script hot-reloads any currently displayed results
 
 ---
 
@@ -534,6 +589,6 @@ When a context `C` is active, a user's raw input `I` is matched against command 
 | 12 ✅ | Action: Copy Text & Config Directory Restructure | `copy_text` action; commands moved to `commands/` subdir |
 | 13 ✅ | Backend testing | `cargo test` suite: YAML parsing, dedup, URL validation, param encoding, text sanitisation |
 | 14 ✅ | Action: Show List | Keyword-triggered inline list expansion from `lists/` config subdir |
-| 15 | Script extensions | External scripts return structured results; launcher executes built-in actions |
+| 15 | Action: Dynamic List | Script-backed dynamic list; three argument modes (`none` / `optional` / `required`) |
 | 16 | Contexts: core model | Reserved `ctx` namespace, built-in set/reset commands, context-aware matching |
 | 17 | Contexts: UI & tray | Context chip in launcher bar, tray label, localStorage persistence |
