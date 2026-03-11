@@ -275,6 +275,42 @@
       // No paste keystroke — the user pastes manually.
       input = "";
       await invoke("copy_text", { text: cmd.action.config.text });
+    } else if (cmd.action.type === "script_action") {
+      const cfg = cmd.action.config;
+      const phrase = cmd.phrase.toLowerCase();
+      const typed  = input.trim();
+      const after  = typed.toLowerCase().startsWith(phrase)
+        ? typed.slice(phrase.length).trim()
+        : "";
+
+      // Determine the argument to pass based on arg mode.
+      let scriptArg: string | null = null;
+      if (cfg.arg === "optional" && after !== "") {
+        scriptArg = after;
+      } else if (cfg.arg === "required") {
+        if (after === "") return; // can't execute without a required argument
+        scriptArg = after;
+      }
+      // arg === "none" (or absent): scriptArg stays null
+
+      const values: string[] = await invoke("run_script_action", {
+        scriptName: cfg.script,
+        arg: scriptArg,
+      });
+
+      if (cfg.result_action === "open_url") {
+        for (const v of values) {
+          await invoke("open_url", { url: v, param: null });
+        }
+        dismiss();
+      } else {
+        // paste_text or copy_text: wrap each value with prefix/suffix and join into one string.
+        const text = values
+          .map(v => (cfg.prefix ?? "") + v + (cfg.suffix ?? ""))
+          .join("");
+        input = "";
+        await invoke(cfg.result_action === "paste_text" ? "paste_text" : "copy_text", { text });
+      }
     }
   }
 

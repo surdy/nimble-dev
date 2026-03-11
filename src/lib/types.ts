@@ -34,6 +34,22 @@ export interface DynamicListConfig {
   item_action?: ItemAction;
 }
 
+/** The built-in action applied to each value returned by a script_action script. */
+export type ResultAction = "open_url" | "paste_text" | "copy_text";
+
+export interface ScriptActionConfig {
+  /** Name of the script file (without path) inside `config_dir/scripts/`. */
+  script: string;
+  /** Controls whether a suffix typed after the phrase is passed as an argument. Defaults to "none". */
+  arg?: ArgMode;
+  /** Built-in action to apply to every value the script returns. */
+  result_action: ResultAction;
+  /** Text prepended to each value when result_action is paste_text or copy_text. */
+  prefix?: string;
+  /** Text appended to each value when result_action is paste_text or copy_text. */
+  suffix?: string;
+}
+
 export interface ListItem {
   title: string;
   subtext?: string;
@@ -44,7 +60,8 @@ export type Action =
   | { type: "paste_text"; config: PasteTextConfig }
   | { type: "copy_text"; config: CopyTextConfig }
   | { type: "static_list"; config: StaticListConfig }
-  | { type: "dynamic_list"; config: DynamicListConfig };
+  | { type: "dynamic_list"; config: DynamicListConfig }
+  | { type: "script_action"; config: ScriptActionConfig };
 
 export interface Command {
   phrase: string;

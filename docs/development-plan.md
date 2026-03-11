@@ -544,7 +544,132 @@ Works identically to `static_list`: if omitted, selecting an item dismisses the 
 
 ---
 
-## Stage 17 — Contexts: Core Model & Built-in Commands
+## Stage 17 — Action: Script Action ✅
+
+**Goal:** A new action type that executes an external script on `Enter` (like `open_url` and `paste_text`) rather than auto-triggering an inline list. The script's output — a single value or a list of values — is acted upon immediately using a configured basic action.
+
+This is distinct from `dynamic_list`, which displays an interactive list for the user to select from. `script_action` runs to completion and applies the result directly: it opens URLs, pastes text, or copies to clipboard without further user interaction.
+
+### Script output format
+
+Scripts live in `config_dir/scripts/` (same directory as `dynamic_list` scripts). They must write to stdout either:
+
+- **Plain text** — the entire trimmed stdout is used as a single value
+- **JSON array of strings** — `["value1", "value2", ...]` — treated as a list of values
+
+A 5-second timeout applies; if the script does not exit in time, execution is aborted.
+
+### Command schema
+
+```yaml
+phrase: get ticket url
+title: Open current Jira ticket
+action:
+  type: script_action
+  config:
+    script: get-ticket.sh  # resolves to scripts/get-ticket.sh
+    arg: none              # none (default) | optional | required
+    result_action: open_url  # open_url | paste_text | copy_text
+```
+
+With prefix/suffix for list paste/copy:
+
+```yaml
+phrase: paste emails
+title: Paste all team emails
+action:
+  type: script_action
+  config:
+    script: team-emails.sh
+    result_action: paste_text
+    prefix: ""
+    suffix: "\n"
+```
+
+### Argument modes
+
+| `arg` value | When execution is allowed | Script receives |
+|-------------|---------------------------|-----------------|
+| `none` *(default)* | Any time the command is selected | No arguments |
+| `optional` | Any time the command is selected | Suffix after phrase, if present |
+| `required` | Only when a non-empty suffix follows the phrase | The typed suffix as its first argument |
+
+The suffix is the text the user types after the command phrase, extracted the same way as `{param}` in `open_url`.
+
+### Result actions
+
+#### `open_url`
+Each output value is opened as a URL in the default browser. Values are opened individually. Standard URL scheme validation applies (http/https; deep-link schemes permitted).
+
+#### `paste_text`
+All output values are concatenated after wrapping each with the optional `prefix` and `suffix` fields. The combined string is pasted into the previously focused application in a single operation. If `prefix` and `suffix` are omitted, values are concatenated without decoration.
+
+#### `copy_text`
+Same as `paste_text` but copies to the clipboard without simulating a keystroke.
+
+**Examples:**
+
+With `prefix: "" suffix: "\n"` and output `["alice@example.com", "bob@example.com"]`:
+```
+alice@example.com
+bob@example.com
+```
+
+With `prefix: "<" suffix: ">"` and output `["alice@example.com", "bob@example.com"]`:
+```
+<alice@example.com><bob@example.com>
+```
+
+### Security boundaries
+- `script` values containing `/`, `\`, or `..` are rejected at invocation time
+- For `open_url` result action, each URL is passed through the existing scheme validation
+- For `paste_text` / `copy_text`, NUL-byte validation applies to the assembled string
+
+### Tasks
+
+#### Rust backend (`commands.rs`, `lib.rs`)
+- Add `ResultAction` enum: `OpenUrl`, `PasteText`, `CopyText` (serde: `snake_case`)
+- Add `ScriptActionConfig { script: String, arg: ArgMode, result_action: ResultAction, prefix: Option<String>, suffix: Option<String> }` and `ScriptAction(ScriptActionConfig)` variant to the `Action` enum
+- Add `pub fn run_script_values(config_dir: &Path, script_name: &str, arg: Option<&str>) -> Result<Vec<String>, String>`:
+  - Reject names containing `/`, `\`, or `..`
+  - Spawn script with optional arg; 5 s timeout
+  - Parse stdout: try `Vec<String>` JSON first; fall back to `vec![stdout.trim().to_string()]`
+- Expose as `run_script_action` Tauri command in `lib.rs`
+
+#### Frontend (`types.ts`, `+page.svelte`)
+- Add `ResultAction`, `ScriptActionConfig`, and `script_action` union member to `types.ts`
+- In `executeCommand()`, handle `script_action`:
+  - Extract suffix from input (text after phrase)
+  - Guard: if `arg: required` and no suffix, do nothing
+  - Invoke `run_script_action`; receive `Vec<String>`
+  - `open_url`: invoke `open_url` for each value individually
+  - `paste_text` / `copy_text`: assemble `values.map(v => prefix + v + suffix).join('')`; invoke the action once
+
+#### Docs
+- Add `docs/using/advanced/script-action.md` with full schema, examples, and result action behaviour
+- Update `docs/using/advanced/README.md` to link to the new page
+- Update `docs/using/configuring-commands.md` full schema to include `script_action`
+
+#### Seed example
+- Add `commands/examples/script-action-example.yaml`
+
+#### Backend tests (`commands.rs`)
+- `run_script_values` with JSON array output returns correct `Vec<String>`
+- `run_script_values` with plain text output returns single-element vec
+- Script name with path traversal is rejected
+- Non-existent script returns `Err`
+- `ScriptActionConfig` with all `arg` modes and `result_action` variants deserialises correctly
+
+### Done when
+- Selecting a `script_action` command runs the script and immediately applies the result (no intermediate list shown)
+- `open_url`: each returned URL opens in the browser
+- `paste_text` / `copy_text`: returned values are assembled with prefix/suffix and pasted/copied in one operation
+- `arg: required` commands do not execute without a suffix
+- Scripts with invalid names are rejected
+
+---
+
+## Stage 18 — Contexts: Core Model & Built-in Commands
 
 **Goal:** Introduce the concept of a *context* — a phrase prefix that is silently prepended to the user's input, letting them reach a group of related commands with less typing. This stage covers the data model, the built-in commands that manage context, and the reserved `ctx` namespace.
 
@@ -583,7 +708,7 @@ When a context `C` is active, a user's raw input `I` is matched against command 
 
 ---
 
-## Stage 18 — Contexts: UI Indicators & Tray Integration
+## Stage 19 — Contexts: UI Indicators & Tray Integration
 
 **Goal:** Make the active context visible at all times — both inside the launcher window and in the system tray — so the user always knows which context is in effect.
 
@@ -634,5 +759,6 @@ When a context `C` is active, a user's raw input `I` is matched against command 
 | 14 ✅ | Action: Static List | Keyword-triggered inline list expansion from `lists/` config subdir |
 | 15 ✅ | Action: Dynamic List | Script-backed dynamic list; three argument modes (`none` / `optional` / `required`) |
 | 16 ✅ | Docs restructure & cleanup | Per-action pages in `basic/` and `advanced/`; onboarding gaps filled; stale content removed |
-| 17 | Contexts: core model | Reserved `ctx` namespace, built-in set/reset commands, context-aware matching |
-| 18 | Contexts: UI & tray | Context chip in launcher bar, tray label, localStorage persistence |
+| 17 ✅ | Action: Script Action | On-Enter script execution; result applied via `open_url`, `paste_text`, or `copy_text`; optional arg; prefix/suffix for list results |
+| 18 | Contexts: core model | Reserved `ctx` namespace, built-in set/reset commands, context-aware matching |
+| 19 | Contexts: UI & tray | Context chip in launcher bar, tray label, localStorage persistence |

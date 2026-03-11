@@ -49,7 +49,7 @@ enabled: true            # set to false to disable without deleting the file (de
 
 # Required: one action block
 action:
-  type: open_url | paste_text | copy_text | static_list | dynamic_list
+  type: open_url | paste_text | copy_text | static_list | dynamic_list | script_action
   config:
     # --- open_url ---
     url: <string>        # any valid URL; use {param} for user-supplied input
@@ -68,6 +68,13 @@ action:
     script: <string>     # name of the script file in scripts/ (without path)
     arg: none | optional | required   # default: none
     item_action: paste_text | copy_text | open_url   # optional
+
+    # --- script_action ---
+    script: <string>     # name of the script file in scripts/ (without path)
+    arg: none | optional | required   # default: none
+    result_action: open_url | paste_text | copy_text   # required
+    prefix: <string>     # optional — prepended to each value (paste_text / copy_text only)
+    suffix: <string>     # optional — appended to each value (paste_text / copy_text only)
 ```
 
 ### Open URL example

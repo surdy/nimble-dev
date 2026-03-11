@@ -67,8 +67,32 @@ pub struct DynamicListConfig {
     pub item_action: Option<ItemAction>,
 }
 
+/// The built-in action to apply to each value returned by a `script_action` script.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "snake_case")]
+pub enum ResultAction {
+    OpenUrl,
+    PasteText,
+    CopyText,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ScriptActionConfig {
+    /// Name of the script file (without path) inside `config_dir/scripts/`.
+    pub script: String,
+    /// Controls whether the script accepts an argument from text typed after the phrase.
+    #[serde(default = "default_arg_mode")]
+    pub arg: ArgMode,
+    /// The built-in action applied to every value the script returns.
+    pub result_action: ResultAction,
+    /// Text prepended to each value when `result_action` is `paste_text` or `copy_text`.
+    pub prefix: Option<String>,
+    /// Text appended to each value when `result_action` is `paste_text` or `copy_text`.
+    pub suffix: Option<String>,
+}
+
 /// The action executed when a command is selected.
-/// Serialised as `{ type: "open_url"|"paste_text"|"copy_text"|"static_list", config: { … } }`.
+/// Serialised as `{ type: "open_url"|"paste_text"|"copy_text"|"static_list"|"dynamic_list"|"script_action", config: { … } }`.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type", content = "config", rename_all = "snake_case")]
 pub enum Action {
@@ -77,6 +101,7 @@ pub enum Action {
     CopyText(CopyTextConfig),
     StaticList(StaticListConfig),
     DynamicList(DynamicListConfig),
+    ScriptAction(ScriptActionConfig),
 }
 
 /// A single item in a named list.
@@ -213,6 +238,18 @@ action:
     arg: none
 "#,
     ),
+    (
+        "examples/script-action-example.yaml",
+        r#"phrase: paste timestamp
+title: Paste current date/time
+action:
+  type: script_action
+  config:
+    script: timestamp.sh
+    arg: none
+    result_action: paste_text
+"#,
+    ),
 ];
 
 // ── List loader ────────────────────────────────────────────────────────────────
@@ -299,6 +336,70 @@ pub fn run_script(
         title: stdout,
         subtext: None,
     }])
+}
+
+/// Run the script at `config_dir/scripts/<script_name>`, optionally passing
+/// `arg` as a positional argument. Returns a list of string values on success.
+///
+/// Script stdout is parsed as a JSON array of strings first; if that fails,
+/// the entire trimmed output is returned as a single-element vec.
+///
+/// `script_name` must be a plain filename (no path separators or `..` components).
+/// A 5-second timeout is enforced; the function returns `Err` on timeout.
+pub fn run_script_values(
+    config_dir: &Path,
+    script_name: &str,
+    arg: Option<&str>,
+) -> Result<Vec<String>, String> {
+    // Security: reject names that could escape the scripts/ directory.
+    if script_name.contains('/') || script_name.contains('\\') || script_name.contains("..") {
+        return Err(format!("Invalid script name: {script_name:?}"));
+    }
+
+    let script_path = config_dir.join("scripts").join(script_name);
+    if !script_path.exists() {
+        return Err(format!("Script not found: {}", script_path.display()));
+    }
+
+    let mut cmd = std::process::Command::new(&script_path);
+    if let Some(a) = arg {
+        cmd.arg(a);
+    }
+    cmd.stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped());
+
+    let child = cmd
+        .spawn()
+        .map_err(|e| format!("Could not spawn {:?}: {e}", script_path.display()))?;
+
+    let (tx, rx) = mpsc::channel();
+    std::thread::spawn(move || {
+        let _ = tx.send(child.wait_with_output());
+    });
+
+    let output = match rx.recv_timeout(Duration::from_secs(5)) {
+        Ok(Ok(out)) => out,
+        Ok(Err(e)) => return Err(format!("Script error: {e}")),
+        Err(_) => return Err(format!("Script {script_name:?} timed out after 5 seconds")),
+    };
+
+    if !output.stderr.is_empty() {
+        eprintln!(
+            "[ctx] script {script_name:?} stderr: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+    }
+
+    let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();
+    if stdout.is_empty() {
+        return Ok(vec![]);
+    }
+
+    // Try JSON array of strings first; fall back to treating the output as a single value.
+    if let Ok(values) = serde_json::from_str::<Vec<String>>(&stdout) {
+        return Ok(values);
+    }
+    Ok(vec![stdout])
 }
 
 // ── Command loader ─────────────────────────────────────────────────────────────
@@ -708,5 +809,117 @@ mod tests {
         let items = run_script(dir.path(), "echo-arg.sh", Some("myarg")).unwrap();
         assert_eq!(items.len(), 1);
         assert_eq!(items[0].title, "myarg");
+    }
+
+    // ── run_script_values ────────────────────────────────────────────────────────────
+
+    #[test]
+    fn run_script_values_rejects_path_traversal_dotdot() {
+        let dir = TempDir::new().unwrap();
+        assert!(run_script_values(dir.path(), "../secret.sh", None).is_err());
+    }
+
+    #[test]
+    fn run_script_values_rejects_path_with_slash() {
+        let dir = TempDir::new().unwrap();
+        assert!(run_script_values(dir.path(), "sub/file.sh", None).is_err());
+    }
+
+    #[test]
+    fn run_script_values_missing_script_returns_err() {
+        let dir = TempDir::new().unwrap();
+        fs::create_dir_all(dir.path().join("scripts")).unwrap();
+        assert!(run_script_values(dir.path(), "nonexistent.sh", None).is_err());
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn run_script_values_json_array_returns_strings() {
+        let dir = TempDir::new().unwrap();
+        make_script(
+            &dir,
+            "values.sh",
+            "#!/bin/sh\necho '[\"alpha\",\"beta\",\"gamma\"]'\n",
+        );
+        let values = run_script_values(dir.path(), "values.sh", None).unwrap();
+        assert_eq!(values, vec!["alpha", "beta", "gamma"]);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn run_script_values_plain_text_returns_single_value() {
+        let dir = TempDir::new().unwrap();
+        make_script(&dir, "plain.sh", "#!/bin/sh\necho 'hello world'\n");
+        let values = run_script_values(dir.path(), "plain.sh", None).unwrap();
+        assert_eq!(values.len(), 1);
+        assert_eq!(values[0], "hello world");
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn run_script_values_passes_arg_to_script() {
+        let dir = TempDir::new().unwrap();
+        make_script(&dir, "echo-arg.sh", "#!/bin/sh\necho \"$1\"\n");
+        let values = run_script_values(dir.path(), "echo-arg.sh", Some("myvalue")).unwrap();
+        assert_eq!(values.len(), 1);
+        assert_eq!(values[0], "myvalue");
+    }
+
+    // ── ScriptActionConfig parsing ──────────────────────────────────────────────────
+
+    #[test]
+    fn parses_script_action_command_paste() {
+        let dir = TempDir::new().unwrap();
+        write_yaml(
+            &dir,
+            "sa.yaml",
+            "phrase: paste ts\ntitle: Paste timestamp\naction:\n  type: script_action\n  config:\n    script: ts.sh\n    result_action: paste_text\n",
+        );
+        let result = load_from_dir(dir.path()).unwrap();
+        assert_eq!(result.commands.len(), 1);
+        if let Action::ScriptAction(cfg) = &result.commands[0].action {
+            assert_eq!(cfg.script, "ts.sh");
+            assert_eq!(cfg.arg, ArgMode::None);
+            assert_eq!(cfg.result_action, ResultAction::PasteText);
+            assert!(cfg.prefix.is_none());
+            assert!(cfg.suffix.is_none());
+        } else {
+            panic!("expected ScriptAction action");
+        }
+    }
+
+    #[test]
+    fn parses_script_action_command_open_url_with_arg() {
+        let dir = TempDir::new().unwrap();
+        write_yaml(
+            &dir,
+            "sa.yaml",
+            "phrase: open urls\ntitle: Open URLs\naction:\n  type: script_action\n  config:\n    script: urls.sh\n    arg: required\n    result_action: open_url\n",
+        );
+        let result = load_from_dir(dir.path()).unwrap();
+        if let Action::ScriptAction(cfg) = &result.commands[0].action {
+            assert_eq!(cfg.arg, ArgMode::Required);
+            assert_eq!(cfg.result_action, ResultAction::OpenUrl);
+        } else {
+            panic!("expected ScriptAction action");
+        }
+    }
+
+    #[test]
+    fn parses_script_action_command_copy_with_prefix_suffix() {
+        let dir = TempDir::new().unwrap();
+        write_yaml(
+            &dir,
+            "sa.yaml",
+            "phrase: copy emails\ntitle: Copy emails\naction:\n  type: script_action\n  config:\n    script: emails.sh\n    result_action: copy_text\n    prefix: \"To: \"\n    suffix: \"\\n\"\n",
+        );
+        let result = load_from_dir(dir.path()).unwrap();
+        if let Action::ScriptAction(cfg) = &result.commands[0].action {
+            assert_eq!(cfg.result_action, ResultAction::CopyText);
+            assert_eq!(cfg.prefix.as_deref(), Some("To: "));
+            assert_eq!(cfg.suffix.as_deref(), Some("\n"));
+        } else {
+            panic!("expected ScriptAction action");
+        }
     }
 }

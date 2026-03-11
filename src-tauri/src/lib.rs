@@ -218,6 +218,22 @@ fn run_dynamic_list(
     commands::run_script(&config_dir, &script_name, arg.as_deref())
 }
 
+/// Run a script from `config_dir/scripts/<script_name>` and return its output as a list of
+/// string values. Used by `script_action` commands — the launcher applies the returned values
+/// directly via its built-in open_url / paste_text / copy_text actions.
+#[tauri::command]
+fn run_script_action(
+    app: tauri::AppHandle,
+    script_name: String,
+    arg: Option<String>,
+) -> Result<Vec<String>, String> {
+    let config_dir = app
+        .path()
+        .app_config_dir()
+        .map_err(|e| e.to_string())?;
+    commands::run_script_values(&config_dir, &script_name, arg.as_deref())
+}
+
 /// Dismiss the launcher intentionally (Escape key, hotkey while visible, tray Hide).
 /// Hides the window, updates the tray, and restores focus to the previously
 /// active application. Distinct from `hide_window` which is used for blur
@@ -413,7 +429,7 @@ pub fn run() {
 
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![hide_window, show_window, dismiss_launcher, register_shortcut, list_commands, load_list, run_dynamic_list, open_url, paste_text, copy_text])
+        .invoke_handler(tauri::generate_handler![hide_window, show_window, dismiss_launcher, register_shortcut, list_commands, load_list, run_dynamic_list, run_script_action, open_url, paste_text, copy_text])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
