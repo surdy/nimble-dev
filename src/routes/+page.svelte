@@ -3,7 +3,7 @@
   import { invoke } from "@tauri-apps/api/core";
   import { getCurrentWindow, LogicalSize } from "@tauri-apps/api/window";
   import { listen } from "@tauri-apps/api/event";
-  import type { Command, CommandsPayload, DuplicateWarning, ListItem, ReservedPhraseWarning } from "$lib/types";
+  import type { AppSettings, Command, CommandsPayload, DuplicateWarning, ListItem, ReservedPhraseWarning } from "$lib/types";
 
   // ── State ──────────────────────────────────────────────────────────────
   let input = $state("");
@@ -28,6 +28,9 @@
 
   // Active context — empty string means no context is set
   let activeContext = $state("");
+
+  // Whether the context chip should be rendered (from settings.yaml)
+  let showContextChip = $state(true);
 
   // Built-in ctx commands — always present, titles reflect current activeContext
   const builtinCommands: Command[] = $derived([
@@ -263,7 +266,7 @@
     if (!capturedShortcut) return;
     try {
       await invoke("register_shortcut", { shortcut: capturedShortcut });
-      localStorage.setItem("ctx_hotkey", capturedShortcut);
+      await invoke("save_hotkey", { hotkey: capturedShortcut }).catch(() => {});
       onboarding = false;
       await appWindow.setSize(LAUNCHER_SIZE);
       // Load commands now that onboarding is complete
@@ -420,24 +423,36 @@
     let unlistenReload: (() => void) | null = null;
 
     (async () => {
-      // Migrate localStorage key from the old app name (Contexts -> Ctx)
-      const legacy = localStorage.getItem("contexts_hotkey");
-      if (legacy && !localStorage.getItem("ctx_hotkey")) {
-        localStorage.setItem("ctx_hotkey", legacy);
-        localStorage.removeItem("contexts_hotkey");
-      }
+      // Load settings from the backend (settings.yaml)
+      const appSettings = await invoke<AppSettings>("get_settings").catch(
+        () => ({ hotkey: undefined, show_context_chip: true, allow_duplicates: true } as AppSettings)
+      );
+      showContextChip = appSettings.show_context_chip;
 
       // Restore active context from the previous session.
       const savedContext = localStorage.getItem("ctx_active_context");
       if (savedContext) activeContext = savedContext;
 
-      const stored = localStorage.getItem("ctx_hotkey");
+      // One-time migration: if the backend has no hotkey saved yet, check
+      // localStorage for a legacy key written by an older version of the app.
+      let resolvedHotkey = appSettings.hotkey;
+      if (!resolvedHotkey) {
+        const legacyHotkey =
+          localStorage.getItem("ctx_hotkey") ??
+          localStorage.getItem("contexts_hotkey");
+        if (legacyHotkey) {
+          await invoke("save_hotkey", { hotkey: legacyHotkey }).catch(() => {});
+          await invoke("register_shortcut", { shortcut: legacyHotkey }).catch(() => {});
+          localStorage.removeItem("ctx_hotkey");
+          localStorage.removeItem("contexts_hotkey");
+          resolvedHotkey = legacyHotkey;
+        }
+      }
 
-      if (stored) {
-        // Re-register saved shortcut, resize to launcher bar, then hide
-        await invoke("register_shortcut", { shortcut: stored }).catch(() => {});
+      if (resolvedHotkey) {
+        // Hotkey already registered by Rust on startup (or just migrated above).
+        // Resize to launcher bar, load commands, then hide.
         await appWindow.setSize(LAUNCHER_SIZE);
-        // Load commands from the config directory
         const result = await invoke<CommandsPayload>("list_commands").catch(() => ({ commands: [], duplicates: [], reserved: [] }));
         commands = result.commands;
         warnings = result.duplicates;
@@ -445,7 +460,7 @@
         warningsDismissed = false;
         dismiss();
       } else {
-        // First launch: show onboarding at the larger size
+        // First launch (no hotkey): show onboarding at the larger size
         await appWindow.setSize(ONBOARDING_SIZE);
         onboarding = true;
         // Focus the onboarding panel so keydown events fire
@@ -525,12 +540,12 @@
         bind:this={inputEl}
         bind:value={input}
         type="text"
-        placeholder={activeContext ? "…" : "Type a command…"}
+        placeholder={activeContext && showContextChip ? "…" : "Type a command…"}
         autocomplete="off"
         autocorrect="off"
         spellcheck="false"
       />
-      {#if activeContext}
+      {#if activeContext && showContextChip}
         <div class="context-chip">
           <span class="chip-label">{activeContext}</span>
           <button

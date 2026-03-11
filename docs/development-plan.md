@@ -933,3 +933,32 @@ effective_input = raw_input                         (context empty OR raw_input 
 | 19b ✅ | Contexts: state & built-in commands | `activeContext` state; `ctx set / reset / show` built-in commands in frontend results list |
 | 19c ✅ | Contexts: context-aware matching | `effectiveInput = raw_input + " " + context`; filtering, list triggers, and param extraction use effective input |
 | 20 ✅ | Contexts: UI & tray | Context chip in launcher bar, tray label, localStorage persistence |
+| 21 ✅ | Settings file | `settings.yaml` for `hotkey`, `show_context_chip`, `allow_duplicates`; hotkey migrated from localStorage |
+
+---
+
+## Stage 21 — Settings File ✅
+
+**Goal:** Persist application settings to a `settings.yaml` file in the app config directory, replacing the old `localStorage` hotkey storage. Gives users a human-editable config for the global hotkey, the context chip visibility, and deduplication behaviour.
+
+### Tasks
+
+- Add `settings.rs` with `AppSettings { hotkey, show_context_chip, allow_duplicates }`, `load()`, and `save()` helpers.
+- `allow_duplicates` defaults to `true` (no dedup). When `false`, first-file-wins deduplication is applied and `DuplicateWarning`s are emitted.
+- Update `commands::load_from_dir` to accept `allow_duplicates: bool`.
+- Update `watcher::start` to accept and forward `allow_duplicates`.
+- Add `SettingsState` managed state in `lib.rs`; load settings in `setup()` and register the hotkey immediately if present.
+- Add Tauri commands `get_settings` and `save_hotkey`.
+- `list_commands` reads `allow_duplicates` from `SettingsState`.
+- Frontend: `onMount` calls `get_settings` instead of reading `localStorage`; one-time migration from old localStorage keys to `settings.yaml`.
+- `confirmShortcut` calls `save_hotkey` instead of `localStorage.setItem`.
+- `show_context_chip` gates the context chip and placeholder text.
+- Add `example-config/settings.yaml` with commented documentation.
+- Install live example to `~/Library/Application Support/com.ctx.launcher/settings.yaml`.
+
+### Done when ✅
+- The global hotkey is stored in `settings.yaml`, not `localStorage`
+- Existing users retain their hotkey after upgrade (one-time migration on first launch)
+- `allow_duplicates: false` enables dedup warnings; changing it takes effect on next relaunch
+- `show_context_chip: false` hides the chip and restores the normal placeholder
+

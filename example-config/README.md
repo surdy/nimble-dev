@@ -11,6 +11,7 @@ This directory mirrors the layout of the Ctx config directory on disk. Copy its 
 
 ```
 example-config/
+├── settings.yaml           # application settings (hotkey, chip, dedup)
 ├── commands/
 │   └── examples/          # one YAML file per command
 │       ├── open-google.yaml

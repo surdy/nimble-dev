@@ -97,3 +97,10 @@ export interface CommandsPayload {
   /** Commands rejected because their phrase starts with the reserved `ctx` prefix. */
   reserved: ReservedPhraseWarning[];
 }
+
+/** Application settings loaded from `settings.yaml` in the config directory. */
+export interface AppSettings {
+  hotkey?: string;
+  show_context_chip: boolean;
+  allow_duplicates: boolean;
+}

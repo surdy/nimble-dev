@@ -1,4 +1,5 @@
 mod commands;
+mod settings;
 mod watcher;
 
 use std::sync::{Arc, Mutex};
@@ -147,6 +148,9 @@ struct TrayMenuState {
     show_hide_item: Arc<MenuItem<tauri::Wry>>,
 }
 
+/// Persisted application settings, loaded once at startup.
+struct SettingsState(Mutex<settings::AppSettings>);
+
 /// Update the tray Show/Hide item text to reflect current window visibility.
 fn sync_tray(app: &tauri::AppHandle, visible: bool) {
     let text = if visible { "Hide" } else { "Show" };
@@ -182,6 +186,24 @@ fn show_window(app: tauri::AppHandle, window: tauri::Window) {
     sync_tray(&app, true);
 }
 
+/// Return the current application settings.
+#[tauri::command]
+fn get_settings(app: tauri::AppHandle) -> settings::AppSettings {
+    app.state::<SettingsState>().0.lock().unwrap().clone()
+}
+
+/// Persist a new hotkey to `settings.yaml` and update the in-memory settings.
+/// The caller is responsible for also calling `register_shortcut` to activate
+/// the shortcut for the current session.
+#[tauri::command]
+fn save_hotkey(app: tauri::AppHandle, hotkey: String) -> Result<(), String> {
+    let config_dir = app.path().app_config_dir().map_err(|e| e.to_string())?;
+    let binding = app.state::<SettingsState>();
+    let mut state = binding.0.lock().unwrap();
+    state.hotkey = Some(hotkey);
+    settings::save(&config_dir, &state)
+}
+
 /// Return the full list of commands loaded from the user config directory,
 /// along with any duplicate warnings detected during loading.
 #[tauri::command]
@@ -190,7 +212,8 @@ fn list_commands(app: tauri::AppHandle) -> Result<commands::LoadResult, String> 
         .path()
         .app_config_dir()
         .map_err(|e| e.to_string())?;
-    commands::load_from_dir(&config_dir.join("commands"))
+    let allow_duplicates = app.state::<SettingsState>().0.lock().unwrap().allow_duplicates;
+    commands::load_from_dir(&config_dir.join("commands"), allow_duplicates)
 }
 
 /// Load a named list from `config_dir/lists/<list_name>.yaml` and return its items.
@@ -248,14 +271,14 @@ fn dismiss_launcher(app: tauri::AppHandle, window: tauri::Window) {
     }
 }
 
-/// Register (or replace) the global hotkey that summons the launcher.
-#[tauri::command]
-fn register_shortcut(app: tauri::AppHandle, shortcut: String) -> Result<(), String> {
+/// Register (or replace) the global hotkey — shared logic used by both the
+/// Tauri command (onboarding) and the startup path (settings.yaml).
+fn do_register_shortcut(app: &tauri::AppHandle, shortcut: &str) -> Result<(), String> {
     app.global_shortcut()
         .unregister_all()
         .map_err(|e| e.to_string())?;
 
-    let shortcut_str = shortcut.clone();
+    let shortcut_str = shortcut.to_string();
     app.global_shortcut()
         .on_shortcut(shortcut_str.as_str(), move |app, _shortcut, event| {
             if event.state() == ShortcutState::Pressed {
@@ -284,6 +307,12 @@ fn register_shortcut(app: tauri::AppHandle, shortcut: String) -> Result<(), Stri
         .map_err(|e| e.to_string())?;
 
     Ok(())
+}
+
+/// Register (or replace) the global hotkey that summons the launcher.
+#[tauri::command]
+fn register_shortcut(app: tauri::AppHandle, shortcut: String) -> Result<(), String> {
+    do_register_shortcut(&app, &shortcut)
 }
 
 /// Paste pre-defined plain text into the application that had focus before
@@ -384,12 +413,24 @@ pub fn run() {
                 show_hide_item: Arc::new(show_hide),
             });
 
+            // Load settings from config dir and manage in app state.
+            // The hotkey (if set) is registered here so it is active immediately
+            // on startup without waiting for the frontend to load.
+            let config_dir = app.path().app_config_dir().map_err(|e| e.to_string())?;
+            let loaded_settings = settings::load(&config_dir);
+            if let Some(ref hotkey) = loaded_settings.hotkey {
+                if let Err(e) = do_register_shortcut(app.handle(), hotkey) {
+                    eprintln!("[ctx] could not register hotkey from settings: {e}");
+                }
+            }
+            let allow_duplicates = loaded_settings.allow_duplicates;
+            app.manage(SettingsState(Mutex::new(loaded_settings)));
+
             // Manage previous-app tracking for paste_text focus restoration
             app.manage(PreviousApp(Mutex::new(None)));
 
             // Start watching the commands subdirectory for live command reloads
-            let config_dir = app.path().app_config_dir().map_err(|e| e.to_string())?;
-            watcher::start(app.handle().clone(), config_dir.join("commands"));
+            watcher::start(app.handle().clone(), config_dir.join("commands"), allow_duplicates);
 
             let icon = app
                 .default_window_icon()
@@ -429,7 +470,7 @@ pub fn run() {
 
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![hide_window, show_window, dismiss_launcher, register_shortcut, list_commands, load_list, run_dynamic_list, run_script_action, open_url, paste_text, copy_text])
+        .invoke_handler(tauri::generate_handler![hide_window, show_window, dismiss_launcher, register_shortcut, get_settings, save_hotkey, list_commands, load_list, run_dynamic_list, run_script_action, open_url, paste_text, copy_text])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

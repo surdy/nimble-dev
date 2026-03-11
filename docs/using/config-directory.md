@@ -18,6 +18,7 @@ Ctx stores all per-user data in a single platform-specific config directory. The
 
 ```
 com.ctx.launcher/
+  settings.yaml     ← application settings (hotkey, show_context_chip, allow_duplicates)
   commands/         ← YAML command files (watched and hot-reloaded by Ctx)
     examples/       ← seeded on first launch if commands/ is empty
     …               ← your own files and subdirectories
@@ -26,6 +27,29 @@ com.ctx.launcher/
 ```
 
 Each subdirectory holds a distinct type of data. New subdirectories will be introduced in future releases as new features are added; each will be documented in this file.
+
+---
+
+## `settings.yaml`
+
+The `settings.yaml` file at the root of the config directory controls application-level behaviour. It is created automatically the first time you run Ctx.
+
+```yaml
+# hotkey: Super+Space   # uncomment and set your preferred global shortcut
+
+# Show the active-context chip inside the launcher bar (default: true)
+show_context_chip: true
+
+# When false, the first file that defines a phrase wins and duplicate
+# phrases in other files generate warnings. Default is true (all loaded).
+allow_duplicates: true
+```
+
+**`hotkey`** — The global shortcut that summons the launcher from anywhere. You normally set this via the onboarding screen; editing it here manually is possible but requires a restart. Deleting this line triggers the onboarding screen on the next launch.
+
+**`show_context_chip`** — When `true` (default), a pill badge showing the active context is displayed inside the launcher bar alongside a clear button. Set to `false` to hide it. Takes effect on next relaunch.
+
+**`allow_duplicates`** — When `true` (default), all command files are loaded regardless of phrase conflicts. Set to `false` to enable first-file-wins deduplication and surface warnings for any conflicting phrases. Takes effect on next relaunch.
 
 ---
 

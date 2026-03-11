@@ -25,7 +25,7 @@ echo '[{"title":"Hello from a script","subtext":"Edit scripts/hello.sh to custom
 ///
 /// The watcher runs for the lifetime of the app — Tauri will clean up the
 /// thread when the process exits.
-pub fn start(app: AppHandle, commands_dir: PathBuf) {
+pub fn start(app: AppHandle, commands_dir: PathBuf, allow_duplicates: bool) {
     thread::spawn(move || {
         // Channel for raw notify events
         let (tx, rx) = mpsc::channel();
@@ -121,7 +121,7 @@ pub fn start(app: AppHandle, commands_dir: PathBuf) {
             }
 
             // Reload commands and emit to frontend
-            match commands::load_from_dir(&commands_dir) {
+            match commands::load_from_dir(&commands_dir, allow_duplicates) {
                 Ok(result) => {
                     if let Err(e) = app.emit(COMMANDS_RELOADED_EVENT, &result) {
                         eprintln!("[ctx] could not emit reload event: {e}");
