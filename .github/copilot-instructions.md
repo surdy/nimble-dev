@@ -28,7 +28,7 @@ All system actions the launcher can perform:
 - Scripts are sandboxed: they do **not** have permission to modify the system or trigger actions; that responsibility belongs solely to the launcher's built-in layer
 
 ## Development Workflow Rules
-1. **Commit after every meaningful step** with a clear, descriptive commit message. After every commit, run `cargo test --manifest-path src-tauri/Cargo.toml` and confirm all tests pass before proceeding.
+1. **Commit and push after every meaningful step** with a clear, descriptive commit message. After every commit, run `cargo test --manifest-path src-tauri/Cargo.toml` and confirm all tests pass, then run `git push` to publish the commit to the remote.
 2. **Add backend tests for every new Rust function**: whenever a new pure helper function or a new action type is added to the Rust backend, add corresponding `#[cfg(test)]` unit tests covering the happy path, edge cases, and expected error conditions. Tests for pure helpers go in `src-tauri/src/lib.rs`; tests for command loading / YAML parsing go in `src-tauri/src/commands.rs`.
 3. **Ask questions instead of making assumptions** whenever requirements are ambiguous
 4. **Keep README.md and user-facing documentation up to date** as features are built
