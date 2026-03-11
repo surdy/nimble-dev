@@ -1,6 +1,6 @@
 # Development Plan
 
-Iterative implementation plan for Ctx, from bare minimum working shell to full feature set. Each stage produces a working, committable increment.
+Iterative implementation plan for Context Actions, from bare minimum working shell to full feature set. Each stage produces a working, committable increment.
 
 ---
 
@@ -42,9 +42,9 @@ Iterative implementation plan for Ctx, from bare minimum working shell to full f
   }
   ```
 - User commands are stored as individual YAML files in the platform config directory (one command per file):
-  - **macOS**: `~/Library/Application Support/com.ctx.launcher/`
-  - **Linux**: `$XDG_CONFIG_HOME/com.ctx.launcher/` (falls back to `~/.config/com.ctx.launcher/`)
-  - **Windows**: `%APPDATA%\com.ctx.launcher\`
+  - **macOS**: `~/Library/Application Support/ContextActions/`
+  - **Linux**: `$XDG_CONFIG_HOME/ContextActions/` (falls back to `~/.config/ContextActions/`)
+  - **Windows**: `%APPDATA%\ContextActions\`
   - Files are discovered **recursively** — commands can be organised into subdirectories
 - Seed an `examples/` subdirectory with 5 individual command files on first launch if no YAML files exist
 - Parse the YAML file into typed Rust structs (`Command`, `Action`, `OpenUrlConfig`, `PasteTextConfig`)
@@ -203,35 +203,35 @@ action:
 
 ---
 
-## Stage 10 — App Rename: Contexts → Ctx ✅
+## Stage 10 — App Rename: Contexts → Context Actions ✅
 
-**Goal:** Rename the application from *Contexts* to *Ctx* everywhere — product name, bundle identifier, config directory, localStorage keys, log prefixes, and all documentation. This is a breaking change to the config directory path; existing users must migrate their command files.
+**Goal:** Rename the application from *Contexts* to *Context Actions* everywhere — product name, bundle identifier, config directory, localStorage keys, log prefixes, and all documentation. This is a breaking change to the config directory path; existing users must migrate their command files.
 
 ### Changes
 
 | Location | Before | After |
 |----------|--------|-------|
-| Product name (`tauri.conf.json`) | `Contexts` | `Ctx` |
-| Bundle identifier | `com.contexts.launcher` | `com.ctx.launcher` |
-| Cargo package name | `contexts-launcher` | `ctx-launcher` |
+| Product name (`tauri.conf.json`) | `Contexts` | `Context Actions` |
+| Bundle identifier | `com.contexts.launcher` | `ContextActions` |
+| Cargo package name | `contexts-launcher` | `context-actions` |
 | Cargo lib name | `contexts_launcher_lib` | `ctx_launcher_lib` |
-| npm package name | `contexts-launcher` | `ctx-launcher` |
-| Config dir (macOS) | `~/Library/Application Support/com.contexts.launcher/` | `~/Library/Application Support/com.ctx.launcher/` |
+| npm package name | `contexts-launcher` | `context-actions` |
+| Config dir (macOS) | `~/Library/Application Support/com.contexts.launcher/` | `~/Library/Application Support/ContextActions/` |
 | localStorage hotkey key | `contexts_hotkey` | `ctx_hotkey` |
 | Log prefix | `[contexts]` | `[ctx]` |
-| Onboarding title | `Welcome to Contexts` | `Welcome to Ctx` |
-| Tray menu items | `Contexts vX.Y.Z` / `Quit Contexts` | `Ctx vX.Y.Z` / `Quit Ctx` |
+| Onboarding title | `Welcome to Contexts` | `Welcome to Context Actions` |
+| Tray menu items | `Contexts vX.Y.Z` / `Quit Contexts` | `Context Actions vX.Y.Z` / `Quit Context Actions` |
 
 ### Migration note
 Because the bundle identifier changes, Tauri will use a new config directory. Users upgrading from the *Contexts* build must manually move their command files:
 ```bash
 mv ~/Library/Application\ Support/com.contexts.launcher \
-   ~/Library/Application\ Support/com.ctx.launcher
+   ~/Library/Application\ Support/ContextActions
 ```
 
 ### Done when ✅
 - App builds and runs under the new name and identifier
-- Config directory is `com.ctx.launcher`; command files load correctly
+- Config directory is `ContextActions`; command files load correctly
 - No references to the old name remain in source, config, or docs
 
 ---
@@ -517,7 +517,7 @@ Works identically to `static_list`: if omitted, selecting an item dismisses the 
 - Added a "Your first command" section with a minimal copy-paste `open_url` example
 - Renamed "Getting Started" → "Building from source" to distinguish end-user and developer paths
 - Removed stale `plugins/` entry from the Project Structure block
-- Updated the Using Ctx table to reference the new `basic/README.md` and `advanced/README.md`
+- Updated the Using Context Actions table to reference the new `basic/README.md` and `advanced/README.md`
 
 #### First-run guide
 - Added a "Your first command" section: config directory path, a worked YAML example, and what to expect when typing the phrase
@@ -740,7 +740,7 @@ This is a pure backend change. No frontend modifications are needed yet.
 #### `commands.rs` — rejection logic
 - In `load_from_dir`, after successfully parsing a `Command`, check whether its phrase starts with `ctx` (case-insensitive), optionally followed by a space or end of string.
 - If so, skip the command and push a `ReservedPhraseWarning` instead of adding it to `commands`.
-- The check must be case-insensitive: `"Ctx"`, `"CTX"`, `"ctx"` are all rejected.
+- The check must be case-insensitive: `"Context Actions"`, `"CTX"`, `"ctx"` are all rejected.
 
 #### `types.ts` — new warning interface
 - Add `ReservedPhraseWarning { phrase: string; file: string }` interface.
@@ -892,9 +892,9 @@ effective_input = raw_input                         (context empty OR raw_input 
 - Account for the chip row height in the dynamic window-resize `$effect` when a context is active and the chip is shown.
 
 #### System tray
-- ~~When a context is active, append the context name to the tray tooltip / app-info menu item, e.g. `"Ctx — reddit"`.~~
-- ~~When no context is active, show the default `"Ctx vX.Y.Z"` label.~~
-- The tray is not updated when the context changes; it always shows `"Ctx vX.Y.Z"`.
+- ~~When a context is active, append the context name to the tray tooltip / app-info menu item, e.g. `"Context Actions — reddit"`.~~
+- ~~When no context is active, show the default `"Context Actions vX.Y.Z"` label.~~
+- The tray is not updated when the context changes; it always shows `"Context Actions vX.Y.Z"`.
 
 #### Persistence
 - Active context is stored in `localStorage` under the key `ctx_active_context` so it survives launcher restarts.
@@ -920,7 +920,7 @@ effective_input = raw_input                         (context empty OR raw_input 
 | 7 ✅ | Live config reload | Hot-reload commands when `commands.yaml` is edited |
 | 8 ✅ | Bug fixes | Fix issues found during real-world use of stages 1–7 |
 | 9 ✅ | Enhancements | Quality-of-life improvements to the core command system |
-| 10 ✅ | App rename | Rename Contexts → Ctx; update identifier, config dir, localStorage keys |
+| 10 ✅ | App rename | Rename Contexts → Context Actions; update identifier, config dir, localStorage keys |
 | 11 ✅ | Documentation | User-facing docs: first run, core actions, tips & tricks, configuration, duplicates |
 | 12 ✅ | Action: Copy Text & Config Directory Restructure | `copy_text` action; commands moved to `commands/` subdir |
 | 13 ✅ | Backend testing | `cargo test` suite: YAML parsing, dedup, URL validation, param encoding, text sanitisation |
@@ -954,7 +954,7 @@ effective_input = raw_input                         (context empty OR raw_input 
 - `confirmShortcut` calls `save_hotkey` instead of `localStorage.setItem`.
 - `show_context_chip` gates the context chip and placeholder text.
 - Add `example-config/settings.yaml` with commented documentation.
-- Install live example to `~/Library/Application Support/com.ctx.launcher/settings.yaml`.
+- Install live example to `~/Library/Application Support/ContextActions/settings.yaml`.
 
 ### Done when ✅
 - The global hotkey is stored in `settings.yaml`, not `localStorage`

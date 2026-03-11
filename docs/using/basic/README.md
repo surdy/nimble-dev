@@ -1,6 +1,6 @@
 # Basic Functionality
 
-Ctx provides three built-in actions for everyday use. Each is configured in a YAML file placed in your `commands/` directory.
+Context Actions provides three built-in actions for everyday use. Each is configured in a YAML file placed in your `commands/` directory.
 
 | Action | What it does |
 |--------|-------------|

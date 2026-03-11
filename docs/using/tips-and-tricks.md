@@ -1,6 +1,6 @@
 # Tips & Tricks
 
-Ctx's built-in actions are deceptively powerful. Here are practical patterns that let you do a lot more than might be obvious at first glance.
+Context Actions's built-in actions are deceptively powerful. Here are practical patterns that let you do a lot more than might be obvious at first glance.
 
 ---
 
@@ -232,7 +232,7 @@ action:
       notify the sender immediately and delete it from your system.
 ```
 
-> **Tip:** organise related snippet files into subdirectories inside your config directory (e.g. `snippets/`, `emails/`, `code/`). Ctx discovers YAML files recursively, so any directory layout works.
+> **Tip:** organise related snippet files into subdirectories inside your config directory (e.g. `snippets/`, `emails/`, `code/`). Context Actions discovers YAML files recursively, so any directory layout works.
 
 ---
 

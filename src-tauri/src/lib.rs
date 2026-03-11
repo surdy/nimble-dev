@@ -397,14 +397,14 @@ pub fn run() {
             let version = app.package_info().version.to_string();
             let app_info = MenuItem::new(
                 app,
-                format!("Ctx v{}", version),
+                format!("Context Actions v{}", version),
                 false,
                 None::<&str>,
             )?;
             let sep1 = PredefinedMenuItem::separator(app)?;
             let show_hide = MenuItem::with_id(app, "show_hide", "Show", true, None::<&str>)?;
             let sep2 = PredefinedMenuItem::separator(app)?;
-            let quit = MenuItem::with_id(app, "quit", "Quit Ctx", true, None::<&str>)?;
+            let quit = MenuItem::with_id(app, "quit", "Quit Context Actions", true, None::<&str>)?;
 
             let menu = Menu::with_items(app, &[&app_info, &sep1, &show_hide, &sep2, &quit])?;
 

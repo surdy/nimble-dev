@@ -1,4 +1,4 @@
-# Ctx Launcher — Roadmap
+# Context Actions — Roadmap
 
 ---
 
@@ -35,7 +35,7 @@
 ### Distribution & Updates
 - [ ] Add license — choose and add an open-source license (e.g. MIT or Apache 2.0)
 - [ ] GitHub Actions CI — automated builds for macOS, Windows, and Linux on every push
-- [ ] Homebrew tap — `brew install ctx-launcher` via a dedicated tap repository
+- [ ] Homebrew tap — `brew install context-actions` via a dedicated tap repository
 - [ ] Update notifications — show an indicator when a newer version is available
 - [ ] Beta channel — opt-in channel for pre-release builds
 - [ ] `ctx update` command — trigger an in-app update from the launcher itself

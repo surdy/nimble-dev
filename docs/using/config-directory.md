@@ -1,6 +1,6 @@
 # Config Directory Structure
 
-Ctx stores all per-user data in a single platform-specific config directory. The directory and its subdirectories are created automatically on first launch.
+Context Actions stores all per-user data in a single platform-specific config directory. The directory and its subdirectories are created automatically on first launch.
 
 ---
 
@@ -8,18 +8,18 @@ Ctx stores all per-user data in a single platform-specific config directory. The
 
 | Platform | Path |
 |----------|------|
-| macOS | `~/Library/Application Support/com.ctx.launcher/` |
-| Linux | `$XDG_CONFIG_HOME/com.ctx.launcher/` (falls back to `~/.config/com.ctx.launcher/`) |
-| Windows | `%APPDATA%\com.ctx.launcher\` |
+| macOS | `~/Library/Application Support/ContextActions/` |
+| Linux | `$XDG_CONFIG_HOME/ContextActions/` (falls back to `~/.config/ContextActions/`) |
+| Windows | `%APPDATA%\ContextActions\` |
 
 ---
 
 ## Subdirectory layout
 
 ```
-com.ctx.launcher/
+ContextActions/
   settings.yaml     ← application settings (hotkey, show_context_chip, allow_duplicates)
-  commands/         ← YAML command files (watched and hot-reloaded by Ctx)
+  commands/         ← YAML command files (watched and hot-reloaded by Context Actions)
     examples/       ← seeded on first launch if commands/ is empty
     …               ← your own files and subdirectories
   lists/            ← named list files for the static_list action type
@@ -32,7 +32,7 @@ Each subdirectory holds a distinct type of data. New subdirectories will be intr
 
 ## `settings.yaml`
 
-The `settings.yaml` file at the root of the config directory controls application-level behaviour. It is created automatically the first time you run Ctx.
+The `settings.yaml` file at the root of the config directory controls application-level behaviour. It is created automatically the first time you run Context Actions.
 
 ```yaml
 # hotkey: Super+Space   # uncomment and set your preferred global shortcut
@@ -55,7 +55,7 @@ allow_duplicates: true
 
 ## `commands/`
 
-Contains all YAML command files. Ctx watches this subdirectory recursively and reloads commands within ~300 ms whenever a file is added, changed, or removed — no restart required.
+Contains all YAML command files. Context Actions watches this subdirectory recursively and reloads commands within ~300 ms whenever a file is added, changed, or removed — no restart required.
 
 You can organise your command files into any subdir structure you like:
 
@@ -95,7 +95,7 @@ For the full list file schema and behaviour details see [Advanced — Static Lis
 
 ## `scripts/`
 
-Contains executable scripts used by the `dynamic_list` action type. Scripts can be any executable file — shell scripts, Python programs, compiled binaries, etc. Each script writes its output to stdout and Ctx parses the result.
+Contains executable scripts used by the `dynamic_list` action type. Scripts can be any executable file — shell scripts, Python programs, compiled binaries, etc. Each script writes its output to stdout and Context Actions parses the result.
 
 File names (without extension) are how commands reference their script:
 ```yaml
@@ -109,7 +109,7 @@ action:
 - **Plain text** — the entire stdout is used as the title of a single result item.
 - **JSON array** — an array of `{ "title": "...", "subtext": "..." }` objects (subtext optional).
 
-A seed example (`scripts/hello.sh`) is created automatically on first launch. Ctx watches this directory and re-runs the active script when any file in `scripts/` changes, so edits take effect immediately.
+A seed example (`scripts/hello.sh`) is created automatically on first launch. Context Actions watches this directory and re-runs the active script when any file in `scripts/` changes, so edits take effect immediately.
 
 For full details and examples see [Script Extensions](advanced/script-extensions.md).
 

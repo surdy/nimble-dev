@@ -7,8 +7,8 @@ Pastes a predefined block of text into whichever application had focus before yo
 ## How it works
 
 1. You invoke the launcher and select a `paste_text` command
-2. Ctx hides the launcher window and restores focus to your previous app
-3. After a brief delay (80 ms), Ctx writes your configured text to the clipboard and simulates `⌘V`
+2. Context Actions hides the launcher window and restores focus to your previous app
+3. After a brief delay (80 ms), Context Actions writes your configured text to the clipboard and simulates `⌘V`
 4. The text appears in your previously focused app as if you had pasted it yourself
 
 ---
@@ -31,4 +31,4 @@ action:
 
 ## macOS Accessibility permission
 
-Ctx uses macOS Accessibility APIs to simulate the paste keystroke. The first time you run a `paste_text` command, macOS will prompt you to grant Accessibility access in **System Settings → Privacy & Security → Accessibility**. Without this permission the keystroke simulation is blocked and the text will not be pasted.
+Context Actions uses macOS Accessibility APIs to simulate the paste keystroke. The first time you run a `paste_text` command, macOS will prompt you to grant Accessibility access in **System Settings → Privacy & Security → Accessibility**. Without this permission the keystroke simulation is blocked and the text will not be pasted.

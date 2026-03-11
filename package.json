@@ -1,5 +1,5 @@
 {
-  "name": "ctx-launcher",
+  "name": "context-actions",
   "version": "0.1.0",
   "description": "A cross-platform command-driven desktop launcher",
   "type": "module",

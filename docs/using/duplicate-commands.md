@@ -1,6 +1,6 @@
 # Duplicate Commands
 
-Ctx detects when two or more command files define the same `phrase` and handles the conflict automatically rather than silently picking one.
+Context Actions detects when two or more command files define the same `phrase` and handles the conflict automatically rather than silently picking one.
 
 ---
 
@@ -24,7 +24,7 @@ title: Open GitHub (work)
 
 ## How duplicates are resolved
 
-When duplicates are found, Ctx keeps the command from the **oldest file** (by last-modified time) and ignores all later definitions of the same phrase. If two files share the same modification time, the file with the lexicographically earlier path is kept.
+When duplicates are found, Context Actions keeps the command from the **oldest file** (by last-modified time) and ignores all later definitions of the same phrase. If two files share the same modification time, the file with the lexicographically earlier path is kept.
 
 This policy ensures that the outcome is deterministic and stable: whichever version of the phrase you created first wins, and adding a new file never silently overwrites an existing command.
 
@@ -58,7 +58,7 @@ After saving or deleting, the live-reload watcher picks up the change within ~30
 
 ## Identifying which files conflict
 
-The duplicate warning in the UI currently shows the count. To identify the specific files, check the Ctx log output (visible in the terminal if you launched Ctx from a shell, or in the Tauri dev console). Each ignored duplicate logs a message like:
+The duplicate warning in the UI currently shows the count. To identify the specific files, check the Context Actions log output (visible in the terminal if you launched Context Actions from a shell, or in the Tauri dev console). Each ignored duplicate logs a message like:
 
 ```
 [ctx] duplicate phrase "open github": keeping snippets/open-github.yaml, ignoring work/open-github.yaml

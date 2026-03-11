@@ -34,7 +34,7 @@ date
 ```
 
 ```sh
-chmod +x ~/Library/Application\ Support/com.ctx.launcher/scripts/timestamp.sh
+chmod +x ~/Library/Application\ Support/ContextActions/scripts/timestamp.sh
 ```
 
 Create `commands/paste-timestamp.yaml`:
@@ -81,7 +81,7 @@ Type `open repo myorg/myrepo` → `get-repo-url.sh myorg/myrepo` → opens the r
 
 ## Script output format
 
-The script writes to **stdout**. Ctx accepts two formats:
+The script writes to **stdout**. Context Actions accepts two formats:
 
 | Format | Example | Interpreted as |
 |--------|---------|----------------|
