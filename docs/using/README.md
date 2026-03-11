@@ -17,7 +17,7 @@ Welcome to the Context Actions user documentation. Use the guides below to get u
 | Guide | Description |
 |-------|-------------|
 | [Basic functionality](basic/README.md) | Open URL, Paste Text, Copy Text |
-| [Advanced features](advanced/README.md) | Static List, Dynamic List, Script Extensions |
+| [Advanced features](advanced/README.md) | Static List, Dynamic List, Writing Scripts, Contexts |
 
 ## Reference
 

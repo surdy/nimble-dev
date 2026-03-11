@@ -1,4 +1,4 @@
-# Contexts Launcher — GitHub Copilot Instructions
+# Context Actions — GitHub Copilot Instructions
 
 ## Project Overview
 Contexts is a cross-platform desktop launcher (similar to Alfred, Spotlight, Raycast) that is primarily command-driven. Users type multi-word phrase commands and the launcher shows partial matches with suggested completions in real time.
@@ -35,7 +35,7 @@ All system actions the launcher can perform:
 5. **Do not write code** until requirements for that phase/feature are clearly understood
 6. **Classify new functionality as basic or advanced before writing docs.** Basic actions are self-contained commands a non-technical user can set up in under a minute (`open_url`, `paste_text`, `copy_text`). Advanced features require additional files, scripts, or configuration knowledge (`static_list`, `dynamic_list`). If it is unclear which category a new feature belongs to, ask the user before placing it. Once classified, add a dedicated page in the appropriate folder (`docs/using/basic/` or `docs/using/advanced/`) covering the YAML schema, a minimal example, any parameter behaviour, and platform-specific requirements. Update the corresponding landing page (`docs/using/basic/README.md` or `docs/using/advanced/README.md`) to link to the new page.
 7. **Keep `docs/using/config-directory.md` up to date** whenever a new subdirectory is introduced in the config directory (e.g. for scripts, settings, or any future data type). Add a dedicated section describing the subdirectory's purpose and any relevant file format notes.
-8. **Keep `docs/using/advanced/script-extensions.md` up to date** whenever the `dynamic_list` script interface changes (output format, arg modes, security boundaries, or timeout behaviour). Also keep `docs/using/configuring-commands.md` current with the full YAML schema for all action types.
+8. **Keep `docs/using/advanced/writing-scripts.md` up to date** whenever the `dynamic_list` script interface changes (output format, arg modes, security boundaries, or timeout behaviour). Also keep `docs/using/configuring-commands.md` current with the full YAML schema for all action types.
 9. **Update `example-config/` for every new action type or config feature.** Add at least one representative command YAML (and any required list/script files) to `example-config/` so the repository always contains a copy-pasteable reference that exercises every supported capability. Update `example-config/README.md` to document the new entry.
 10. **Install live examples in the local app config directory after every new feature.** After implementing a new action type or config feature, add a working example directly to `~/Library/Application Support/ContextActions/` (macOS) so it is immediately testable in the running app. Mirror the same files that were added to `example-config/`.
 

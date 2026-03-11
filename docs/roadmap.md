@@ -53,3 +53,6 @@
 
 ### Actions
 - [ ] Action: `transform_text` — reads the current selection from the previously focused app, applies a user-defined transformation (e.g. uppercase, slugify, wrap in Markdown, call a script), then pastes or copies the result via a standard built-in action
+
+### Community
+- [ ] Contributing guide — CONTRIBUTING.md covering how to set up a dev environment, the branching model, and how to submit a pull request

@@ -85,7 +85,7 @@ cargo --version   # e.g. cargo 1.94.0
 
 ```bash
 git clone <repository-url>
-cd contexts-launcher
+cd context-actions
 ```
 
 ---

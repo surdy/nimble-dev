@@ -68,7 +68,7 @@ action:
 | `optional` | Exact match (immediately) **or** phrase + space + suffix | No arg on exact match; suffix when present |
 | `required` | Only when a non-empty suffix follows the phrase | The typed suffix as its first argument |
 
-For `optional` and `required` modes the script is re-invoked as the user types, with a 200 ms debounce to prevent excessive calls. For how to use arguments inside a script, see [Script Extensions](script-extensions.md#accepting-an-argument).
+For `optional` and `required` modes the script is re-invoked as the user types, with a 200 ms debounce to prevent excessive calls. For how to use arguments inside a script, see [Writing Scripts](writing-scripts.md#accepting-an-argument).
 
 ---
 
@@ -96,4 +96,4 @@ When an item is selected, Context Actions uses the item's **`subtext`** as the v
 | Select an item | Performs `item_action`, or dismisses if absent |
 | Script times out (> 5 s) | Empty list shown; no error surfaced to user |
 
-For how to write scripts and advanced examples see [Script Extensions](script-extensions.md).
+For how to write scripts and advanced examples see [Writing Scripts](writing-scripts.md).

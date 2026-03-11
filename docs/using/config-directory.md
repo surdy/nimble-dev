@@ -111,10 +111,10 @@ action:
 
 A seed example (`scripts/hello.sh`) is created automatically on first launch. Context Actions watches this directory and re-runs the active script when any file in `scripts/` changes, so edits take effect immediately.
 
-For full details and examples see [Script Extensions](advanced/script-extensions.md).
+For full details and examples see [Writing Scripts](advanced/writing-scripts.md).
 
 ---
 
 - [Configuring Commands](configuring-commands.md) — YAML schema, enable/disable, live reload
 - [Basic Functionality](basic/README.md) — Open URL, Paste Text, Copy Text
-- [Advanced Features](advanced/README.md) — Static List, Dynamic List, Script Extensions
+- [Advanced Features](advanced/README.md) — Static List, Dynamic List, Writing Scripts

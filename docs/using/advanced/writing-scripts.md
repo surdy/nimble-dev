@@ -1,6 +1,6 @@
-# Script Extensions
+# Writing Scripts
 
-The `dynamic_list` action lets any command run an external script and display the results as an inline list — the same way `static_list` shows items from a YAML file, but powered by code you write.
+The `dynamic_list` and `script_action` actions can run any executable you place in the `scripts/` directory of your config folder.
 
 ---
 

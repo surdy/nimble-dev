@@ -40,7 +40,7 @@ When you invoke the launcher and start typing, Context Actions shows partial mat
 
 ### macOS
 
-1. Download the latest `.dmg` from the [Releases page](https://github.com/your-org/contexts-launcher/releases)
+1. Download the latest `.dmg` from the [Releases page](https://github.com/your-org/context-actions/releases)
 2. Open the `.dmg`, drag **Context Actions.app** into **Applications**, then eject the disk image
 
 **Gatekeeper warning** — because Context Actions is not yet notarized by Apple, macOS will block the first launch. To allow it:
@@ -70,7 +70,7 @@ Planned for a future release. Build from source in the meantime — see [docs/de
 |-------|-------------|
 | [First run](docs/using/first-run.md) | Onboarding walkthrough and choosing your global shortcut |
 | [Basic functionality](docs/using/basic/README.md) | Open URL, Paste Text, Copy Text |
-| [Advanced features](docs/using/advanced/README.md) | Static List, Dynamic List, Script Extensions |
+| [Advanced features](docs/using/advanced/README.md) | Static List, Dynamic List, Writing Scripts, Contexts |
 | [Tips & tricks](docs/using/tips-and-tricks.md) | App deep links, web search via param passing, frequently-pasted snippets |
 | [Config directory structure](docs/using/config-directory.md) | Overview of the config directory layout and its subdirectories |
 | [Configuring commands](docs/using/configuring-commands.md) | YAML schema, enable/disable, directory layout, live reload |
@@ -138,14 +138,6 @@ src/           — SvelteKit frontend source
 src-tauri/     — Rust/Tauri backend source
 static/        — Static frontend assets
 ```
-
----
-
-## Contributing
-
-- Commit after every meaningful step with a descriptive message
-- Raise questions rather than making assumptions when requirements are unclear
-- Keep this README and the `docs/` folder up to date as the project evolves
 
 ---
 
