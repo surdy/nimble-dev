@@ -409,10 +409,9 @@
     }
   }
 
-  // Persist active context to localStorage and keep the tray label in sync.
+  // Persist active context to localStorage.
   $effect(() => {
     localStorage.setItem("ctx_active_context", activeContext);
-    invoke("update_tray_label", { context: activeContext || null }).catch(() => {});
   });
 
   // ── Lifecycle ─────────────────────────────────────────────────────────

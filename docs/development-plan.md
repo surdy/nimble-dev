@@ -892,9 +892,9 @@ effective_input = raw_input                         (context empty OR raw_input 
 - Account for the chip row height in the dynamic window-resize `$effect` when a context is active and the chip is shown.
 
 #### System tray
-- When a context is active, append the context name to the tray tooltip / app-info menu item, e.g. `"Ctx — reddit"`.
-- When no context is active, show the default `"Ctx vX.Y.Z"` label.
-- The tray label update must happen on the same thread that manages the `TrayMenuState`.
+- ~~When a context is active, append the context name to the tray tooltip / app-info menu item, e.g. `"Ctx — reddit"`.~~
+- ~~When no context is active, show the default `"Ctx vX.Y.Z"` label.~~
+- The tray is not updated when the context changes; it always shows `"Ctx vX.Y.Z"`.
 
 #### Persistence
 - Active context is stored in `localStorage` under the key `ctx_active_context` so it survives launcher restarts.
