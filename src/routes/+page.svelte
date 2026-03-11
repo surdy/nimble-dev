@@ -58,23 +58,87 @@
     selectedIndex = 0;
   });
 
-  // Detect exact-phrase match for static_list commands and load the list.
+  // Detect exact-phrase match for static_list / dynamic_list commands and load items.
+  // Returns a cleanup that cancels any in-flight debounce timer.
   $effect(() => {
     const typed = input.trim().toLowerCase();
-    const match = commands.find(
+
+    // ── static_list: exact match only ─────────────────────────────────
+    const staticMatch = commands.find(
       cmd => cmd.action.type === "static_list" && cmd.phrase.toLowerCase() === typed
     ) ?? null;
 
-    if (match && match.action.type === "static_list") {
-      const listName = match.action.config.list;
-      activeListCmd = match;
+    if (staticMatch && staticMatch.action.type === "static_list") {
+      const listName = staticMatch.action.config.list;
+      activeListCmd = staticMatch;
       invoke<ListItem[]>("load_list", { listName })
         .then(items => { listItems = items; selectedIndex = 0; })
         .catch(() => { listItems = []; });
-    } else {
-      activeListCmd = null;
-      listItems = [];
+      return;
     }
+
+    // ── dynamic_list: exact match OR phrase + space + suffix ───────────
+    const dynMatch = commands.find(cmd => {
+      if (cmd.action.type !== "dynamic_list") return false;
+      const phrase = cmd.phrase.toLowerCase();
+      return typed === phrase || typed.startsWith(phrase + " ");
+    }) ?? null;
+
+    if (dynMatch && dynMatch.action.type === "dynamic_list") {
+      const phrase = dynMatch.phrase.toLowerCase();
+      const config = dynMatch.action.config;
+      const isExact = typed === phrase;
+      const suffix = typed.startsWith(phrase + " ") ? typed.slice(phrase.length + 1).trim() : "";
+      const argMode = config.arg ?? "none";
+
+      let timer: ReturnType<typeof setTimeout> | null = null;
+
+      if (argMode === "none") {
+        if (isExact) {
+          activeListCmd = dynMatch;
+          invoke<ListItem[]>("run_dynamic_list", { scriptName: config.script, arg: null })
+            .then(items => { listItems = items; selectedIndex = 0; })
+            .catch(() => { listItems = []; });
+        } else {
+          activeListCmd = null;
+          listItems = [];
+        }
+      } else if (argMode === "optional") {
+        activeListCmd = dynMatch;
+        if (isExact) {
+          // Immediate invocation — no suffix
+          invoke<ListItem[]>("run_dynamic_list", { scriptName: config.script, arg: null })
+            .then(items => { listItems = items; selectedIndex = 0; })
+            .catch(() => { listItems = []; });
+        } else {
+          // Suffix present — debounce re-invocation
+          timer = setTimeout(() => {
+            invoke<ListItem[]>("run_dynamic_list", { scriptName: config.script, arg: suffix })
+              .then(items => { listItems = items; selectedIndex = 0; })
+              .catch(() => { listItems = []; });
+          }, 200);
+        }
+      } else {
+        // required: only invoke when suffix is non-empty
+        if (suffix) {
+          activeListCmd = dynMatch;
+          timer = setTimeout(() => {
+            invoke<ListItem[]>("run_dynamic_list", { scriptName: config.script, arg: suffix })
+              .then(items => { listItems = items; selectedIndex = 0; })
+              .catch(() => { listItems = []; });
+          }, 200);
+        } else {
+          activeListCmd = null;
+          listItems = [];
+        }
+      }
+
+      return () => { if (timer !== null) clearTimeout(timer); };
+    }
+
+    // No list match
+    activeListCmd = null;
+    listItems = [];
   });
 
   // Resize window to fit current results (skip during onboarding)
@@ -170,6 +234,8 @@
     const value = item.subtext ?? item.title;
     const itemAction =
       activeListCmd?.action.type === "static_list"
+        ? activeListCmd.action.config.item_action
+        : activeListCmd?.action.type === "dynamic_list"
         ? activeListCmd.action.config.item_action
         : undefined;
     input = "";
@@ -286,6 +352,14 @@
         if (activeListCmd && activeListCmd.action.type === "static_list") {
           const listName = activeListCmd.action.config.list;
           invoke<ListItem[]>("load_list", { listName })
+            .then(items => { listItems = items; })
+            .catch(() => { listItems = []; });
+        } else if (activeListCmd && activeListCmd.action.type === "dynamic_list") {
+          const config = activeListCmd.action.config;
+          const typed = input.trim().toLowerCase();
+          const phrase = activeListCmd.phrase.toLowerCase();
+          const suffix = typed.startsWith(phrase + " ") ? typed.slice(phrase.length + 1).trim() : "";
+          invoke<ListItem[]>("run_dynamic_list", { scriptName: config.script, arg: suffix || null })
             .then(items => { listItems = items; })
             .catch(() => { listItems = []; });
         }

@@ -49,13 +49,25 @@ enabled: true            # set to false to disable without deleting the file (de
 
 # Required: one action block
 action:
-  type: open_url | paste_text
+  type: open_url | paste_text | copy_text | static_list | dynamic_list
   config:
     # --- open_url ---
     url: <string>        # any valid URL; use {param} for user-supplied input
 
     # --- paste_text ---
     text: <string>       # the text to paste (multi-line supported with YAML | block scalar)
+
+    # --- copy_text ---
+    text: <string>       # the text to copy to the clipboard
+
+    # --- static_list ---
+    list: <string>       # name of the list file in lists/ (without .yaml extension)
+    item_action: paste_text | copy_text | open_url   # optional
+
+    # --- dynamic_list ---
+    script: <string>     # name of the script file in scripts/ (without path)
+    arg: none | optional | required   # default: none
+    item_action: paste_text | copy_text | open_url   # optional
 ```
 
 ### Open URL example

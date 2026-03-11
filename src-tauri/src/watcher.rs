@@ -8,6 +8,14 @@ use crate::commands;
 /// The Tauri event name emitted to the frontend when commands are reloaded.
 pub const COMMANDS_RELOADED_EVENT: &str = "commands://reloaded";
 
+/// Content of the seed `hello.sh` script written on first launch.
+const HELLO_SH: &str = r#"#!/bin/sh
+# Example dynamic list script.
+# Output a JSON array of objects with "title" and optional "subtext" fields,
+# or plain text for a single-item result. Edit this file to return your own items.
+echo '[{"title":"Hello from a script","subtext":"Edit scripts/hello.sh to customise"},{"title":"Dynamic lists are powerful","subtext":"Return JSON or plain text from any executable"}]'
+"#;
+
 /// Start a background thread that watches `commands_dir` and the sibling
 /// `lists/` directory for YAML file changes. On any relevant event the command
 /// list is reloaded and emitted to all windows as `commands://reloaded`.
@@ -53,6 +61,34 @@ pub fn start(app: AppHandle, commands_dir: PathBuf) {
         let _ = std::fs::create_dir_all(&lists_dir);
         if let Err(e) = watcher.watch(&lists_dir, RecursiveMode::Recursive) {
             eprintln!("[ctx] could not watch lists dir: {e}");
+        }
+
+        // Also watch the sibling scripts/ directory so edits to scripts
+        // trigger a commands://reloaded event (the frontend will re-invoke
+        // run_dynamic_list if a dynamic list is currently displayed).
+        let scripts_dir = commands_dir
+            .parent()
+            .map(|p| p.join("scripts"))
+            .unwrap_or_else(|| commands_dir.join("../scripts"));
+        // Ensure the scripts directory exists so the watcher can be registered.
+        let _ = std::fs::create_dir_all(&scripts_dir);
+        // Seed hello.sh on first launch (when it does not yet exist).
+        let hello_sh = scripts_dir.join("hello.sh");
+        if !hello_sh.exists() {
+            if let Ok(()) = std::fs::write(&hello_sh, HELLO_SH) {
+                #[cfg(unix)]
+                {
+                    use std::os::unix::fs::PermissionsExt;
+                    if let Ok(meta) = std::fs::metadata(&hello_sh) {
+                        let mut perms = meta.permissions();
+                        perms.set_mode(0o755);
+                        let _ = std::fs::set_permissions(&hello_sh, perms);
+                    }
+                }
+            }
+        }
+        if let Err(e) = watcher.watch(&scripts_dir, RecursiveMode::Recursive) {
+            eprintln!("[ctx] could not watch scripts dir: {e}");
         }
 
         eprintln!(

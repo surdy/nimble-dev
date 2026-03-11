@@ -22,6 +22,7 @@ com.ctx.launcher/
     examples/       ← seeded on first launch if commands/ is empty
     …               ← your own files and subdirectories
   lists/            ← named list files for the static_list action type
+  scripts/          ← executable scripts for the dynamic_list action type
 ```
 
 Each subdirectory holds a distinct type of data. New subdirectories will be introduced in future releases as new features are added; each will be documented in this file.
@@ -68,7 +69,28 @@ For the full list file schema and behaviour details see [Basic Functionality —
 
 ---
 
-## Related docs
+## `scripts/`
+
+Contains executable scripts used by the `dynamic_list` action type. Scripts can be any executable file — shell scripts, Python programs, compiled binaries, etc. Each script writes its output to stdout and Ctx parses the result.
+
+File names (without extension) are how commands reference their script:
+```yaml
+action:
+  type: dynamic_list
+  config:
+    script: team-emails.sh    # runs scripts/team-emails.sh
+```
+
+**Output format:**
+- **Plain text** — the entire stdout is used as the title of a single result item.
+- **JSON array** — an array of `{ "title": "...", "subtext": "..." }` objects (subtext optional).
+
+A seed example (`scripts/hello.sh`) is created automatically on first launch. Ctx watches this directory and re-runs the active script when any file in `scripts/` changes, so edits take effect immediately.
+
+For full details and examples see [Script Extensions](script-extensions.md).
+
+---
 
 - [Configuring Commands](configuring-commands.md) — YAML schema, enable/disable, live reload
-- [Basic Functionality](basic-functionality.md) — Open URL, Paste Text, Copy Text, Show List action reference
+- [Basic Functionality](basic-functionality.md) — Open URL, Paste Text, Copy Text, Show List, Dynamic List action reference
+- [Script Extensions](script-extensions.md) — How to write and register `dynamic_list` scripts

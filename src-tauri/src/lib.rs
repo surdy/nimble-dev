@@ -203,6 +203,21 @@ fn load_list(app: tauri::AppHandle, list_name: String) -> Result<Vec<commands::L
     commands::load_list(&config_dir, &list_name)
 }
 
+/// Run a script from `config_dir/scripts/<script_name>` and return the items it produces.
+/// The optional `arg` is passed as a positional argument to the script.
+#[tauri::command]
+fn run_dynamic_list(
+    app: tauri::AppHandle,
+    script_name: String,
+    arg: Option<String>,
+) -> Result<Vec<commands::ListItem>, String> {
+    let config_dir = app
+        .path()
+        .app_config_dir()
+        .map_err(|e| e.to_string())?;
+    commands::run_script(&config_dir, &script_name, arg.as_deref())
+}
+
 /// Dismiss the launcher intentionally (Escape key, hotkey while visible, tray Hide).
 /// Hides the window, updates the tray, and restores focus to the previously
 /// active application. Distinct from `hide_window` which is used for blur
@@ -398,7 +413,7 @@ pub fn run() {
 
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![hide_window, show_window, dismiss_launcher, register_shortcut, list_commands, load_list, open_url, paste_text, copy_text])
+        .invoke_handler(tauri::generate_handler![hide_window, show_window, dismiss_launcher, register_shortcut, list_commands, load_list, run_dynamic_list, open_url, paste_text, copy_text])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

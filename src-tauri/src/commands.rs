@@ -2,6 +2,8 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
+use std::sync::mpsc;
+use std::time::Duration;
 use walkdir::WalkDir;
 
 // ── Schema ─────────────────────────────────────────────────────────────────────
@@ -40,6 +42,31 @@ pub struct StaticListConfig {
     pub item_action: Option<ItemAction>,
 }
 
+/// How a `dynamic_list` command accepts user-supplied arguments.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "snake_case")]
+pub enum ArgMode {
+    None,
+    Optional,
+    Required,
+}
+
+fn default_arg_mode() -> ArgMode {
+    ArgMode::None
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DynamicListConfig {
+    /// Name of the script file (without path) inside `config_dir/scripts/`.
+    pub script: String,
+    /// Controls when the script is invoked and whether a suffix argument is passed.
+    #[serde(default = "default_arg_mode")]
+    pub arg: ArgMode,
+    /// Optional action to perform when an item is selected.
+    /// If absent, selecting an item dismisses the launcher without any further action.
+    pub item_action: Option<ItemAction>,
+}
+
 /// The action executed when a command is selected.
 /// Serialised as `{ type: "open_url"|"paste_text"|"copy_text"|"static_list", config: { … } }`.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -49,6 +76,7 @@ pub enum Action {
     PasteText(PasteTextConfig),
     CopyText(CopyTextConfig),
     StaticList(StaticListConfig),
+    DynamicList(DynamicListConfig),
 }
 
 /// A single item in a named list.
@@ -174,6 +202,17 @@ action:
     list: team-emails
 "#,
     ),
+    (
+        "examples/dynamic-list-example.yaml",
+        r#"phrase: hello script
+title: Hello from script
+action:
+  type: dynamic_list
+  config:
+    script: hello.sh
+    arg: none
+"#,
+    ),
 ];
 
 // ── List loader ────────────────────────────────────────────────────────────────
@@ -193,6 +232,73 @@ pub fn load_list(config_dir: &Path, list_name: &str) -> Result<Vec<ListItem>, St
         .map_err(|e| format!("Could not read list {:?}: {e}", path.display()))?;
     serde_yaml::from_str::<Vec<ListItem>>(&yaml)
         .map_err(|e| format!("Could not parse list {:?}: {e}", path.display()))
+}
+
+// ── Script runner ─────────────────────────────────────────────────────────────
+
+/// Run the script at `config_dir/scripts/<script_name>`, optionally passing
+/// `arg` as a positional argument. Returns the parsed list of items on success.
+///
+/// `script_name` must be a plain filename (no path separators or `..` components).
+/// A 5-second timeout is enforced; the function returns `Err` on timeout.
+pub fn run_script(
+    config_dir: &Path,
+    script_name: &str,
+    arg: Option<&str>,
+) -> Result<Vec<ListItem>, String> {
+    // Security: reject names that could escape the scripts/ directory.
+    if script_name.contains('/') || script_name.contains('\\') || script_name.contains("..") {
+        return Err(format!("Invalid script name: {script_name:?}"));
+    }
+
+    let script_path = config_dir.join("scripts").join(script_name);
+    if !script_path.exists() {
+        return Err(format!("Script not found: {}", script_path.display()));
+    }
+
+    let mut cmd = std::process::Command::new(&script_path);
+    if let Some(a) = arg {
+        cmd.arg(a);
+    }
+    cmd.stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped());
+
+    let child = cmd
+        .spawn()
+        .map_err(|e| format!("Could not spawn {:?}: {e}", script_path.display()))?;
+
+    // Enforce a 5-second timeout using a background thread + channel.
+    let (tx, rx) = mpsc::channel();
+    std::thread::spawn(move || {
+        let _ = tx.send(child.wait_with_output());
+    });
+
+    let output = match rx.recv_timeout(Duration::from_secs(5)) {
+        Ok(Ok(out)) => out,
+        Ok(Err(e)) => return Err(format!("Script error: {e}")),
+        Err(_) => return Err(format!("Script {script_name:?} timed out after 5 seconds")),
+    };
+
+    if !output.stderr.is_empty() {
+        eprintln!(
+            "[ctx] script {script_name:?} stderr: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+    }
+
+    let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();
+    if stdout.is_empty() {
+        return Ok(vec![]);
+    }
+
+    // Try JSON array first; fall back to treating the entire output as a single item title.
+    if let Ok(items) = serde_json::from_str::<Vec<ListItem>>(&stdout) {
+        return Ok(items);
+    }
+    Ok(vec![ListItem {
+        title: stdout,
+        subtext: None,
+    }])
 }
 
 // ── Command loader ─────────────────────────────────────────────────────────────
@@ -480,5 +586,127 @@ mod tests {
     fn load_list_rejects_path_with_slash() {
         let dir = TempDir::new().unwrap();
         assert!(load_list(dir.path(), "sub/file").is_err());
+    }
+
+    // ── DynamicListConfig parsing ─────────────────────────────────────────────
+
+    #[test]
+    fn parses_dynamic_list_command_explicit_arg_none() {
+        let dir = TempDir::new().unwrap();
+        write_yaml(
+            &dir,
+            "dyn.yaml",
+            "phrase: hello script\ntitle: Hello\naction:\n  type: dynamic_list\n  config:\n    script: hello.sh\n    arg: none\n",
+        );
+        let result = load_from_dir(dir.path()).unwrap();
+        assert_eq!(result.commands.len(), 1);
+        if let Action::DynamicList(cfg) = &result.commands[0].action {
+            assert_eq!(cfg.script, "hello.sh");
+            assert_eq!(cfg.arg, ArgMode::None);
+            assert!(cfg.item_action.is_none());
+        } else {
+            panic!("expected DynamicList action");
+        }
+    }
+
+    #[test]
+    fn parses_dynamic_list_command_default_arg_mode() {
+        let dir = TempDir::new().unwrap();
+        write_yaml(
+            &dir,
+            "dyn.yaml",
+            "phrase: hello script\ntitle: Hello\naction:\n  type: dynamic_list\n  config:\n    script: hello.sh\n",
+        );
+        let result = load_from_dir(dir.path()).unwrap();
+        if let Action::DynamicList(cfg) = &result.commands[0].action {
+            assert_eq!(cfg.arg, ArgMode::None, "arg should default to none");
+        } else {
+            panic!("expected DynamicList action");
+        }
+    }
+
+    #[test]
+    fn parses_dynamic_list_command_required_with_item_action() {
+        let dir = TempDir::new().unwrap();
+        write_yaml(
+            &dir,
+            "dyn.yaml",
+            "phrase: search things\ntitle: Search\naction:\n  type: dynamic_list\n  config:\n    script: search.sh\n    arg: required\n    item_action: paste_text\n",
+        );
+        let result = load_from_dir(dir.path()).unwrap();
+        if let Action::DynamicList(cfg) = &result.commands[0].action {
+            assert_eq!(cfg.arg, ArgMode::Required);
+            assert_eq!(cfg.item_action, Some(ItemAction::PasteText));
+        } else {
+            panic!("expected DynamicList action");
+        }
+    }
+
+    // ── run_script ────────────────────────────────────────────────────────────
+
+    #[test]
+    fn run_script_rejects_path_traversal_dotdot() {
+        let dir = TempDir::new().unwrap();
+        assert!(run_script(dir.path(), "../secret.sh", None).is_err());
+    }
+
+    #[test]
+    fn run_script_rejects_path_with_slash() {
+        let dir = TempDir::new().unwrap();
+        assert!(run_script(dir.path(), "sub/file.sh", None).is_err());
+    }
+
+    #[test]
+    fn run_script_missing_script_returns_err() {
+        let dir = TempDir::new().unwrap();
+        fs::create_dir_all(dir.path().join("scripts")).unwrap();
+        assert!(run_script(dir.path(), "nonexistent.sh", None).is_err());
+    }
+
+    #[cfg(unix)]
+    fn make_script(dir: &TempDir, name: &str, content: &str) {
+        use std::os::unix::fs::PermissionsExt;
+        let scripts_dir = dir.path().join("scripts");
+        fs::create_dir_all(&scripts_dir).unwrap();
+        let path = scripts_dir.join(name);
+        fs::write(&path, content).unwrap();
+        let mut perms = fs::metadata(&path).unwrap().permissions();
+        perms.set_mode(0o755);
+        fs::set_permissions(&path, perms).unwrap();
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn run_script_json_output_returns_items() {
+        let dir = TempDir::new().unwrap();
+        make_script(
+            &dir,
+            "test.sh",
+            "#!/bin/sh\necho '[{\"title\":\"A\"},{\"title\":\"B\",\"subtext\":\"sub\"}]'\n",
+        );
+        let items = run_script(dir.path(), "test.sh", None).unwrap();
+        assert_eq!(items.len(), 2);
+        assert_eq!(items[0].title, "A");
+        assert_eq!(items[1].subtext.as_deref(), Some("sub"));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn run_script_plain_text_returns_single_item() {
+        let dir = TempDir::new().unwrap();
+        make_script(&dir, "plain.sh", "#!/bin/sh\necho 'hello world'\n");
+        let items = run_script(dir.path(), "plain.sh", None).unwrap();
+        assert_eq!(items.len(), 1);
+        assert_eq!(items[0].title, "hello world");
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn run_script_passes_arg_to_script() {
+        let dir = TempDir::new().unwrap();
+        make_script(&dir, "echo-arg.sh", "#!/bin/sh\necho \"$1\"\n");
+        let items = run_script(dir.path(), "echo-arg.sh", Some("myarg")).unwrap();
+        assert_eq!(items.len(), 1);
+        assert_eq!(items[0].title, "myarg");
     }
 }
