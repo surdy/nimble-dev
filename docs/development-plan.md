@@ -320,7 +320,7 @@ mv ~/Library/Application\ Support/com.contexts.launcher \
 
 ---
 
-## Stage 14 — Action: Show List
+## Stage 14 — Action: Show List ✅
 
 **Goal:** Commands can reference a named list stored in the `lists/` config subdirectory. As soon as the user's typed input exactly matches the command phrase, the full list of items is shown immediately — no Enter key required. Selecting an item pastes its value into the previously focused application.
 
@@ -533,7 +533,7 @@ When a context `C` is active, a user's raw input `I` is matched against command 
 | 11 ✅ | Documentation | User-facing docs: first run, core actions, tips & tricks, configuration, duplicates |
 | 12 ✅ | Action: Copy Text & Config Directory Restructure | `copy_text` action; commands moved to `commands/` subdir |
 | 13 ✅ | Backend testing | `cargo test` suite: YAML parsing, dedup, URL validation, param encoding, text sanitisation |
-| 14 | Action: Show List | Keyword-triggered inline list expansion from `lists/` config subdir |
+| 14 ✅ | Action: Show List | Keyword-triggered inline list expansion from `lists/` config subdir |
 | 15 | Script extensions | External scripts return structured results; launcher executes built-in actions |
 | 16 | Contexts: core model | Reserved `ctx` namespace, built-in set/reset commands, context-aware matching |
 | 17 | Contexts: UI & tray | Context chip in launcher bar, tray label, localStorage persistence |
