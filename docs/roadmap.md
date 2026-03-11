@@ -48,6 +48,8 @@
 ### Configuration & Usability
 - [ ] Configuration UI — settings panel accessible from the launcher or tray, editing `settings.yaml` fields without touching the file directly
 - [ ] Bug / issue reporter — `ctx report issue` opens a pre-filled GitHub issue in the browser with version and platform info attached
+- [ ] Global variables — built-in variables (e.g. `{{date}}`, `{{clipboard}}`) and user-defined variables reusable across any command's URL, text, or script arguments
+- [ ] Profiles — named configuration profiles (e.g. `work`, `home`) each with their own command set, scripts, and settings; switch profiles from the launcher or on a schedule
 
 ### Actions
 - [ ] Action: `transform_text` — reads the current selection from the previously focused app, applies a user-defined transformation (e.g. uppercase, slugify, wrap in Markdown, call a script), then pastes or copies the result via a standard built-in action
