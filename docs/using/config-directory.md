@@ -92,5 +92,5 @@ For full details and examples see [Script Extensions](advanced/script-extensions
 ---
 
 - [Configuring Commands](configuring-commands.md) — YAML schema, enable/disable, live reload
-- [Basic Functionality](basic/index.md) — Open URL, Paste Text, Copy Text
-- [Advanced Features](advanced/index.md) — Static List, Dynamic List, Script Extensions
+- [Basic Functionality](basic/README.md) — Open URL, Paste Text, Copy Text
+- [Advanced Features](advanced/README.md) — Static List, Dynamic List, Script Extensions

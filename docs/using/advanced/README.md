@@ -8,4 +8,4 @@ These action types let you display dynamic or data-driven lists of items directl
 | [Dynamic List](dynamic-list.md) | Runs an external script and shows its output as an inline list |
 | [Script Extensions](script-extensions.md) | How to write, configure, and debug `dynamic_list` scripts |
 
-For the core everyday actions see [Basic Functionality](../basic/index.md).
+For the core everyday actions see [Basic Functionality](../basic/README.md).

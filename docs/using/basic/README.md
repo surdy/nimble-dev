@@ -8,7 +8,7 @@ Ctx provides three built-in actions for everyday use. Each is configured in a YA
 | [Paste Text](paste-text.md) | Pastes a predefined block of text into your previously focused app |
 | [Copy Text](copy-text.md) | Copies a predefined block of text to the clipboard |
 
-For data-driven or script-powered actions, see [Advanced Features](../advanced/index.md).
+For data-driven or script-powered actions, see [Advanced Features](../advanced/README.md).
 
 ---
 
