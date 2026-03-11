@@ -33,7 +33,7 @@
 ## Planned
 
 ### Distribution & Updates
-- [ ] Add license — choose and add an open-source license (e.g. MIT or Apache 2.0)
+- [x] Add license — MIT license added
 - [ ] GitHub Actions CI — automated builds for macOS, Windows, and Linux on every push
 - [ ] Homebrew tap — `brew install context-actions` via a dedicated tap repository
 - [ ] Update notifications — show an indicator when a newer version is available

@@ -143,4 +143,4 @@ static/        — Static frontend assets
 
 ## License
 
-TBD
+MIT — see [LICENSE](LICENSE).
