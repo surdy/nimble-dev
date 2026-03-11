@@ -14,8 +14,12 @@ export interface CopyTextConfig {
   text: string;
 }
 
-export interface ShowListConfig {
+export type ItemAction = "paste_text" | "copy_text" | "open_url";
+
+export interface StaticListConfig {
   list: string;
+  /** If absent, selecting an item only dismisses the launcher. */
+  item_action?: ItemAction;
 }
 
 export interface ListItem {
@@ -27,7 +31,7 @@ export type Action =
   | { type: "open_url"; config: OpenUrlConfig }
   | { type: "paste_text"; config: PasteTextConfig }
   | { type: "copy_text"; config: CopyTextConfig }
-  | { type: "show_list"; config: ShowListConfig };
+  | { type: "static_list"; config: StaticListConfig };
 
 export interface Command {
   phrase: string;

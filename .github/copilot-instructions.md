@@ -32,7 +32,7 @@ These are the only system actions the launcher itself can perform:
 3. **Ask questions instead of making assumptions** whenever requirements are ambiguous
 3. **Keep README.md and user-facing documentation up to date** as features are built
 4. **Do not write code** until requirements for that phase/feature are clearly understood
-5. **Keep `docs/using/basic-functionality.md` up to date** whenever a new built-in action type is added to the launcher (currently: `open_url`, `paste_text`, `copy_text`, `show_list`). Add a dedicated section covering the YAML schema, a minimal example, any parameter behaviour, and platform-specific requirements.
+5. **Keep `docs/using/basic-functionality.md` up to date** whenever a new built-in action type is added to the launcher (currently: `open_url`, `paste_text`, `copy_text`, `static_list`). Add a dedicated section covering the YAML schema, a minimal example, any parameter behaviour, and platform-specific requirements.
 6. **Keep `docs/using/config-directory.md` up to date** whenever a new subdirectory is introduced in the config directory (e.g. for scripts, settings, or any future data type). Add a dedicated section describing the subdirectory's purpose and any relevant file format notes.
 6. **Update `docs/using/` after Script Extensions (Stage 15) ships:** add a new `docs/using/script-extensions.md` covering how to write and register a script command, the expected stdout format (plain text and JSON), security boundaries, and debugging tips. Also update `docs/using/basic-functionality.md` to note that script results can only trigger the existing built-in actions, and update `docs/using/configuring-commands.md` with the `script` action type and its YAML schema.
 

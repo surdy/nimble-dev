@@ -354,7 +354,7 @@ A command references a list by filename (without extension). The file is resolve
 phrase: team emails
 title: Team email addresses
 action:
-  type: show_list
+  type: static_list
   config:
     list: team-emails    # resolves to lists/team-emails.yaml
 ```
@@ -369,7 +369,7 @@ action:
 ### Tasks
 
 #### Rust backend (`commands.rs`)
-- Add `ShowListConfig { list: String }` struct and `ShowList(ShowListConfig)` variant to the `Action` enum
+- Add `StaticListConfig { list: String }` struct and `StaticList(StaticListConfig)` variant to the `Action` enum
 - Add `ListItem { title: String, subtext: Option<String> }` struct (serialisable + deserialisable)
 - Add `pub(crate) fn load_list(config_dir: &Path, list_name: &str) -> Result<Vec<ListItem>, String>`:
   - Reject `list_name` values containing `/`, `\`, or `..` components (path traversal prevention)
@@ -379,8 +379,8 @@ action:
 - Extend the file watcher in `watcher.rs` to also watch `config_dir/lists/` and emit the same `commands://reloaded` event on changes
 
 #### Frontend (`types.ts`, `+page.svelte`)
-- Add `ShowListConfig`, `show_list` action variant, and `ListItem` interface to `types.ts`
-- In `+page.svelte`, add reactive logic to detect an exact phrase match for a `show_list` command:
+- Add `StaticListConfig`, `static_list` action variant, and `ListItem` interface to `types.ts`
+- In `+page.svelte`, add reactive logic to detect an exact phrase match for a `static_list` command:
   - Invoke `load_list` with the list name; store result in a `listItems` state variable
   - Render the `listItems` list instead of the standard results list
   - On `commands://reloaded`, re-invoke `load_list` if a list is currently displayed
@@ -390,7 +390,7 @@ action:
 - Add seed files: `lists/team-emails.yaml` and `commands/examples/show-team-emails.yaml`
 - Update `docs/using/config-directory.md` to document the `lists/` subdirectory
 - Update `docs/using/basic-functionality.md` with a Show List section
-- Update `copilot-instructions.md` rule 5 to include `show_list` in the list of action types
+- Update `copilot-instructions.md` rule 5 to include `static_list` in the list of action types
 
 #### Backend tests (`commands.rs`)
 - `load_list` with a valid YAML file returns the correct `Vec<ListItem>`
@@ -399,7 +399,7 @@ action:
 - A list name containing `..` or `/` is rejected with `Err`
 
 ### Done when
-- Typing a `show_list` phrase exactly causes the list items to appear without pressing Enter
+- Typing a `static_list` phrase exactly causes the list items to appear without pressing Enter
 - Partial typing still shows the command as a single result row
 - Selecting a list item pastes its subtext (or title if absent) into the previously active application
 - Editing a list file hot-reloads the displayed items within the debounce window

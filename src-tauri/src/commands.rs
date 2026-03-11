@@ -21,21 +21,34 @@ pub struct CopyTextConfig {
     pub text: String,
 }
 
+/// The action performed when a list item is selected.
+/// The item's `subtext` (falling back to `title`) is used as the value.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "snake_case")]
+pub enum ItemAction {
+    PasteText,
+    CopyText,
+    OpenUrl,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ShowListConfig {
+pub struct StaticListConfig {
     /// Name of the list file (without extension) inside `config_dir/lists/`.
     pub list: String,
+    /// Optional action to perform when an item is selected.
+    /// If absent, selecting an item dismisses the launcher without any further action.
+    pub item_action: Option<ItemAction>,
 }
 
 /// The action executed when a command is selected.
-/// Serialised as `{ type: "open_url"|"paste_text"|"copy_text"|"show_list", config: { … } }`.
+/// Serialised as `{ type: "open_url"|"paste_text"|"copy_text"|"static_list", config: { … } }`.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type", content = "config", rename_all = "snake_case")]
 pub enum Action {
     OpenUrl(OpenUrlConfig),
     PasteText(PasteTextConfig),
     CopyText(CopyTextConfig),
-    ShowList(ShowListConfig),
+    StaticList(StaticListConfig),
 }
 
 /// A single item in a named list.
@@ -156,7 +169,7 @@ action:
         r#"phrase: team emails
 title: Team email addresses
 action:
-  type: show_list
+  type: static_list
   config:
     list: team-emails
 "#,
@@ -386,7 +399,39 @@ mod tests {
         assert_eq!(result.commands.len(), 1, "only the valid command should load");
     }
 
-    // ── load_list ─────────────────────────────────────────────────────────────
+    #[test]
+    fn parses_static_list_command_without_item_action() {
+        let dir = TempDir::new().unwrap();
+        write_yaml(
+            &dir,
+            "show.yaml",
+            "phrase: team emails\ntitle: Team emails\naction:\n  type: static_list\n  config:\n    list: team-emails\n",
+        );
+        let result = load_from_dir(dir.path()).unwrap();
+        assert_eq!(result.commands.len(), 1);
+        if let Action::StaticList(cfg) = &result.commands[0].action {
+            assert_eq!(cfg.list, "team-emails");
+            assert!(cfg.item_action.is_none());
+        } else {
+            panic!("expected StaticList action");
+        }
+    }
+
+    #[test]
+    fn parses_static_list_command_with_item_action_paste() {
+        let dir = TempDir::new().unwrap();
+        write_yaml(
+            &dir,
+            "show.yaml",
+            "phrase: pick snippet\ntitle: Snippets\naction:\n  type: static_list\n  config:\n    list: snippets\n    item_action: paste_text\n",
+        );
+        let result = load_from_dir(dir.path()).unwrap();
+        if let Action::StaticList(cfg) = &result.commands[0].action {
+            assert_eq!(cfg.item_action, Some(ItemAction::PasteText));
+        } else {
+            panic!("expected StaticList action");
+        }
+    }
 
     fn write_list(dir: &TempDir, name: &str, content: &str) {
         let path = dir.path().join("lists").join(format!("{name}.yaml"));

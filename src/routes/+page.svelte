@@ -24,7 +24,7 @@
   let warningsDismissed = $state(false);
   const warningVisible = $derived(warnings.length > 0 && !warningsDismissed);
 
-  // List expansion state — populated when input exactly matches a show_list phrase
+  // List expansion state — populated when input exactly matches a static_list phrase
   let listItems = $state<ListItem[]>([]);
   let activeListCmd = $state<Command | null>(null);
 
@@ -46,7 +46,7 @@
           .slice(0, MAX_RESULTS)
   );
 
-  // True when the typed input exactly equals a show_list command phrase.
+  // True when the typed input exactly equals a static_list command phrase.
   // In this mode we show list items instead of the normal results list.
   const showingList = $derived(activeListCmd !== null && listItems.length > 0);
 
@@ -58,14 +58,14 @@
     selectedIndex = 0;
   });
 
-  // Detect exact-phrase match for show_list commands and load the list.
+  // Detect exact-phrase match for static_list commands and load the list.
   $effect(() => {
     const typed = input.trim().toLowerCase();
     const match = commands.find(
-      cmd => cmd.action.type === "show_list" && cmd.phrase.toLowerCase() === typed
+      cmd => cmd.action.type === "static_list" && cmd.phrase.toLowerCase() === typed
     ) ?? null;
 
-    if (match && match.action.type === "show_list") {
+    if (match && match.action.type === "static_list") {
       const listName = match.action.config.list;
       activeListCmd = match;
       invoke<ListItem[]>("load_list", { listName })
@@ -167,9 +167,23 @@
 
   // ── Action execution ──────────────────────────────────────────────────
   async function executeListItem(item: ListItem) {
-    const text = item.subtext ?? item.title;
+    const value = item.subtext ?? item.title;
+    const itemAction =
+      activeListCmd?.action.type === "static_list"
+        ? activeListCmd.action.config.item_action
+        : undefined;
     input = "";
-    await invoke("paste_text", { text });
+    if (itemAction === "paste_text") {
+      await invoke("paste_text", { text: value });
+    } else if (itemAction === "copy_text") {
+      await invoke("copy_text", { text: value });
+    } else if (itemAction === "open_url") {
+      await invoke("open_url", { url: value, param: null });
+      dismiss();
+    } else {
+      // No action configured — just dismiss
+      invoke("dismiss_launcher").catch(() => appWindow.hide());
+    }
   }
 
   async function executeCommand(cmd: Command) {
@@ -269,7 +283,7 @@
         warnings = event.payload.duplicates;
         warningsDismissed = false; // always surface new warnings
         // If a list is currently displayed, refresh it in case its file changed
-        if (activeListCmd && activeListCmd.action.type === "show_list") {
+        if (activeListCmd && activeListCmd.action.type === "static_list") {
           const listName = activeListCmd.action.config.list;
           invoke<ListItem[]>("load_list", { listName })
             .then(items => { listItems = items; })
