@@ -12,18 +12,19 @@ A fast, cross-platform desktop launcher driven entirely by commands — think Al
 
 ---
 
-## Features (Planned)
+## Features
 
-### Phase 1 — Core Launcher
-- **Command-driven UI**: type multi-word phrases to trigger actions
-- **Partial matching**: results appear as you type, showing possible completions as subtext
-- **Open URL**: navigate to any URL in your default browser; supports an optional `param` query variable
-- **Paste Text**: paste pre-defined text snippets into the previously focused application
+### Built-in actions
+- **Open URL** — navigate to any URL in your default browser; supports an optional `{param}` placeholder for user-supplied input
+- **Paste Text** — paste pre-defined text snippets into the previously focused application via `⌘V` simulation
+- **Copy Text** — copy pre-defined text to the clipboard without simulating a keystroke
+- **Static List** — display a named YAML list of items inline as soon as the phrase is typed; selecting an item can paste, copy, or open a URL
+- **Dynamic List** — run an external script and show its output as an inline list; supports `none`, `optional`, and `required` argument modes for real-time filtering
 
-### Phase 2 — Script Extensions
-- Associate custom commands with external scripts or executables
-- Scripts return plain text or structured JSON (title + subtext + action)
-- Actions are fulfilled by the launcher's built-in functions — scripts cannot perform system actions themselves
+### Script extensions
+- Associate commands with any executable (shell script, Python, Node.js, compiled binary, …)
+- Scripts return plain text or a structured JSON array (`title` + optional `subtext`)
+- All system actions flow through the launcher's built-in layer — scripts cannot directly modify the system
 
 ---
 
@@ -60,7 +61,8 @@ Planned for a future release. Build from source in the meantime — see [docs/de
 | Guide | Description |
 |-------|-------------|
 | [First run](docs/using/first-run.md) | Onboarding walkthrough and choosing your global shortcut |
-| [Basic functionality](docs/using/basic-functionality.md) | Open URL and Paste Text — the two built-in actions |
+| [Basic functionality](docs/using/basic/README.md) | Open URL, Paste Text, Copy Text |
+| [Advanced features](docs/using/advanced/README.md) | Static List, Dynamic List, Script Extensions |
 | [Tips & tricks](docs/using/tips-and-tricks.md) | App deep links, web search via param passing, frequently-pasted snippets |
 | [Config directory structure](docs/using/config-directory.md) | Overview of the config directory layout and its subdirectories |
 | [Configuring commands](docs/using/configuring-commands.md) | YAML schema, enable/disable, directory layout, live reload |
