@@ -501,7 +501,50 @@ Works identically to `static_list`: if omitted, selecting an item dismisses the 
 
 ---
 
-## Stage 16 — Contexts: Core Model & Built-in Commands
+## Stage 16 — Docs Restructure & Cleanup ✅
+
+**Goal:** Reorganise user-facing documentation for clarity and long-term maintainability. Separate basic from advanced functionality, add proper landing pages, fill onboarding gaps, and remove stale content.
+
+### Changes made
+
+#### Structure
+- Split the single `basic-functionality.md` into per-action pages under `docs/using/basic/` (`open-url.md`, `paste-text.md`, `copy-text.md`) with a `README.md` landing page
+- Created `docs/using/advanced/` with per-action pages (`static-list.md`, `dynamic-list.md`) and moved `script-extensions.md` there, with a `README.md` landing page
+- Created `docs/using/README.md` as an orientating landing page for the whole `using/` folder
+
+#### README
+- Added a "How it works" section explaining the YAML → command → match mental model
+- Added a "Your first command" section with a minimal copy-paste `open_url` example
+- Renamed "Getting Started" → "Building from source" to distinguish end-user and developer paths
+- Removed stale `plugins/` entry from the Project Structure block
+- Updated the Using Ctx table to reference the new `basic/README.md` and `advanced/README.md`
+
+#### First-run guide
+- Added a "Your first command" section: config directory path, a worked YAML example, and what to expect when typing the phrase
+
+#### Content fixes
+- `tips-and-tricks.md`: fixed stale opening sentence that said "two built-in actions"
+- `advanced/dynamic-list.md`: clarified dual role of `subtext` (display hint *and* action payload); added cross-link to `script-extensions.md` for argument details
+- `advanced/static-list.md`: added matching `subtext` note
+- `docs/using/config-directory.md`: updated links to the new folder structure
+
+#### Copilot instructions
+- Rule 1: added `git push` requirement after every commit
+- Rule 6: replaced generic "keep docs up to date" with an explicit classify-before-writing rule — ask whether a new feature is basic or advanced before placing it
+- Updated built-in actions list and file/folder conventions to reflect current state
+
+#### Seed examples in config directory
+- Added `scripts/hello.sh` (JSON-outputting example script)
+- Added `commands/examples/dynamic-list-example.yaml`
+
+### Done when ✅
+- All action types have a dedicated page in the correct `basic/` or `advanced/` subfolder
+- A newcomer can understand the app, set up a first command, and reach advanced features through a clear link hierarchy
+- No stale references to old file paths remain in any doc
+
+---
+
+## Stage 17 — Contexts: Core Model & Built-in Commands
 
 **Goal:** Introduce the concept of a *context* — a phrase prefix that is silently prepended to the user's input, letting them reach a group of related commands with less typing. This stage covers the data model, the built-in commands that manage context, and the reserved `ctx` namespace.
 
@@ -540,7 +583,7 @@ When a context `C` is active, a user's raw input `I` is matched against command 
 
 ---
 
-## Stage 17 — Contexts: UI Indicators & Tray Integration
+## Stage 18 — Contexts: UI Indicators & Tray Integration
 
 **Goal:** Make the active context visible at all times — both inside the launcher window and in the system tray — so the user always knows which context is in effect.
 
@@ -588,7 +631,8 @@ When a context `C` is active, a user's raw input `I` is matched against command 
 | 11 ✅ | Documentation | User-facing docs: first run, core actions, tips & tricks, configuration, duplicates |
 | 12 ✅ | Action: Copy Text & Config Directory Restructure | `copy_text` action; commands moved to `commands/` subdir |
 | 13 ✅ | Backend testing | `cargo test` suite: YAML parsing, dedup, URL validation, param encoding, text sanitisation |
-| 14 ✅ | Action: Show List | Keyword-triggered inline list expansion from `lists/` config subdir |
-| 15 | Action: Dynamic List | Script-backed dynamic list; three argument modes (`none` / `optional` / `required`) |
-| 16 | Contexts: core model | Reserved `ctx` namespace, built-in set/reset commands, context-aware matching |
-| 17 | Contexts: UI & tray | Context chip in launcher bar, tray label, localStorage persistence |
+| 14 ✅ | Action: Static List | Keyword-triggered inline list expansion from `lists/` config subdir |
+| 15 ✅ | Action: Dynamic List | Script-backed dynamic list; three argument modes (`none` / `optional` / `required`) |
+| 16 ✅ | Docs restructure & cleanup | Per-action pages in `basic/` and `advanced/`; onboarding gaps filled; stale content removed |
+| 17 | Contexts: core model | Reserved `ctx` namespace, built-in set/reset commands, context-aware matching |
+| 18 | Contexts: UI & tray | Context chip in launcher bar, tray label, localStorage persistence |
