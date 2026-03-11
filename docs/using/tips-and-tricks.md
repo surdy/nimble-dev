@@ -233,3 +233,40 @@ action:
 ```
 
 > **Tip:** organise related snippet files into subdirectories inside your config directory (e.g. `snippets/`, `emails/`, `code/`). Ctx discovers YAML files recursively, so any directory layout works.
+
+---
+
+## Using contexts for scoped matching
+
+A **context** is a word or phrase that is silently appended to every command you type, so you can focus on a topic without retyping it. Type `ctx` in the launcher to manage it.
+
+### Topic-locked web search
+
+```
+ctx set rust programming   → Enter
+```
+
+Now type `search google` and press Enter → opens `google.com/search?q=rust+programming`. The context fills the `{param}` slot automatically.
+
+Clear when done:
+
+```
+ctx reset   → Enter
+```
+
+### Single-word site navigation
+
+```
+ctx set reddit   → Enter
+```
+
+Type `open` → matches the `open reddit` command immediately. No need to type the full phrase every time.
+
+### Scoped to a sub-phrase of a long command
+
+Any substring of a command phrase can be typed when the context supplies the rest. For example, with context `github` and a `search github` command:
+
+- Type `search` — effective input is `"search github"` — the command matches.
+- Press Enter with a `{param}` URL → the context word becomes the query.
+
+For the full reference including the built-in `ctx set / reset / show` commands see [Contexts](advanced/context.md).

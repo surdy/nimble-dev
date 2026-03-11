@@ -8,5 +8,6 @@ These action types let you display dynamic or data-driven lists of items directl
 | [Dynamic List](dynamic-list.md) | Runs an external script and shows its output as an inline list |
 | [Script Action](script-action.md) | Runs a script on Enter and applies the result via open_url, paste_text, or copy_text |
 | [Script Extensions](script-extensions.md) | How to write, configure, and debug scripts used by `dynamic_list` and `script_action` |
+| [Contexts](context.md) | Append a persistent suffix to every command phrase for scoped matching |
 
 For the core everyday actions see [Basic Functionality](../basic/README.md).
