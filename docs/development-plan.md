@@ -934,6 +934,7 @@ effective_input = raw_input                         (context empty OR raw_input 
 | 19c ✅ | Contexts: context-aware matching | `effectiveInput = raw_input + " " + context`; filtering, list triggers, and param extraction use effective input |
 | 20 ✅ | Contexts: UI & tray | Context chip in launcher bar, tray label, localStorage persistence |
 | 21 ✅ | Settings file | `settings.yaml` for `hotkey`, `show_context_chip`, `allow_duplicates`; hotkey migrated from localStorage |
+| 22 ✅ | Housekeeping | App rename, MIT licence, roadmap, motivation doc, docs cleanup |
 
 ---
 
@@ -961,4 +962,44 @@ effective_input = raw_input                         (context empty OR raw_input 
 - Existing users retain their hotkey after upgrade (one-time migration on first launch)
 - `allow_duplicates: false` enables dedup warnings; changing it takes effect on next relaunch
 - `show_context_chip: false` hides the chip and restores the normal placeholder
+
+---
+
+## Stage 22 — Housekeeping ✅
+
+**Goal:** Tidy up the project before further feature work — consistent naming, a licence, orientation documents for new contributors, and a well-organised docs tree.
+
+### Tasks
+
+#### App rename
+- Renamed product from `Ctx` / `Ctx Launcher` to **Context Actions** across all surfaces: `tauri.conf.json` (`productName`, `identifier`), `Cargo.toml` (package and lib name), `package.json`, `app.html`, `lib.rs` tray strings, onboarding welcome text, and all documentation.
+- New bundle identifier: `ContextActions`; new config directory: `~/Library/Application Support/ContextActions/`.
+- `ctx set / ctx reset / ctx show` command phrases and internal `ctx_` identifiers left unchanged (contexts feature namespace, not app brand).
+
+#### MIT licence
+- Added `LICENSE` file (MIT, 2026, Harpreet Singh Gulati).
+- Added `license = "MIT"` field to `Cargo.toml`; `package.json` already declared MIT.
+- Updated README licence section from "TBD" to "MIT — see LICENSE".
+
+#### Roadmap
+- Added `docs/roadmap.md` listing all implemented features (checked) and planned items grouped by theme: Distribution & Updates, Theming, Configuration & Usability, Actions, Community.
+
+#### Motivation doc
+- Added `docs/motivation.md` explaining why Context Actions exists, its goals (reduce friction, context-switching overhead, distraction), why not Alfred/Raycast, and explicit non-goals (not an app launcher, not a full replacement, no plugin system).
+
+#### Docs cleanup
+- Renamed `docs/using/advanced/script-extensions.md` → `writing-scripts.md` (better reflects content as a how-to guide).
+- Fixed stale name references (`Contexts Launcher`, `contexts-launcher`) in `copilot-instructions.md`, `development-setup.md`, and `README.md`.
+- Removed Contributing section from README (roadmap item added to re-add it later).
+- Verified all internal doc links — zero broken links.
+- Updated `advanced/README.md` and `docs/using/README.md` to include Contexts in the Advanced features description.
+
+#### Copilot instructions
+- Added rule 11: update `docs/roadmap.md` when a planned item is implemented, marking its checkbox and updating the description if needed.
+
+### Done when ✅
+- App is consistently named "Context Actions" across all files
+- MIT licence file is present and referenced
+- Roadmap and motivation docs are committed
+- Docs tree has no broken links and no stale name references
 
