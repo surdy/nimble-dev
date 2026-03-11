@@ -139,11 +139,23 @@ pub struct DuplicateWarning {
     pub ignored: String,
 }
 
+/// A warning produced when a YAML file defines a command whose phrase uses
+/// the reserved `ctx` prefix.
+#[derive(Debug, Clone, Serialize)]
+pub struct ReservedPhraseWarning {
+    /// The rejected phrase as written in the YAML file.
+    pub phrase: String,
+    /// Config-dir-relative path of the offending file.
+    pub file: String,
+}
+
 /// The result of loading commands from the config directory.
 #[derive(Debug, Clone, Serialize)]
 pub struct LoadResult {
     pub commands: Vec<Command>,
     pub duplicates: Vec<DuplicateWarning>,
+    /// Commands rejected because their phrase starts with the reserved `ctx` prefix.
+    pub reserved: Vec<ReservedPhraseWarning>,
 }
 
 // ── Seed files written on first launch ────────────────────────────────────────
@@ -455,6 +467,7 @@ pub fn load_from_dir(config_dir: &Path) -> Result<LoadResult, String> {
 
     let mut commands = Vec::new();
     let mut duplicates = Vec::new();
+    let mut reserved: Vec<ReservedPhraseWarning> = Vec::new();
     // Maps lowercase phrase → relative path of the file that claimed it.
     let mut seen: HashMap<String, String> = HashMap::new();
 
@@ -473,6 +486,17 @@ pub fn load_from_dir(config_dir: &Path) -> Result<LoadResult, String> {
                 Ok(cmd) if !cmd.enabled => {} // disabled — silently skip
                 Ok(cmd) => {
                     let key = cmd.phrase.to_lowercase();
+                    // Reserved namespace: reject phrases that equal "ctx" or start
+                    // with "ctx " (case-insensitive). These are reserved for built-in
+                    // context-management commands.
+                    if key == "ctx" || key.starts_with("ctx ") {
+                        eprintln!("[ctx] reserved phrase {:?} in {display}, skipping", cmd.phrase);
+                        reserved.push(ReservedPhraseWarning {
+                            phrase: cmd.phrase,
+                            file: display,
+                        });
+                        continue;
+                    }
                     if let Some(winner) = seen.get(&key) {
                         eprintln!(
                             "[ctx] duplicate phrase {:?} in {display}, kept {winner}",
@@ -492,7 +516,7 @@ pub fn load_from_dir(config_dir: &Path) -> Result<LoadResult, String> {
         }
     }
 
-    Ok(LoadResult { commands, duplicates })
+    Ok(LoadResult { commands, duplicates, reserved })
 }
 
 #[cfg(test)]
@@ -921,5 +945,73 @@ mod tests {
         } else {
             panic!("expected ScriptAction action");
         }
+    }
+
+    // ── Reserved namespace ────────────────────────────────────────────────────
+
+    #[test]
+    fn reserved_ctx_phrase_is_rejected() {
+        let dir = TempDir::new().unwrap();
+        write_yaml(
+            &dir,
+            "ctx.yaml",
+            "phrase: ctx set foo\ntitle: Bad\naction:\n  type: open_url\n  config:\n    url: https://example.com\n",
+        );
+        let result = load_from_dir(dir.path()).unwrap();
+        assert!(result.commands.is_empty(), "ctx phrase must not load as a command");
+        assert_eq!(result.reserved.len(), 1);
+        assert_eq!(result.reserved[0].phrase, "ctx set foo");
+    }
+
+    #[test]
+    fn reserved_ctx_phrase_case_insensitive() {
+        let dir = TempDir::new().unwrap();
+        write_yaml(
+            &dir,
+            "ctx.yaml",
+            "phrase: CTX reset\ntitle: Bad\naction:\n  type: open_url\n  config:\n    url: https://example.com\n",
+        );
+        let result = load_from_dir(dir.path()).unwrap();
+        assert!(result.commands.is_empty());
+        assert_eq!(result.reserved.len(), 1);
+        assert_eq!(result.reserved[0].phrase, "CTX reset");
+    }
+
+    #[test]
+    fn ctxfoo_no_space_is_accepted() {
+        let dir = TempDir::new().unwrap();
+        write_yaml(
+            &dir,
+            "ctxfoo.yaml",
+            "phrase: ctxfoo bar\ntitle: Not reserved\naction:\n  type: open_url\n  config:\n    url: https://example.com\n",
+        );
+        let result = load_from_dir(dir.path()).unwrap();
+        assert_eq!(result.commands.len(), 1, "ctxfoo does not start with the ctx prefix");
+        assert!(result.reserved.is_empty());
+    }
+
+    #[test]
+    fn open_ctx_phrase_is_accepted() {
+        let dir = TempDir::new().unwrap();
+        write_yaml(
+            &dir,
+            "open-ctx.yaml",
+            "phrase: open ctx\ntitle: Contains ctx\naction:\n  type: open_url\n  config:\n    url: https://example.com\n",
+        );
+        let result = load_from_dir(dir.path()).unwrap();
+        assert_eq!(result.commands.len(), 1, "phrase does not start with ctx");
+        assert!(result.reserved.is_empty());
+    }
+
+    #[test]
+    fn reserved_vec_empty_without_violations() {
+        let dir = TempDir::new().unwrap();
+        write_yaml(
+            &dir,
+            "good.yaml",
+            "phrase: open google\ntitle: Open Google\naction:\n  type: open_url\n  config:\n    url: https://www.google.com\n",
+        );
+        let result = load_from_dir(dir.path()).unwrap();
+        assert!(result.reserved.is_empty());
     }
 }

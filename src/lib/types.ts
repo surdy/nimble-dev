@@ -77,8 +77,17 @@ export interface DuplicateWarning {
   ignored: string;
 }
 
+export interface ReservedPhraseWarning {
+  /** The rejected phrase as written in the YAML file. */
+  phrase: string;
+  /** Config-dir-relative path of the offending file. */
+  file: string;
+}
+
 /** Payload returned by list_commands and emitted as commands://reloaded. */
 export interface CommandsPayload {
   commands: Command[];
   duplicates: DuplicateWarning[];
+  /** Commands rejected because their phrase starts with the reserved `ctx` prefix. */
+  reserved: ReservedPhraseWarning[];
 }

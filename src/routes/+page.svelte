@@ -3,7 +3,7 @@
   import { invoke } from "@tauri-apps/api/core";
   import { getCurrentWindow, LogicalSize } from "@tauri-apps/api/window";
   import { listen } from "@tauri-apps/api/event";
-  import type { Command, CommandsPayload, DuplicateWarning, ListItem } from "$lib/types";
+  import type { Command, CommandsPayload, DuplicateWarning, ListItem, ReservedPhraseWarning } from "$lib/types";
 
   // ── State ──────────────────────────────────────────────────────────────
   let input = $state("");
@@ -21,8 +21,10 @@
 
   // Duplicate-command warnings from the last load / reload cycle
   let warnings = $state<DuplicateWarning[]>([]);
+  let reservedWarnings = $state<ReservedPhraseWarning[]>([]);
   let warningsDismissed = $state(false);
-  const warningVisible = $derived(warnings.length > 0 && !warningsDismissed);
+  const totalWarnings = $derived(warnings.length + reservedWarnings.length);
+  const warningVisible = $derived(totalWarnings > 0 && !warningsDismissed);
 
   // List expansion state — populated when input exactly matches a static_list phrase
   let listItems = $state<ListItem[]>([]);
@@ -218,9 +220,10 @@
       onboarding = false;
       await appWindow.setSize(LAUNCHER_SIZE);
       // Load commands now that onboarding is complete
-      const result = await invoke<CommandsPayload>("list_commands").catch(() => ({ commands: [], duplicates: [] }));
+      const result = await invoke<CommandsPayload>("list_commands").catch(() => ({ commands: [], duplicates: [], reserved: [] }));
       commands = result.commands;
       warnings = result.duplicates;
+      reservedWarnings = result.reserved;
       warningsDismissed = false;
       dismiss();
     } catch (err) {
@@ -360,9 +363,10 @@
         await invoke("register_shortcut", { shortcut: stored }).catch(() => {});
         await appWindow.setSize(LAUNCHER_SIZE);
         // Load commands from the config directory
-        const result = await invoke<CommandsPayload>("list_commands").catch(() => ({ commands: [], duplicates: [] }));
+        const result = await invoke<CommandsPayload>("list_commands").catch(() => ({ commands: [], duplicates: [], reserved: [] }));
         commands = result.commands;
         warnings = result.duplicates;
+        reservedWarnings = result.reserved;
         warningsDismissed = false;
         dismiss();
       } else {
@@ -383,6 +387,7 @@
       unlistenReload = await listen<CommandsPayload>("commands://reloaded", (event) => {
         commands = event.payload.commands;
         warnings = event.payload.duplicates;
+        reservedWarnings = event.payload.reserved;
         warningsDismissed = false; // always surface new warnings
         // If a list is currently displayed, refresh it in case its file changed
         if (activeListCmd && activeListCmd.action.type === "static_list") {
@@ -453,7 +458,7 @@
     {#if warningVisible}
       <div class="warnings-bar">
         <span class="warnings-text">
-          ⚠ {warnings.length} duplicate command{warnings.length === 1 ? '' : 's'} ignored
+          ⚠ {totalWarnings} command{totalWarnings === 1 ? '' : 's'} ignored
         </span>
         <button class="warnings-dismiss" onclick={() => (warningsDismissed = true)} aria-label="Dismiss">&times;</button>
       </div>
