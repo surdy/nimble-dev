@@ -406,7 +406,7 @@ action:
 
 ---
 
-## Stage 15 — Action: Dynamic List
+## Stage 15 — Action: Dynamic List ✅
 
 **Goal:** Commands can execute an external script to dynamically generate a list of items. Like `static_list`, the list appears automatically when the phrase is matched — no Enter required. Scripts can optionally accept a user-typed argument to filter or parameterise their output in real time.
 
