@@ -56,13 +56,21 @@
   const MAX_RESULTS = 8;
   const ROW_H = 56; // px per result row
 
+  // When a context is active and the user is not typing a ctx command, append
+  // the context to raw input so commands are matched against the full phrase.
+  const effectiveInput = $derived(
+    activeContext && !input.trim().toLowerCase().startsWith("ctx")
+      ? input.trim() + " " + activeContext
+      : input.trim()
+  );
+
   const filtered = $derived(
-    input.trim() === ""
+    effectiveInput === ""
       ? []
       : commands
           .filter(cmd => {
             const phrase = cmd.phrase.toLowerCase();
-            const typed  = input.trim().toLowerCase();
+            const typed  = effectiveInput.toLowerCase();
             // Standard partial/substring match (discovery while typing)
             // OR param mode: user has typed the full phrase + space + param text
             return phrase.includes(typed) || typed.startsWith(phrase + " ");
@@ -97,9 +105,10 @@
   });
 
   // Detect exact-phrase match for static_list / dynamic_list commands and load items.
+  // Uses effectiveInput so context-suffixed phrases are matched correctly.
   // Returns a cleanup that cancels any in-flight debounce timer.
   $effect(() => {
-    const typed = input.trim().toLowerCase();
+    const typed = effectiveInput.toLowerCase();
 
     // ── static_list: exact match only ─────────────────────────────────
     const staticMatch = commands.find(
@@ -293,9 +302,10 @@
 
   async function executeCommand(cmd: Command) {
     if (cmd.action.type === "open_url") {
-      // Extract any text typed after the command phrase as the param
+      // Extract any text typed after the command phrase as the param.
+      // Use effectiveInput so the context suffix can serve as the {param} value.
       const phrase = cmd.phrase.toLowerCase();
-      const typed  = input.trim();
+      const typed  = effectiveInput;
       const after  = typed.toLowerCase().startsWith(phrase)
         ? typed.slice(phrase.length).trim()
         : "";
@@ -317,7 +327,8 @@
     } else if (cmd.action.type === "script_action") {
       const cfg = cmd.action.config;
       const phrase = cmd.phrase.toLowerCase();
-      const typed  = input.trim();
+      // Use effectiveInput so the context suffix is included in the suffix arg.
+      const typed  = effectiveInput;
       const after  = typed.toLowerCase().startsWith(phrase)
         ? typed.slice(phrase.length).trim()
         : "";
@@ -540,12 +551,12 @@
           <div class="no-results">No results</div>
         {:else}
           {#each allFiltered as cmd, i}
-            {@const typed     = input.trim()}
+            {@const rawTyped   = input.trim()}
             {@const builtinAction = cmd.action.type === "builtin" ? cmd.action.config.action : null}
-            {@const ctxSetValue = builtinAction === "ctx_set" && typed.toLowerCase().startsWith("ctx set ") ? typed.slice("ctx set ".length).trim() : ""}
-            {@const isParamMode = builtinAction === null && typed.toLowerCase().startsWith(cmd.phrase.toLowerCase() + " ")}
-            {@const paramText  = isParamMode ? typed.slice(cmd.phrase.length + 1) : ""}
-            {@const hl        = highlight(cmd.phrase, typed)}
+            {@const ctxSetValue = builtinAction === "ctx_set" && rawTyped.toLowerCase().startsWith("ctx set ") ? rawTyped.slice("ctx set ".length).trim() : ""}
+            {@const isParamMode = builtinAction === null && effectiveInput.toLowerCase().startsWith(cmd.phrase.toLowerCase() + " ")}
+            {@const paramText  = isParamMode ? effectiveInput.slice(cmd.phrase.length + 1) : ""}
+            {@const hl        = highlight(cmd.phrase, effectiveInput)}
             <!-- svelte-ignore a11y_no_static_element_interactions -->
             <!-- svelte-ignore a11y_click_events_have_key_events -->
             <div
