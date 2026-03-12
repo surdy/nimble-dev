@@ -52,7 +52,7 @@ fn capture_previous_app(state: &PreviousApp) {
         if xdo.is_null() {
             return;
         }
-        let mut win: x11::xlib::Window = 0;
+        let mut win: std::os::raw::c_ulong = 0;
         if xdo_get_active_window(xdo, &mut win) == 0 && win != 0 {
             *state.0.lock().unwrap() = Some(win.to_string());
         }
@@ -104,7 +104,7 @@ fn restore_previous_app(win_id: String) {
     }
     use libxdo_sys::{xdo_focus_window, xdo_free, xdo_new, xdo_raise_window};
     use std::ptr;
-    if let Ok(win) = win_id.parse::<u64>() {
+    if let Ok(win) = win_id.parse::<std::os::raw::c_ulong>() {
         unsafe {
             let xdo = xdo_new(ptr::null());
             if !xdo.is_null() {
