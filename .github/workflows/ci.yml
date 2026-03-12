@@ -52,6 +52,7 @@ jobs:
             libayatana-appindicator3-dev \
             librsvg2-dev \
             xdotool \
+            libxdo-dev \
             flatpak \
             flatpak-builder
           flatpak remote-add --user --if-not-exists flathub \
