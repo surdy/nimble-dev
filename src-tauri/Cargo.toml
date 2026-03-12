@@ -40,3 +40,6 @@ notify = { version = "7", features = ["macos_fsevent"] }
 [target.'cfg(target_os = "windows")'.dependencies]
 windows-sys = { version = "0.59", features = ["Win32_UI_WindowsAndMessaging"] }
 
+[target.'cfg(target_os = "linux")'.dependencies]
+libxdo-sys = "0.11"
+

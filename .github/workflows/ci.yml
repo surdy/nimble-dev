@@ -41,7 +41,7 @@ jobs:
           key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}
           restore-keys: ${{ runner.os }}-node-
 
-      # Linux: Tauri WebKit deps, xdotool, and Flatpak toolchain
+      # Linux: Tauri WebKit deps, libxdo (build dep for xdo crate), and Flatpak toolchain
       - name: Install Linux system dependencies
         if: runner.os == 'Linux'
         run: |
@@ -52,7 +52,6 @@ jobs:
             libayatana-appindicator3-dev \
             librsvg2-dev \
             libxdo-dev \
-            xdotool \
             flatpak \
             flatpak-builder
           flatpak remote-add --user --if-not-exists flathub \

@@ -16,7 +16,7 @@ use tauri_plugin_opener::OpenerExt;
 /// Holds a platform-specific identifier for the application that had focus
 /// before the launcher appeared.
 /// - macOS: process ID as a decimal string
-/// - Linux: X11 window ID as a decimal string (from `xdotool getactivewindow`)
+/// - Linux: X11 window ID as a decimal string (via `xdo` crate / libxdo)
 struct PreviousApp(Mutex<Option<String>>);
 
 /// macOS: captures the frontmost application's PID via NSWorkspace.
@@ -35,27 +35,28 @@ fn capture_previous_app(state: &PreviousApp) {
     }
 }
 
-/// Linux: captures the active X11 window ID via `xdotool getactivewindow`.
-/// No-op under pure Wayland (xdotool requires X11).
+/// Linux: captures the active X11 window ID via `libxdo-sys`.
+/// No-op under pure Wayland (libxdo requires an X11 DISPLAY).
 #[cfg(target_os = "linux")]
 fn capture_previous_app(state: &PreviousApp) {
-    // xdotool requires an X11 DISPLAY; skip silently under pure Wayland.
+    // libxdo requires an X11 DISPLAY; skip silently under pure Wayland.
     if std::env::var_os("WAYLAND_DISPLAY").is_some()
         && std::env::var_os("DISPLAY").is_none()
     {
         return;
     }
-    let Ok(out) = std::process::Command::new("xdotool")
-        .arg("getactivewindow")
-        .output()
-    else {
-        return;
-    };
-    if out.status.success() {
-        let win_id = String::from_utf8_lossy(&out.stdout).trim().to_string();
-        if !win_id.is_empty() {
-            *state.0.lock().unwrap() = Some(win_id);
+    use libxdo_sys::{xdo_free, xdo_get_active_window, xdo_new};
+    use std::ptr;
+    unsafe {
+        let xdo = xdo_new(ptr::null());
+        if xdo.is_null() {
+            return;
         }
+        let mut win: x11::xlib::Window = 0;
+        if xdo_get_active_window(xdo, &mut win) == 0 && win != 0 {
+            *state.0.lock().unwrap() = Some(win.to_string());
+        }
+        xdo_free(xdo);
     }
 }
 
@@ -91,8 +92,8 @@ fn restore_previous_app(id: String) {
     }
 }
 
-/// Linux: focuses the X11 window identified by its window ID string via `xdotool`.
-/// Gracefully skips under pure Wayland (xdotool unavailable there).
+/// Linux: focuses the X11 window identified by its window ID string via `libxdo-sys`.
+/// Gracefully skips under pure Wayland (libxdo unavailable there).
 #[cfg(target_os = "linux")]
 fn restore_previous_app(win_id: String) {
     if std::env::var_os("WAYLAND_DISPLAY").is_some()
@@ -101,12 +102,18 @@ fn restore_previous_app(win_id: String) {
         eprintln!("[ctx] focus restore skipped: Wayland without XWayland bridge");
         return;
     }
-    let _ = std::process::Command::new("xdotool")
-        .args(["windowfocus", "--sync", &win_id])
-        .output();
-    let _ = std::process::Command::new("xdotool")
-        .args(["windowraise", &win_id])
-        .output();
+    use libxdo_sys::{xdo_focus_window, xdo_free, xdo_new, xdo_raise_window};
+    use std::ptr;
+    if let Ok(win) = win_id.parse::<u64>() {
+        unsafe {
+            let xdo = xdo_new(ptr::null());
+            if !xdo.is_null() {
+                let _ = xdo_focus_window(xdo, win);
+                let _ = xdo_raise_window(xdo, win);
+                xdo_free(xdo);
+            }
+        }
+    }
 }
 
 /// Windows: restores foreground focus to the window identified by its HWND string.

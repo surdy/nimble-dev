@@ -198,3 +198,23 @@ Flatpak chosen as the Linux distribution target. CI installs `flatpak-builder` a
 
 ### Risks & pitfalls
 - None. `dtolnay/rust-toolchain` is widely used and kept up to date.
+
+## Linux focus tracking: xdotool subprocess vs libxdo-sys crate
+_Date: 2026-03-12_
+
+### Options evaluated
+**Option A — `xdotool` subprocess (original)**
+- Pros: zero Rust deps; simple code
+- Cons: fails inside Flatpak sandbox (host PATH not visible); requires runtime binary installed by user
+
+**Option B — `libxdo-sys` FFI crate (chosen)**
+- Pros: no runtime binary required; works inside Flatpak when libxdo is bundled; single build-time dep (`libxdo-dev`); exposes `xdo_get_active_window`, `xdo_focus_window`, `xdo_raise_window` directly
+- Cons: raw `unsafe` FFI; slightly more code; `libxdo-dev` must be installed at compile time
+
+**Option C — `xdg-desktop-portal` RemoteDesktop**
+- Pros: universal Wayland support; no C dep
+- Cons: no `get_active_window` equivalent (cannot capture focus); alarming permission prompt; input injection only
+
+### Decision
+Switched to `libxdo-sys` 0.11. Removes the `xdotool` runtime dependency, makes the Flatpak bundle self-contained, and uses the same underlying C libSwitched txdSwitched to `libxdo-sys` 0.11. Removes the `xdotool` runtime d uSwitched to `l Risks & pitfalls
+- `libxdo-sys` requires `libxdo-dev` at build time on Linux- `libxdo-sys` requires `libxdo-dep - `libxdo-sys` requires `libxdo-dev` at build time on Linux- `libxdo-sys` requires `libxdo-dep - `libxayl- `libxdo-sys` requires `libxdo-dev` at build t manifest must include libxdo as a bundled module before publishing to Flathub.

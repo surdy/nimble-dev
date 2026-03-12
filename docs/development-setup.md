@@ -13,20 +13,20 @@ This guide walks you through setting up your machine to build and run Context Ac
 | Xcode Command Line Tools | latest | macOS native build tools (C compiler, linker) |
 ### Linux additional system packages
 
-On Linux you also need the Tauri WebKit dependencies and `xdotool` (required for the paste-text focus-restoration feature):
+On Linux you also need the Tauri WebKit dependencies and `libxdo-dev` (required at compile time for the `xdo` crate used by the paste-text focus-restoration feature):
 
 ```bash
 # Ubuntu / Debian
-sudo apt install libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev xdotool
+sudo apt install libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev libxdo-dev
 
 # Fedora
-sudo dnf install webkit2gtk4.1-devel gtk3-devel libayatana-appindicator-gtk3-devel librsvg2-devel xdotool
+sudo dnf install webkit2gtk4.1-devel gtk3-devel libayatana-appindicator-gtk3-devel librsvg2-devel libxdo-devel
 
 # Arch
-sudo pacman -S webkit2gtk-4.1 gtk3 libayatana-appindicator librsvg xdotool
+sudo pacman -S webkit2gtk-4.1 gtk3 libayatana-appindicator librsvg xdotool libxdo
 ```
 
-> **Wayland note:** `xdotool` requires X11. Under a pure Wayland session (no XWayland), the paste-text action still copies text to the clipboard but focus is not automatically restored to the previous application — you will need to click the target window before pressing Ctrl+V.
+> **Wayland note:** `libxdo` requires X11. Under a pure Wayland session (no XWayland), the paste-text action still copies text to the clipboard but focus is not automatically restored to the previous application — you will need to click the target window before pressing Ctrl+V.
 ---
 
 ## Step 1 — Xcode Command Line Tools (macOS)
