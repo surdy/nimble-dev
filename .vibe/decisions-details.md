@@ -140,3 +140,32 @@ Chosen Option A (capture before show). This mirrors the existing macOS pattern a
 ### Risks & pitfalls
 - On some X11 compositors there can be a short delay between `window.show()` and the window actually receiving focus; the capture-before-show approach is safe regardless
 - If the hotkey triggers capture from the launcher window itself (hotkey pressed twice in rapid succession), we may capture our own window ID; the macOS guard `pid != std::process::id()` prevents this on macOS, but there is currently no equivalent guard on Linux — worst case: restore is a no-op
+
+## Windows HWND type: isize vs u64 for PreviousApp storage
+_Date: 2026-03-13_
+
+### Options evaluated
+**Option A — store as `isize` (HWND native type)**
+- Pros: matches `windows-sys` API type; no cast needed at callsite
+- Cons: signed integer is unusual for a handle; parse-back requires `isize::parse`
+
+**Option B — store as `u64` string**
+- Pros: clearly non-negative; portable width
+- Cons: requires cast from `isize`; `isize` is always ≥ 0 for valid HWNDs
+
+### Decision
+Stored as decimal `isize` string to exactly match the `windows-sys` return type without casting. Valid HWNDs are always > 0 so sign is not an issue in practice; parse-back uses `id.parse::<isize>()`.
+
+### Risks & pitfalls
+- `isize` is 64-bit on 64-bit Windows; no truncation risk.
+- A zero HWND correctly fails the `!= 0` guard in `capture_previous_app`.
+
+---
+
+## Windows PowerShell invocation strategy for .ps1 scripts
+_Date: 2026-03-13_
+
+### Options evaluated
+**Optio**Optio**Optio**Optio**Optio**Optio**Optio**Optio**Optio**Optio**Optio**O <p**Optio**Optio**Optio**Optio**Optio**Optio**Optio**Optio*ng**Optio**Optio**Onee**Optio**Optio**OptinP**Optio**Optio**Optio**Optio**Optio**Optio**Optio**5.**Optio**Optio**Optio**Optio**Optio**Optio**Optio**Optio**Optio***O**Optio**Optio**Optio**Optio**Optio**Optio**Optio**Optio**Optio**Optio**Optio**ros: **Optio**Optio**Optio**Optio**Optio**pt**Optio**Optio**Optio**Optio**Optio**Optio*ch**Optio**Optio**Optio**Optio**Optio**Optio**Optio**Optio**Optio**Optio**Op.ex**Optio**Opel**Optio**Optio**Optio**Optio**Optio**Optio**Optio**Optio**Optio**Optio**Optio**O <p**Optio**Optio**Optio**Optio**Optio**Optio**Optio**Optio*ng**Optio**Optio**Onee**Optio**Optio**OptinP**Optio**Optioign**Optio**Optio**Opt")**Optio**Optio**Optio**Optio**Optio**Optio**Optio**Ope `pow**Optio**Optio**Optio**Optio**Optio**Optio**Optio**Optio**Optio**Optio both scri**Optio**Optio**Optio**Optio**Optio**Optio**Optio**Optio*.e**Optio**Optio**Oo start on cold-boot Windows machines.
+- `-ExecutionPolicy Bypass` is process-scoped only — it does not change the machine policy.
+- Scripts containing `#Requires -RunAsAdministrator` will still fail; users must handle elevation themselves.

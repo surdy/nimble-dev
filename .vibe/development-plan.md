@@ -935,6 +935,9 @@ effective_input = raw_input                         (context empty OR raw_input 
 | 20 ✅ | Contexts: UI & tray | Context chip in launcher bar, tray label, localStorage persistence |
 | 21 ✅ | Settings file | `settings.yaml` for `hotkey`, `show_context_chip`, `allow_duplicates`; hotkey migrated from localStorage |
 | 22 ✅ | Housekeeping | App rename, MIT licence, roadmap, motivation doc, docs cleanup |
+| 23 ✅ | Cross-platform clipboard | `arboard` crate for Linux & Windows; `pbcopy` retained on macOS |
+| 24 ✅ | Linux focus tracking | `xdotool` capture/restore on X11; Wayland graceful fallback |
+| 25 ✅ | Windows focus, taskbar, seed | Win32 focus capture/restore; `skipTaskbar`; `hello.ps1` seed; `.ps1` invocation via PowerShell |
 
 ---
 
@@ -1055,7 +1058,7 @@ Chosen approach: `xdotool` subprocess (simpler, no new crate, aligns with how `p
 
 ---
 
-## Stage 25 — Windows: Focus Tracking, Taskbar & Seed Script
+## Stage 25 — Windows: Focus Tracking, Taskbar & Seed Script ✅
 
 ### Goal
 Make the launcher fully functional on Windows: pre-invoke focus capture, post-dismiss focus restore, hiding from the Windows taskbar, and a seed script the user can actually execute.
