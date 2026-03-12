@@ -166,9 +166,21 @@ Stored as decimal `isize` string to exactly match the `windows-sys` return type 
 _Date: 2026-03-13_
 
 ### Options evaluated
-**Optio**Optio**Optio**Optio**Optio**Optio**Optio**Optio**Optio**Optio**Optio**O <p**Optio**Optio**Optio**Optio**Optio**Optio**Optio**Optio*ng**Optio**Optio**Onee**Optio**Optio**OptinP**Optio**Optio**Optio**Optio**Optio**Optio**Optio**5.**Optio**Optio**Optio**Optio**Optio**Optio**Optio**Optio**Optio***O**Optio**Optio**Optio**Optio**Optio**Optio**Optio**Optio**Optio**Optio**Optio**ros: **Optio**Optio**Optio**Optio**Optio**pt**Optio**Optio**Optio**Optio**Optio**Optio*ch**Optio**Optio**Optio**Optio**Optio**Optio**Optio**Optio**Optio**Optio**Op.ex**Optio**Opel**Optio**Optio**Optio**Optio**Optio**Optio**Optio**Optio**Optio**Optio**Optio**O <p**Optio**Optio**Optio**Optio**Optio**Optio**Optio**Optio*ng**Optio**Optio**Onee**Optio**Optio**OptinP**Optio**Optioign**Optio**Optio**Opt")**Optio**Optio**Optio**Optio**Optio**Optio**Optio**Ope `pow**Optio**Optio**Optio**Optio**Optio**Optio**Optio**Optio**Optio**Optio both scri**Optio**Optio**Optio**Optio**Optio**Optio**Optio**Optio*.e**Optio**Optio**Oo start on cold-boot Windows machines.
-- `-ExecutionPolicy Bypass` is process-scoped only — it does not change the machine policy.
-- Scripts containing `#Requires -RunAsAdministrator` will still fail; users must handle elevation themselves.
+**Option A — `powershell.exe` (Windows PowerShell 5.1, built-in)**
+- Pros: present on every default Windows 10/11 installation; no user-side install required
+- Cons: only ships Windows PowerShell 5.1; does not exist on non-Windows
+
+**Option B — `pwsh.exe` (PowerShell 7+, cross-platform)**
+- Pros: modern cross-platform PowerShell; richer language features and module ecosystem
+- Cons: not installed by default on Windows; adds an extra install step for users
+
+### Decision
+`powershell.exe` chosen over `pwsh` because it ships on every default Windows installation. `.ps1` scripts are invoked as `powershell -ExecutionPolicy Bypass -File <path>` so users never need to change their machine-level execution policy.
+
+### Risks & pitfalls
+- `powershell.exe` may not be on PATH in heavily customised environments
+- `-ExecutionPolicy Bypass` is process-scoped only — it does not change the machine policy
+- Scripts containing `#Requires -RunAsAdministrator` will still fail; users must handle elevation themselves
 
 ## CI Linux packaging: Flatpak vs AppImage
 _Date: 2026-03-12_
@@ -190,8 +202,24 @@ _Date: 2026-03-12_
 Flatpak chosen as the Linux distribution target. CI installs `flatpak-builder` and the GNOME SDK 45 runtime on the ubuntu-22.04 runner, then runs `tauri build --bundles flatpak`. Aligns with modern Linux packaging and the explicit goal in the Stage 26 plan.
 
 ### Risks & pitfalls
-- GNOME SDK version c- GNOME SDK versi ub- GNOME SDK version ad- GNOME SDK version c- ea- GNOME SDK version c- GNOME SDK versi ub- GNOME SDK version ad- GNOME SDK version c- ea- GNOME SDK version c- GNOME SDK versi ub- GNOME SDK versie- GNOME SDK version c- GNOME SDK versi ub- GNOME SDK version ad- GNOME SDK version c- ea- GNOME SDK version c- GNOME SDK versi ub- GNre publis- GNOME SDK version c- G# - GNOME SDK version c- GNOME SDK versi ub- GNOME SDK version ad- GNOMEte- GNOME SDK version c- GNOME SDK versi ub- GNOME SDK version ad- GNOME SDK version c- ea- GNOMEcti- GNOME SDK version c- GNOMac- GNOME SDK version c- GNOME SDK versi ub- GNOMEal- GNOME SDK version c- GNOME SDK versi ub- GNOME SDK version ad- GNOME SDK vos:- GNOME SDKwell-known
-- Cons: unmaintained since 2022; known deprecation warnings
+- GNOME SDK version pin (`//45`) will become outdated as new SDK releases ship; the CI workflow must be updated to stay in sync
+- `flatpak-builder` install adds several minutes to CI; unavoidable for a Flatpak target
+- Flatpak sandbox finish-args must correctly specify all required permissions or the app will malfunction at runtime
+- `libxdo` must be added as a bundled module in the manifest before Flathub submission
+
+---
+
+## CI Rust toolchain action: dtolnay vs actions-rs
+_Date: 2026-03-12_
+
+### Options evaluated
+**Option A — `dtolnay/rust-toolchain@stable` (chosen)**
+- Pros: actively maintained; fast; community-standard replacement after `actions-rs` was deprecated
+- Cons: third-party action (not GitHub-official)
+
+**Option B — `actions-rs/toolchain@v1`**
+- Pros: was the original canonical Rust CI action; widely documented in older tutorials
+- Cons: unmaintained since 2022; known deprecation warnings on Node.js 16; repository archived
 
 ### Decision
 `dtolnay/rust-toolchain@stable` used in the CI workflow.
