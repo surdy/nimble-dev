@@ -41,7 +41,7 @@ jobs:
           key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}
           restore-keys: ${{ runner.os }}-node-
 
-      # Linux: Tauri WebKit deps, xdotool, and Flatpak toolchain
+      # Linux: Tauri WebKit deps and xdotool
       - name: Install Linux system dependencies
         if: runner.os == 'Linux'
         run: |
@@ -51,14 +51,7 @@ jobs:
             libgtk-3-dev \
             libayatana-appindicator3-dev \
             librsvg2-dev \
-            xdotool \
-            flatpak \
-            flatpak-builder
-          flatpak remote-add --user --if-not-exists flathub \
-            https://flathub.org/repo/flathub.flatpakrepo
-          flatpak install --user --noninteractive flathub \
-            org.gnome.Sdk//45 \
-            org.gnome.Platform//45
+            xdotool
 
       - name: Install frontend dependencies
         run: npm ci
@@ -72,9 +65,9 @@ jobs:
         if: runner.os == 'macOS'
         run: npm run tauri build -- --bundles dmg
 
-      - name: Build (Linux - flatpak)
+      - name: Build (Linux - appimage)
         if: runner.os == 'Linux'
-        run: npm run tauri build -- --bundles flatpak
+        run: npm run tauri build -- --bundles appimage
 
       - name: Build (Windows - msi)
         if: runner.os == 'Windows'
@@ -93,7 +86,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: context-actions-linux
-          path: src-tauri/target/release/bundle/flatpak/*.flatpak
+          path: src-tauri/target/release/bundle/appimage/*.AppImage
 
       - name: Upload Windows artefact
         if: runner.os == 'Windows'
