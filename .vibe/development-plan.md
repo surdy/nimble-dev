@@ -938,6 +938,7 @@ effective_input = raw_input                         (context empty OR raw_input 
 | 23 ✅ | Cross-platform clipboard | `arboard` crate for Linux & Windows; `pbcopy` retained on macOS |
 | 24 ✅ | Linux focus tracking | `xdotool` capture/restore on X11; Wayland graceful fallback |
 | 25 ✅ | Windows focus, taskbar, seed | Win32 focus capture/restore; `skipTaskbar`; `hello.ps1` seed; `.ps1` invocation via PowerShell |
+| 26 ✅ | Cross-platform CI & packaging | GitHub Actions matrix (macOS/Linux/Windows); `.dmg`, `.flatpak`, `.msi` artefacts; per-platform build docs |
 
 ---
 
@@ -1008,7 +1009,7 @@ effective_input = raw_input                         (context empty OR raw_input 
 
 ---
 
-## Stage 23 — Cross-Platform Clipboard (Linux & Windows) ✅
+## Stage 23 — Cross-Platform Clipboard (Linux & Windows)
 
 ### Goal
 Replace the macOS-only `pbcopy` clipboard implementation with the `arboard` crate so that `copy_text` and `paste_text` work on Linux and Windows without per-action code changes.
@@ -1032,7 +1033,7 @@ Replace the macOS-only `pbcopy` clipboard implementation with the `arboard` crat
 
 ---
 
-## Stage 24 — Linux: Focus Tracking & Paste Flow ✅
+## Stage 24 — Linux: Focus Tracking & Paste Flow
 
 ### Goal
 Implement `capture_previous_app` and `restore_previous_app` on Linux (X11) so that `paste_text` correctly returns focus to the user's previous application before simulating Ctrl+V.
@@ -1058,7 +1059,7 @@ Chosen approach: `xdotool` subprocess (simpler, no new crate, aligns with how `p
 
 ---
 
-## Stage 25 — Windows: Focus Tracking, Taskbar & Seed Script ✅
+## Stage 25 — Windows: Focus Tracking, Taskbar & Seed Script
 
 ### Goal
 Make the launcher fully functional on Windows: pre-invoke focus capture, post-dismiss focus restore, hiding from the Windows taskbar, and a seed script the user can actually execute.
@@ -1089,7 +1090,7 @@ Make the launcher fully functional on Windows: pre-invoke focus capture, post-di
 
 ---
 
-## Stage 26 — Cross-Platform CI & Packaging
+## Stage 26 — Cross-Platform CI & Packaging ✅
 
 ### Goal
 Automated CI that builds, tests, and packages the app on macOS, Linux, and Windows so platform regressions are caught before shipping.

@@ -169,3 +169,32 @@ _Date: 2026-03-13_
 **Optio**Optio**Optio**Optio**Optio**Optio**Optio**Optio**Optio**Optio**Optio**O <p**Optio**Optio**Optio**Optio**Optio**Optio**Optio**Optio*ng**Optio**Optio**Onee**Optio**Optio**OptinP**Optio**Optio**Optio**Optio**Optio**Optio**Optio**5.**Optio**Optio**Optio**Optio**Optio**Optio**Optio**Optio**Optio***O**Optio**Optio**Optio**Optio**Optio**Optio**Optio**Optio**Optio**Optio**Optio**ros: **Optio**Optio**Optio**Optio**Optio**pt**Optio**Optio**Optio**Optio**Optio**Optio*ch**Optio**Optio**Optio**Optio**Optio**Optio**Optio**Optio**Optio**Optio**Op.ex**Optio**Opel**Optio**Optio**Optio**Optio**Optio**Optio**Optio**Optio**Optio**Optio**Optio**O <p**Optio**Optio**Optio**Optio**Optio**Optio**Optio**Optio*ng**Optio**Optio**Onee**Optio**Optio**OptinP**Optio**Optioign**Optio**Optio**Opt")**Optio**Optio**Optio**Optio**Optio**Optio**Optio**Ope `pow**Optio**Optio**Optio**Optio**Optio**Optio**Optio**Optio**Optio**Optio both scri**Optio**Optio**Optio**Optio**Optio**Optio**Optio**Optio*.e**Optio**Optio**Oo start on cold-boot Windows machines.
 - `-ExecutionPolicy Bypass` is process-scoped only — it does not change the machine policy.
 - Scripts containing `#Requires -RunAsAdministrator` will still fail; users must handle elevation themselves.
+
+## CI Linux packaging: Flatpak vs AppImage
+_Date: 2026-03-12_
+
+### Options evaluated
+**Option A — Flatpak**
+- Pros: sandboxed distribution; widely supported on modern Linux desktops; flathub is the standard install pathway; consistent runtime environment
+- Cons: requires `flatpak-builder` + GNOME SDK installed in CI; longer setup step; app identifier must ideally follow reverse-DNS convention
+
+**Option B — AppImage**
+- Pros: single-file, no install needed; simpler CI (no runtime install)
+- Cons: no sandbox; less aligned with modern Linux distribution practices; no central repository
+
+**Option C — deb package**
+- Pros: trivial CI setup; native on Ubuntu/Debian
+- Cons: not cross-distro; requires maintainer infrastructure for a repository
+
+### Decision
+Flatpak chosen as the Linux distribution target. CI installs `flatpak-builder` and the GNOME SDK 45 runtime on the ubuntu-22.04 runner, then runs `tauri build --bundles flatpak`. Aligns with modern Linux packaging and the explicit goal in the Stage 26 plan.
+
+### Risks & pitfalls
+- GNOME SDK version c- GNOME SDK versi ub- GNOME SDK version ad- GNOME SDK version c- ea- GNOME SDK version c- GNOME SDK versi ub- GNOME SDK version ad- GNOME SDK version c- ea- GNOME SDK version c- GNOME SDK versi ub- GNOME SDK versie- GNOME SDK version c- GNOME SDK versi ub- GNOME SDK version ad- GNOME SDK version c- ea- GNOME SDK version c- GNOME SDK versi ub- GNre publis- GNOME SDK version c- G# - GNOME SDK version c- GNOME SDK versi ub- GNOME SDK version ad- GNOMEte- GNOME SDK version c- GNOME SDK versi ub- GNOME SDK version ad- GNOME SDK version c- ea- GNOMEcti- GNOME SDK version c- GNOMac- GNOME SDK version c- GNOME SDK versi ub- GNOMEal- GNOME SDK version c- GNOME SDK versi ub- GNOME SDK version ad- GNOME SDK vos:- GNOME SDKwell-known
+- Cons: unmaintained since 2022; known deprecation warnings
+
+### Decision
+`dtolnay/rust-toolchain@stable` used in the CI workflow.
+
+### Risks & pitfalls
+- None. `dtolnay/rust-toolchain` is widely used and kept up to date.

@@ -58,9 +58,29 @@ When you invoke the launcher and start typing, Context Actions shows partial mat
 
 Without this, paste commands write to the clipboard but skip the keystroke simulation.
 
-### Windows & Linux
+### Linux
 
-Planned for a future release. Build from source in the meantime — see [docs/development-setup.md](docs/development-setup.md).
+1. Download the latest `.flatpak` from the [Releases page](https://github.com/your-org/context-actions/releases)
+2. Install it:
+   ```bash
+   flatpak install --user context-actions.flatpak
+   ```
+3. Run it:
+   ```bash
+   flatpak run ContextActions
+   ```
+
+> **Runtime dependency:** `xdotool` must be available inside the Flatpak sandbox for the Paste Text action to restore focus on X11. The distributed Flatpak includes this.
+
+> **Wayland note:** Focus restoration is not available under a pure Wayland session (no XWayland). The paste action still writes to the clipboard, but you must click the target window before pressing Ctrl+V.
+
+### Windows
+
+1. Download the latest `.msi` from the [Releases page](https://github.com/your-org/context-actions/releases)
+2. Run the installer
+3. Launch **Context Actions** from the Start Menu or system tray
+
+**SmartScreen warning** — because the installer is not yet code-signed, Windows SmartScreen may show a warning on first run. Click **More info → Run anyway** to proceed.
 
 ---
 
@@ -112,7 +132,17 @@ npm install
 npm run tauri dev
 ```
 
-### Build
+### Platform build targets
+
+| Platform | Prerequisites | Artefact | Command |
+|----------|--------------|----------|---------|
+| macOS | Xcode CLT, Rust, Node 18+ | `.dmg` | `npm run tauri build -- --bundles dmg` |
+| Linux | Tauri WebKit deps, `xdotool`, `flatpak-builder`, GNOME SDK 45 | `.flatpak` | `npm run tauri build -- --bundles flatpak` |
+| Windows | Rust, Node 18+, WiX Toolset | `.msi` | `npm run tauri build -- --bundles msi` |
+
+See [docs/development-setup.md](docs/development-setup.md) for the full per-platform dependency list.
+
+### Build (all targets for current platform)
 
 ```bash
 npm run tauri build

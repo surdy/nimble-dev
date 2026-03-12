@@ -150,6 +150,26 @@ These are also listed in `.vscode/extensions.json` so VS Code will prompt you to
 
 ---
 
+## Platform build targets
+
+Use `npm run tauri build` to produce a release bundle for the current platform. For a specific artefact type pass `--bundles <target>`:
+
+| Platform | Command | Output artefact | Extra pre-requisites |
+|----------|---------|-----------------|----------------------|
+| macOS | `npm run tauri build -- --bundles dmg` | `src-tauri/target/release/bundle/dmg/*.dmg` | Xcode CLT |
+| Linux | `npm run tauri build -- --bundles flatpak` | `src-tauri/target/release/bundle/flatpak/*.flatpak` | `flatpak`, `flatpak-builder`, GNOME SDK 45 (see below) |
+| Windows | `npm run tauri build -- --bundles msi` | `src-tauri/target/release/bundle/msi/*.msi` | WiX Toolset (installed automatically by Tauri CLI) |
+
+### Linux: Flatpak pre-requisites
+
+```bash
+sudo apt-get install flatpak flatpak-builder
+flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+flatpak install --user --noninteractive flathub org.gnome.Sdk//45 org.gnome.Platform//45
+```
+
+---
+
 ## Troubleshooting
 
 **`cargo` or `rustc` not found after install**

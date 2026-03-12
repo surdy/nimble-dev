@@ -13,3 +13,5 @@ One-line record of every meaningful decision. See `decisions-details.md` for ful
 
 - **Windows HWND storage type** — `isize` decimal string (matches `windows-sys` return type; zero guard handles invalid HWNDs) _(2026-03-13)_
 - **Windows PowerShell invocation** — `powershell -ExecutionPolicy Bypass -File` on `.ps1` extension; `powershell.exe` chosen over `pwsh` for default availability _(2026-03-13)_
+- **CI Linux packaging** — Flatpak (sandboxed, modern Linux standard; GNOME SDK 45 installed in CI) over AppImage or deb _(2026-03-12)_
+- **CI Rust toolchain action** — `dtolnay/rust-toolchain@stable` (actively maintained, fast) over deprecated `actions-rs` _(2026-03-12)_
