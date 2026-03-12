@@ -60,13 +60,13 @@ fn capture_previous_app(state: &PreviousApp) {
 }
 
 /// Windows: captures the foreground window handle via `GetForegroundWindow`.
-/// Stores the HWND as a decimal string.
+/// Stores the HWND cast to `usize` as a decimal string.
 #[cfg(target_os = "windows")]
 fn capture_previous_app(state: &PreviousApp) {
     use windows_sys::Win32::UI::WindowsAndMessaging::GetForegroundWindow;
     let hwnd = unsafe { GetForegroundWindow() };
-    if hwnd != 0 {
-        *state.0.lock().unwrap() = Some(hwnd.to_string());
+    if !hwnd.is_null() {
+        *state.0.lock().unwrap() = Some((hwnd as usize).to_string());
     }
 }
 
@@ -117,7 +117,8 @@ fn restore_previous_app(win_id: String) {
 #[cfg(target_os = "windows")]
 fn restore_previous_app(id: String) {
     use windows_sys::Win32::UI::WindowsAndMessaging::{BringWindowToTop, SetForegroundWindow};
-    if let Ok(hwnd) = id.parse::<isize>() {
+    if let Ok(hwnd_val) = id.parse::<usize>() {
+        let hwnd = hwnd_val as *mut std::ffi::c_void;
         unsafe {
             SetForegroundWindow(hwnd);
             BringWindowToTop(hwnd);
