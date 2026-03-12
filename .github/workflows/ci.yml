@@ -51,6 +51,7 @@ jobs:
             libgtk-3-dev \
             libayatana-appindicator3-dev \
             librsvg2-dev \
+            libxdo-dev \
             xdotool \
             flatpak \
             flatpak-builder
@@ -72,9 +73,21 @@ jobs:
         if: runner.os == 'macOS'
         run: npm run tauri build -- --bundles dmg
 
-      - name: Build (Linux - flatpak)
+      # Tauri 2 has no native Flatpak bundler; build the binary then use flatpak-builder.
+      - name: Build binary (Linux)
         if: runner.os == 'Linux'
-        run: npm run tauri build -- --bundles flatpak
+        run: npm run tauri build -- --no-bundle
+
+      - name: Build Flatpak
+        if: runner.os == 'Linux'
+        run: |
+          flatpak-builder --force-clean --user \
+            --repo=flatpak-repo \
+            build-dir \
+            flatpak/app.contextactions.App.json
+          flatpak build-bundle flatpak-repo \
+            context-actions.flatpak \
+            app.contextactions.App
 
       - name: Build (Windows - msi)
         if: runner.os == 'Windows'
@@ -93,7 +106,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: context-actions-linux
-          path: src-tauri/target/release/bundle/flatpak/*.flatpak
+          path: context-actions.flatpak
 
       - name: Upload Windows artefact
         if: runner.os == 'Windows'

@@ -1,0 +1,33 @@
+{
+  "app-id": "app.contextactions.App",
+  "runtime": "org.gnome.Platform",
+  "runtime-version": "45",
+  "sdk": "org.gnome.Sdk",
+  "command": "context-actions",
+  "finish-args": [
+    "--share=ipc",
+    "--socket=x11",
+    "--socket=fallback-x11",
+    "--socket=wayland",
+    "--share=network",
+    "--device=dri",
+    "--filesystem=xdg-config/ContextActions:create",
+    "--talk-name=org.freedesktop.Notifications",
+    "--talk-name=org.freedesktop.portal.Desktop"
+  ],
+  "modules": [
+    {
+      "name": "context-actions",
+      "buildsystem": "simple",
+      "build-commands": [
+        "install -Dm755 context-actions /app/bin/context-actions"
+      ],
+      "sources": [
+        {
+          "type": "file",
+          "path": "../src-tauri/target/release/context-actions"
+        }
+      ]
+    }
+  ]
+}
