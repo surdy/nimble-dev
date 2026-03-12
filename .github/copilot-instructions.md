@@ -96,3 +96,22 @@ All system actions the launcher can perform:
     ```
 
     Both files live in `.vibe/` at the repo root and are committed alongside the code change they relate to.
+
+## Git & Commit Hygiene Rules
+13. **Never create an "Initial plan" or placeholder commit.** Do not commit a plan,
+    outline, or todo list as a standalone commit before writing any code. Planning is
+    done in the conversation; only substantive code or documentation changes are committed.
+
+14. **Never create merge commits on `main`.** All pull requests opened by Copilot must
+    be merged using **squash merge** or **rebase merge** only. Do not use the default
+    merge strategy that produces a `Merge pull request #N …` commit. When merging via
+    the GitHub UI, always select "Squash and merge" or "Rebase and merge".
+
+15. **Every commit must contain at least one meaningful file change.** A commit that
+    only modifies metadata, adds an empty file, or produces no diff to any tracked file
+    is forbidden. If there is nothing substantive to commit yet, do not commit.
+
+16. **Commit messages must follow the Conventional Commits format.** Use one of:
+    `feat`, `fix`, `docs`, `chore`, `refactor`, `test`, `ci`, `style`, `perf`.
+    The subject line must be ≤ 72 characters and written in the imperative mood.
+    A body is optional but recommended for non-trivial changes.
