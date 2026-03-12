@@ -1003,3 +1003,113 @@ effective_input = raw_input                         (context empty OR raw_input 
 - Roadmap and motivation docs are committed
 - Docs tree has no broken links and no stale name references
 
+---
+
+## Stage 23 — Cross-Platform Clipboard (Linux & Windows)
+
+### Goal
+Replace the macOS-only `pbcopy` clipboard implementation with the `arboard` crate so that `copy_text` and `paste_text` work on Linux and Windows without per-action code changes.
+
+### Background
+`write_clipboard_text()` currently forks a `pbcopy` subprocess on macOS and returns `Err("paste_text is not yet supported on this platform")` on all other platforms. `arboard` is a pure-Rust, cross-platform clipboard crate that supports macOS, Linux (X11 + Wayland), and Windows. The `notify` crate's `macos_fsevent` feature is also incorrectly declared as an unconditional dependency — it should be scoped to macOS.
+
+### Tasks
+- Add `arboard = "3"` to `[dependencies]` in `Cargo.toml`
+- Move `notify` to `[dependencies]` without the `macos_fsevent` feature; add a `[target.'cfg(target_os = "macos")'.dependencies]` entry for `notify` with `features = ["macos_fsevent"]`
+- Rewrite `write_clipboard_text()`:
+  - macOS: keep `pbcopy` subprocess (avoids NSPasteboard threading constraints) **or** switch to `arboard` if testing confirms equal reliability
+  - Linux & Windows: use `arboard::Clipboard::new()?.set_text(text)`
+- Clipboard integration tests require a display server — gate them with `#[ignore]` and document that `DISPLAY` must be set for them to run
+- Verify `paste_text` (clipboard write + `enigo` Ctrl+V) works end-to-end on Linux in a VM or container with a display
+
+### Done when ✅
+- `copy_text` and `paste_text` compile and run on Linux and Windows without returning "not supported"
+- `cargo test` passes on all three platforms; clipboard integration tests marked `#[ignore]` for headless CI
+- `notify` no longer requests `macos_fsevent` on non-macOS builds
+
+---
+
+## Stage 24 — Linux: Focus Tracking & Paste Flow
+
+### Goal
+Implement `capture_previous_app` and `restore_previous_app` on Linux (X11) so that `paste_text` correctly returns focus to the user's previous application before simulating Ctrl+V.
+
+### Background
+On Linux the two functions are no-ops; focus is never restored before the `enigo` keystroke fires, so the paste lands in the wrong window or is silently dropped. Two approaches:
+1. **`xdotool` subprocess** — `xdotool getactivewindow` to capture, `xdotool windowfocus --sync <id>` to restore. Widely available on X11 desktops; zero Rust crate deps.
+2. **`xcb`/`x11rb`** — query `_NET_ACTIVE_WINDOW` directly in Rust. More robust, but adds a heavy dependency.
+
+Chosen approach: `xdotool` subprocess (simpler, no new crate, aligns with how `pbcopy` works on macOS).
+
+### Tasks
+- `capture_previous_app` on Linux: run `xdotool getactivewindow`; store the window ID as a string in `PreviousApp` state
+- `restore_previous_app` on Linux: run `xdotool windowfocus --sync <id>` + `xdotool windowraise <id>` as a subprocess; ignore errors gracefully
+- Wayland: detect `WAYLAND_DISPLAY` set and `DISPLAY` unset; skip focus restoration and return `Ok(())`; log a warning so the user can understand why paste doesn't focus
+- Update `PreviousApp` state to store `String` (PID string on macOS, window-ID string on Linux) to avoid per-platform type divergence
+- Add `xdotool` to the Linux system-dependency list in `docs/development-setup.md` and `docs/using/config-directory.md`
+
+### Done when ✅
+- On Linux X11, `paste_text` focuses the previous app and pastes correctly
+- On Wayland, `paste_text` writes to clipboard without crashing; a warning is logged about focus limitation
+- `cargo test` still passes on all platforms
+
+---
+
+## Stage 25 — Windows: Focus Tracking, Taskbar & Seed Script
+
+### Goal
+Make the launcher fully functional on Windows: pre-invoke focus capture, post-dismiss focus restore, hiding from the Windows taskbar, and a seed script the user can actually execute.
+
+### Tasks
+
+#### Focus tracking
+- `capture_previous_app` on Windows: call `GetForegroundWindow()` via `windows-sys` crate; store the `HWND` value as a `u64` in `PreviousApp` state
+- `restore_previous_app` on Windows: call `SetForegroundWindow(hwnd)` then `BringWindowToTop(hwnd)`
+- Add `[target.'cfg(target_os = "windows")'.dependencies]` block: `windows-sys = { version = "0.59", features = ["Win32_UI_WindowsAndMessaging"] }`
+
+#### Taskbar hiding
+- Add `"skipTaskbar": true` to the window entry in `tauri.conf.json`; Tauri 2 maps this to `WS_EX_TOOLWINDOW` on Windows so the window is excluded from the taskbar
+
+#### Seed script
+- In `watcher.rs`, conditionally seed `hello.sh` on macOS/Linux and `hello.ps1` on Windows
+- `hello.ps1`: PowerShell equivalent that `Write-Output`s a JSON array matching the `hello.sh` dynamic-list output format
+- Update `docs/using/advanced/writing-scripts.md` with a Windows PowerShell example; document that scripts must be in `scripts/` and output UTF-8
+
+#### Onboarding copy
+- `paste_text` on Windows uses `SendInput` via `enigo` — no Accessibility permission is needed; gate the macOS Accessibility prompt text in `+page.svelte` so it does not appear on Windows
+
+### Done when ✅
+- Launcher builds, runs, and passes all tests on Windows 10/11
+- `paste_text` and `copy_text` work end-to-end on Windows
+- Window does not appear in the Windows taskbar while visible
+- `hello.ps1` is seeded on first launch on Windows
+
+---
+
+## Stage 26 — Cross-Platform CI & Packaging
+
+### Goal
+Automated CI that builds, tests, and packages the app on macOS, Linux, and Windows so platform regressions are caught before shipping.
+
+### Tasks
+
+#### CI workflow (`.github/workflows/ci.yml`)
+- Matrix: `[macos-latest, ubuntu-22.04, windows-latest]`
+- Each job: install Rust stable → install Node.js 20 → `npm ci` → `cargo test` → `npm run tauri build`
+- Linux pre-step: install system deps (`libwebkit2gtk-4.1-dev`, `libgtk-3-dev`, `libayatana-appindicator3-dev`, `librsvg2-dev`, `xdotool`)
+- Cache `~/.cargo/registry` and `node_modules` per OS runner
+
+#### Packaging
+- macOS: `.dmg` produced by `tauri build`; note notarisation and code-signing as a future hardening step
+- Linux: `.AppImage` and `.deb`; document that `xdotool` is a runtime dependency
+- Windows: `.msi` (NSIS) installer; document UAC/SmartScreen first-run prompt
+
+#### Documentation
+- Add "Building from source" platform matrix to `docs/development-setup.md`
+- Add platform-specific install instructions to `README.md`
+
+### Done when ✅
+- CI passes green on all three runners
+- Build artefacts (`.dmg`, `.AppImage`, `.msi`) are produced successfully
+- README documents how to build on each platform
+
