@@ -106,9 +106,9 @@ pub(crate) fn validate_text(text: &str) -> Result<(), String> {
 // ── Clipboard helper ───────────────────────────────────────────────────────────
 
 /// Write `text` to the system clipboard.
-/// macOS: delegates to the `pbcopy` subprocess (no threading constraints).
-/// Other platforms: uses `arboard` (add the crate to Cargo.toml when targeting
-///                  Linux / Windows).
+/// macOS: delegates to the `pbcopy` subprocess (avoids NSPasteboard threading
+///        constraints with the main thread).
+/// Linux / Windows: uses `arboard`, a pure-Rust cross-platform clipboard crate.
 fn write_clipboard_text(text: &str) -> Result<(), String> {
     #[cfg(target_os = "macos")]
     {
@@ -129,9 +129,12 @@ fn write_clipboard_text(text: &str) -> Result<(), String> {
     }
     #[cfg(not(target_os = "macos"))]
     {
-        // arboard is intentionally not yet in Cargo.toml for the macOS-only
-        // build; add it when targeting Linux / Windows.
-        Err("paste_text is not yet supported on this platform".to_string())
+        let mut clipboard = arboard::Clipboard::new()
+            .map_err(|e| format!("Could not open clipboard: {e}"))?;
+        clipboard
+            .set_text(text)
+            .map_err(|e| format!("Could not write to clipboard: {e}"))?;
+        Ok(())
     }
 }
 
@@ -537,6 +540,15 @@ mod tests {
     }
 
     // ── validate_text ──────────────────────────────────────────────────────────
+
+    // clipboard_roundtrip: requires a live display server; skipped in headless CI.
+    // Run manually: cargo test -- --ignored clipboard_roundtrip
+    #[test]
+    #[ignore = "requires a display server / desktop session"]
+    fn clipboard_roundtrip() {
+        write_clipboard_text("context-actions clipboard test")
+            .expect("clipboard write should succeed");
+    }
 
     #[test]
     fn nul_byte_rejected() {
