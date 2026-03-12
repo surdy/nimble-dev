@@ -111,6 +111,8 @@ action:
 
 A seed example (`scripts/hello.sh`) is created automatically on first launch. Context Actions watches this directory and re-runs the active script when any file in `scripts/` changes, so edits take effect immediately.
 
+> **Linux runtime dependency:** Scripts that use `paste_text` as their `item_action` rely on `xdotool` to restore focus to the previous application before pasting. Install it with your package manager (e.g. `sudo apt install xdotool`). Under a pure Wayland session, focus restoration is skipped and the clipboard is set; paste manually with Ctrl+V.
+
 For full details and examples see [Writing Scripts](advanced/writing-scripts.md).
 
 ---

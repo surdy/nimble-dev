@@ -13,12 +13,15 @@ use tauri_plugin_opener::OpenerExt;
 
 // ── Previous-app focus tracking ────────────────────────────────────────────────
 
-/// Holds the PID of the application that had focus before the launcher appeared.
-struct PreviousApp(Mutex<Option<i32>>);
+/// Holds a platform-specific identifier for the application that had focus
+/// before the launcher appeared.
+/// - macOS: process ID as a decimal string
+/// - Linux: X11 window ID as a decimal string (from `xdotool getactivewindow`)
+struct PreviousApp(Mutex<Option<String>>);
 
-/// Record the frontmost application's PID before we show the launcher.
-/// Called in the global-shortcut handler and tray show/hide, so macOS knows
-/// where to return focus when paste_text is executed.
+/// macOS: captures the frontmost application's PID via NSWorkspace.
+/// Called in the global-shortcut handler and tray show/hide before the launcher
+/// is shown, so focus can be restored when paste_text is executed.
 #[cfg(target_os = "macos")]
 fn capture_previous_app(state: &PreviousApp) {
     use objc2_app_kit::NSWorkspace;
@@ -27,32 +30,76 @@ fn capture_previous_app(state: &PreviousApp) {
         let pid = app.processIdentifier();
         // Don't record ourselves
         if pid != std::process::id() as i32 {
-            *state.0.lock().unwrap() = Some(pid);
+            *state.0.lock().unwrap() = Some(pid.to_string());
         }
     }
 }
 
-#[cfg(not(target_os = "macos"))]
-fn capture_previous_app(_state: &PreviousApp) {}
-
-/// Activate the app identified by `pid` so it regains keyboard focus.
-#[cfg(target_os = "macos")]
-fn restore_previous_app(pid: i32) {
-    use objc2_app_kit::{NSApplicationActivationOptions, NSRunningApplication};
-    if let Some(app) =
-        NSRunningApplication::runningApplicationWithProcessIdentifier(pid)
+/// Linux: captures the active X11 window ID via `xdotool getactivewindow`.
+/// No-op under pure Wayland (xdotool requires X11).
+#[cfg(target_os = "linux")]
+fn capture_previous_app(state: &PreviousApp) {
+    // xdotool requires an X11 DISPLAY; skip silently under pure Wayland.
+    if std::env::var_os("WAYLAND_DISPLAY").is_some()
+        && std::env::var_os("DISPLAY").is_none()
     {
-        // ActivateIgnoringOtherApps is deprecated in macOS 14 but still works;
-        // it has no replacement on NSRunningApplication in objc2-app-kit 0.3.
-        #[allow(deprecated)]
-        app.activateWithOptions(
-            NSApplicationActivationOptions::ActivateIgnoringOtherApps,
-        );
+        return;
+    }
+    let Ok(out) = std::process::Command::new("xdotool")
+        .arg("getactivewindow")
+        .output()
+    else {
+        return;
+    };
+    if out.status.success() {
+        let win_id = String::from_utf8_lossy(&out.stdout).trim().to_string();
+        if !win_id.is_empty() {
+            *state.0.lock().unwrap() = Some(win_id);
+        }
     }
 }
 
-#[cfg(not(target_os = "macos"))]
-fn restore_previous_app(_pid: i32) {}
+#[cfg(not(any(target_os = "macos", target_os = "linux")))]
+fn capture_previous_app(_state: &PreviousApp) {}
+
+/// macOS: activates the application identified by its PID string.
+#[cfg(target_os = "macos")]
+fn restore_previous_app(id: String) {
+    use objc2_app_kit::{NSApplicationActivationOptions, NSRunningApplication};
+    if let Ok(pid) = id.parse::<i32>() {
+        if let Some(app) =
+            NSRunningApplication::runningApplicationWithProcessIdentifier(pid)
+        {
+            // ActivateIgnoringOtherApps is deprecated in macOS 14 but still works;
+            // it has no replacement on NSRunningApplication in objc2-app-kit 0.3.
+            #[allow(deprecated)]
+            app.activateWithOptions(
+                NSApplicationActivationOptions::ActivateIgnoringOtherApps,
+            );
+        }
+    }
+}
+
+/// Linux: focuses the X11 window identified by its window ID string via `xdotool`.
+/// Gracefully skips under pure Wayland (xdotool unavailable there).
+#[cfg(target_os = "linux")]
+fn restore_previous_app(win_id: String) {
+    if std::env::var_os("WAYLAND_DISPLAY").is_some()
+        && std::env::var_os("DISPLAY").is_none()
+    {
+        eprintln!("[ctx] focus restore skipped: Wayland without XWayland bridge");
+        return;
+    }
+    let _ = std::process::Command::new("xdotool")
+        .args(["windowfocus", "--sync", &win_id])
+        .output();
+    let _ = std::process::Command::new("xdotool")
+        .args(["windowraise", &win_id])
+        .output();
+}
+
+#[cfg(not(any(target_os = "macos", target_os = "linux")))]
+fn restore_previous_app(_id: String) {}
 
 // ── Pure helpers (no Tauri runtime needed — fully testable) ──────────────────
 
