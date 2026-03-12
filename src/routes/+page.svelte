@@ -366,6 +366,12 @@
         input = "";
         await invoke(cfg.result_action === "paste_text" ? "paste_text" : "copy_text", { text });
       }
+    } else if (cmd.action.type === "static_list" || cmd.action.type === "dynamic_list") {
+      // If the user selected this command via partial match, fill in the full
+      // phrase so the reactive effect detects the exact match and loads the list.
+      if (input.toLowerCase() !== cmd.phrase.toLowerCase()) {
+        input = cmd.phrase;
+      }
     } else if (cmd.action.type === "builtin") {
       const builtinAction = cmd.action.config.action;
       if (builtinAction === "ctx_set") {
