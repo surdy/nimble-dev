@@ -64,3 +64,35 @@ All system actions the launcher can perform:
 - `docs/` — user-facing and developer documentation
 - `src/` — SvelteKit frontend source
 - `src-tauri/` — Rust/Tauri backend source
+- `.vibe/` — decision logs (see rule 12 below)
+
+## Decision Logging Rules
+12. **Log every meaningful trade-off or technology decision to `.vibe/decisions-details.md` and `.vibe/decisions.md`.** This applies to any choice where two or more reasonable approaches were considered — library selection, architectural patterns, API design, UI/UX trade-offs, security model choices, performance strategies, etc.
+
+    **`.vibe/decisions-details.md`** — append one entry per decision using this exact structure:
+    ```
+    ## <Short title summarising the decision>
+    _Date: YYYY-MM-DD_
+
+    ### Options evaluated
+    **Option A — <name>**
+    - Pros: …
+    - Cons: …
+
+    **Option B — <name>**
+    - Pros: …
+    - Cons: …
+
+    ### Decision
+    <Which option was chosen and the core rationale in 1–3 sentences.>
+
+    ### Risks & pitfalls
+    - …
+    ```
+
+    **`.vibe/decisions.md`** — append one bullet per decision (title + one-line outcome only, no rationale or risks):
+    ```
+    - **<Short title>** — <chosen option in a few words> _(YYYY-MM-DD)_
+    ```
+
+    Both files live in `.vibe/` at the repo root and are committed alongside the code change they relate to.
