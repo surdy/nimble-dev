@@ -98,3 +98,45 @@ Chosen Option A (unconditional). The compile cost on macOS is minimal and the si
 ### Risks & pitfalls
 - If `arboard` introduces a macOS build failure in a future version, it would break the macOS build even though it is not used there
 - The unused macOS backend code slightly increases binary size on macOS; acceptable for now
+
+---
+
+## PreviousApp state type: i32 PID vs String for cross-platform IDs
+_Date: 2026-03-12_
+
+### Options evaluated
+**Option A — Keep `i32`, add a second field for Linux window ID**
+- Pros: macOS code unchanged; explicit typing per platform
+- Cons: requires a custom enum or tuple struct; more boilerplate at every call site
+
+**Option B — Change to `String`, store IDs as decimal strings**
+- Pros: single unified state type; macOS PIDs and Linux X11 window IDs both fit; call sites are identical across platforms; trivial to extend to Windows HWND (also a numeric ID)
+- Cons: macOS path now parses the string back to `i32`; marginal allocation overhead vs direct integer
+
+### Decision
+Chosen Option B (`String`). The uniformity across call sites outweighs the trivial parse cost. All platform ID types (PID, X11 window ID, HWND) are representable as decimal strings, making this approach future-proof for Windows too.
+
+### Risks & pitfalls
+- If `pid.to_string()` and `id.parse::<i32>()` ever diverge due to a bug, macOS focus restoration silently fails; the parse is infallible for valid PIDs so this risk is purely theoretical
+- Variable name `prev_pid` at call sites is slightly misleading on Linux (it holds a window ID, not a PID); acceptable as a cosmetic issue
+
+---
+
+## Linux focus restore: capture timing (before vs after window show)
+_Date: 2026-03-12_
+
+### Options evaluated
+**Option A — Capture before `window.show()`**
+- Pros: launcher window is not yet visible, so `xdotool getactivewindow` reliably returns the user's app rather than our own window
+- Cons: none apparent
+
+**Option B — Capture after `window.show()`**
+- Pros: none
+- Cons: on X11, the launcher may have already received focus by the time `getactivewindow` is called, capturing ourselves instead of the target app
+
+### Decision
+Chosen Option A (capture before show). This mirrors the existing macOS pattern and avoids the race condition where the launcher steals focus before we can sample the active window.
+
+### Risks & pitfalls
+- On some X11 compositors there can be a short delay between `window.show()` and the window actually receiving focus; the capture-before-show approach is safe regardless
+- If the hotkey triggers capture from the launcher window itself (hotkey pressed twice in rapid succession), we may capture our own window ID; the macOS guard `pid != std::process::id()` prevents this on macOS, but there is currently no equivalent guard on Linux — worst case: restore is a no-op

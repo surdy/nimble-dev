@@ -1029,7 +1029,7 @@ Replace the macOS-only `pbcopy` clipboard implementation with the `arboard` crat
 
 ---
 
-## Stage 24 — Linux: Focus Tracking & Paste Flow
+## Stage 24 — Linux: Focus Tracking & Paste Flow ✅
 
 ### Goal
 Implement `capture_previous_app` and `restore_previous_app` on Linux (X11) so that `paste_text` correctly returns focus to the user's previous application before simulating Ctrl+V.
