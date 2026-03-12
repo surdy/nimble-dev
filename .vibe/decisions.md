@@ -4,7 +4,7 @@ One-line record of every meaningful decision. See `decisions-details.md` for ful
 
 ---
 
-- **Linux focus tracking** — `xdo` Rust crate (libxdo) replacing `xdotool` subprocess; works inside Flatpak sandbox when libxdo is bundled _(2026-03-12)_
+- **Linux focus tracking (reversal)** — switched from `xdotool` subprocess to `libxdo-sys` FFI; `xdotool` incompatible with Flatpak sandbox _(2026-03-12)_
 - **Cross-platform clipboard** — `pbcopy` on macOS retained; `arboard` crate added for Linux & Windows _(2026-03-11)_
 - **Windows Win32 bindings** — `windows-sys` (Microsoft-published, minimal FFI, feature-gated) over `winapi` or `windows` _(2026-03-11)_
 - **arboard crate scoping** — unconditional `[dependencies]` (simpler; per-platform cost is minimal) _(2026-03-11)_

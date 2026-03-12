@@ -67,7 +67,7 @@ All system actions the launcher can perform:
 - `.vibe/` — decision logs (see rule 12 below)
 
 ## Decision Logging Rules
-12. **Log every meaningful trade-off or technology decision to `.vibe/decisions-details.md` and `.vibe/decisions.md`.** This applies to any choice where two or more reasonable approaches were considered — library selection, architectural patterns, API design, UI/UX trade-offs, security model choices, performance strategies, etc.
+12. **Log every meaningful trade-off or technology decision to `.vibe/decisions-details.md` and `.vibe/decisions.md`.** This applies to any choice where two or more reasonable approaches were considered — library selection, architectural patterns, API design, UI/UX trade-offs, security model choices, performance strategies, etc. **Also log any reversal**: when the user questions a previous decision and we switch to a different approach, record it as a dedicated entry (or amend the original entry) explaining what triggered the reversal and why the new route was chosen.
 
     **`.vibe/decisions-details.md`** — append one entry per decision using this exact structure:
     ```
@@ -83,6 +83,11 @@ All system actions the launcher can perform:
     - Pros: …
     - Cons: …
 
+    ### Reversal (include this section only when overturning a previous decision)
+    _Original decision:_ "<title of previous entry>" chose <option> _(YYYY-MM-DD)_
+    _Trigger:_ <what prompted the question or rethink>
+    _Why we changed route:_ <concise rationale — what was wrong with the original choice>
+
     ### Decision
     <Which option was chosen and the core rationale in 1–3 sentences.>
 
@@ -90,9 +95,10 @@ All system actions the launcher can perform:
     - …
     ```
 
-    **`.vibe/decisions.md`** — append one bullet per decision (title + one-line outcome only, no rationale or risks):
+    **`.vibe/decisions.md`** — append one bullet per decision (title + one-line outcome only, no rationale or risks). For reversals, prefix the title with `(reversal)` so they are easy to scan:
     ```
     - **<Short title>** — <chosen option in a few words> _(YYYY-MM-DD)_
+    - **<Short title> (reversal)** — switched from <old> to <new>; <one-line reason> _(YYYY-MM-DD)_
     ```
 
     Both files live in `.vibe/` at the repo root and are committed alongside the code change they relate to.

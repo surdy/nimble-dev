@@ -215,6 +215,15 @@ _Date: 2026-03-12_
 - Pros: universal Wayland support; no C dep
 - Cons: no `get_active_window` equivalent (cannot capture focus); alarming permission prompt; input injection only
 
+### Reversal
+_Original decision:_ "Linux focus tracking: xdotool subprocess vs Rust xcb/x11rb crate" chose `xdotool` subprocess _(2026-03-11)_
+_Trigger:_ User questioned whether `xdotool` would work inside a Flatpak sandbox; investigation confirmed the host PATH is not accessible at runtime inside the sandbox.
+_Why we changed route:_ `libxdo-sys` links against `libxdo` at compile time so it can be bundled directly into the Flatpak and requires no runtime binary on the host. It also removes the user-facing system dependency on `xdotool` for non-Flatpak installs.
+
 ### Decision
-Switched to `libxdo-sys` 0.11. Removes the `xdotool` runtime dependency, makes the Flatpak bundle self-contained, and uses the same underlying C libSwitched txdSwitched to `libxdo-sys` 0.11. Removes the `xdotool` runtime d uSwitched to `l Risks & pitfalls
-- `libxdo-sys` requires `libxdo-dev` at build time on Linux- `libxdo-sys` requires `libxdo-dep - `libxdo-sys` requires `libxdo-dev` at build time on Linux- `libxdo-sys` requires `libxdo-dep - `libxayl- `libxdo-sys` requires `libxdo-dev` at build t manifest must include libxdo as a bundled module before publishing to Flathub.
+Switched to `libxdo-sys` 0.11. Removes the `xdotool` runtime dependency, makes the Flatpak bundle self-contained, and uses the same underlying C library that `xdotool` itself wraps. The switch required less than 30 lines of change.
+
+### Risks & pitfalls
+- `libxdo-sys` requires `libxdo-dev` at compile time on Linux (CI installs it; documented in development-setup.md)
+- The Flatpak manifest must include libxdo as a bundled module before publishing to Flathub
+- X11 only — Wayland focus capture remains unsupported (same limitation as `xdotool`)
