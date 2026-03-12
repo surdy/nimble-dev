@@ -305,6 +305,18 @@ pub fn run_script(
         return Err(format!("Script not found: {}", script_path.display()));
     }
 
+    #[cfg(windows)]
+    let mut cmd = {
+        let ext = script_path.extension().and_then(|e| e.to_str()).unwrap_or("");
+        if ext.eq_ignore_ascii_case("ps1") {
+            let mut c = std::process::Command::new("powershell");
+            c.args(["-ExecutionPolicy", "Bypass", "-File", &script_path.to_string_lossy().into_owned()]);
+            c
+        } else {
+            std::process::Command::new(&script_path)
+        }
+    };
+    #[cfg(not(windows))]
     let mut cmd = std::process::Command::new(&script_path);
     if let Some(a) = arg {
         cmd.arg(a);
@@ -373,6 +385,18 @@ pub fn run_script_values(
         return Err(format!("Script not found: {}", script_path.display()));
     }
 
+    #[cfg(windows)]
+    let mut cmd = {
+        let ext = script_path.extension().and_then(|e| e.to_str()).unwrap_or("");
+        if ext.eq_ignore_ascii_case("ps1") {
+            let mut c = std::process::Command::new("powershell");
+            c.args(["-ExecutionPolicy", "Bypass", "-File", &script_path.to_string_lossy().into_owned()]);
+            c
+        } else {
+            std::process::Command::new(&script_path)
+        }
+    };
+    #[cfg(not(windows))]
     let mut cmd = std::process::Command::new(&script_path);
     if let Some(a) = arg {
         cmd.arg(a);

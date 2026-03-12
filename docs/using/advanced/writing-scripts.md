@@ -120,3 +120,44 @@ See [Dynamic List](dynamic-list.md) for the full YAML schema and argument mode r
    ```
 
 5. **Live reload** — editing any file in `scripts/` triggers a reload. If a dynamic list is currently displayed it re-runs automatically within the 300 ms debounce window.
+
+---
+
+## Windows: PowerShell scripts
+
+On Windows, use `.ps1` files instead of shell scripts. PowerShell is available on all Windows 10/11 systems without installation.
+
+### Minimal example (`hello.ps1`)
+
+```powershell
+# Example dynamic list script.
+# Output a JSON array or plain text — same format as on macOS/Linux.
+Write-Output '[{"title":"Hello from a script","subtext":"Edit scripts/hello.ps1 to customise"},{"title":"Dynamic lists are powerful","subtext":"Return JSON or plain text from any executable"}]'
+```
+
+### Accepting an argument
+
+```powershell
+param([string]$Query = "")
+# Filter a list by the typed query
+$items = @("Alice", "Bob", "Carol") | Where-Object { $_ -match $Query }
+$json = $items | ForEach-Object { '{"title":"' + $_ + '"}' }
+Write-Output ('[' + ($json -join ',') + ']')
+```
+
+### Registering a PowerShell script
+
+Point the `script` field at the `.ps1` filename:
+
+```yaml
+phrase: search names
+title: Search names
+action:
+  type: dynamic_list
+  config:
+    script: search-names.ps1
+    arg: optional
+```
+
+> **Note:** Context Actions invokes scripts via `cmd /C <script>` on Windows. PowerShell scripts with a `.ps1` extension are launched via `powershell -ExecutionPolicy Bypass -File <script>`. Ensure your PowerShell execution policy permits running scripts, or use `-ExecutionPolicy Bypass` as shown above.
+

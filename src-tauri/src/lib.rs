@@ -59,7 +59,18 @@ fn capture_previous_app(state: &PreviousApp) {
     }
 }
 
-#[cfg(not(any(target_os = "macos", target_os = "linux")))]
+/// Windows: captures the foreground window handle via `GetForegroundWindow`.
+/// Stores the HWND as a decimal string.
+#[cfg(target_os = "windows")]
+fn capture_previous_app(state: &PreviousApp) {
+    use windows_sys::Win32::UI::WindowsAndMessaging::GetForegroundWindow;
+    let hwnd = unsafe { GetForegroundWindow() };
+    if hwnd != 0 {
+        *state.0.lock().unwrap() = Some(hwnd.to_string());
+    }
+}
+
+#[cfg(not(any(target_os = "macos", target_os = "linux", target_os = "windows")))]
 fn capture_previous_app(_state: &PreviousApp) {}
 
 /// macOS: activates the application identified by its PID string.
@@ -98,7 +109,23 @@ fn restore_previous_app(win_id: String) {
         .output();
 }
 
-#[cfg(not(any(target_os = "macos", target_os = "linux")))]
+/// Windows: restores foreground focus to the window identified by its HWND string.
+/// Uses `SetForegroundWindow` + `BringWindowToTop`.
+/// Note: Windows focus-stealing prevention may silently block `SetForegroundWindow`
+/// if this process is not currently the foreground process; call immediately
+/// after the launcher window is hidden to minimise the blocking window.
+#[cfg(target_os = "windows")]
+fn restore_previous_app(id: String) {
+    use windows_sys::Win32::UI::WindowsAndMessaging::{BringWindowToTop, SetForegroundWindow};
+    if let Ok(hwnd) = id.parse::<isize>() {
+        unsafe {
+            SetForegroundWindow(hwnd);
+            BringWindowToTop(hwnd);
+        }
+    }
+}
+
+#[cfg(not(any(target_os = "macos", target_os = "linux", target_os = "windows")))]
 fn restore_previous_app(_id: String) {}
 
 // ── Pure helpers (no Tauri runtime needed — fully testable) ──────────────────

@@ -8,12 +8,19 @@ use crate::commands;
 /// The Tauri event name emitted to the frontend when commands are reloaded.
 pub const COMMANDS_RELOADED_EVENT: &str = "commands://reloaded";
 
-/// Content of the seed `hello.sh` script written on first launch.
+/// Content of the seed `hello.sh` script written on first launch (macOS / Linux).
 const HELLO_SH: &str = r#"#!/bin/sh
 # Example dynamic list script.
 # Output a JSON array of objects with "title" and optional "subtext" fields,
 # or plain text for a single-item result. Edit this file to return your own items.
 echo '[{"title":"Hello from a script","subtext":"Edit scripts/hello.sh to customise"},{"title":"Dynamic lists are powerful","subtext":"Return JSON or plain text from any executable"}]'
+"#;
+
+/// Content of the seed `hello.ps1` script written on first launch (Windows).
+const HELLO_PS1: &str = r#"# Example dynamic list script.
+# Output a JSON array of objects with 'title' and optional 'subtext' fields,
+# or plain text for a single-item result. Edit this file to return your own items.
+Write-Output '[{"title":"Hello from a script","subtext":"Edit scripts/hello.ps1 to customise"},{"title":"Dynamic lists are powerful","subtext":"Return JSON or plain text from any executable"}]'
 "#;
 
 /// Start a background thread that watches `commands_dir` and the sibling
@@ -72,12 +79,12 @@ pub fn start(app: AppHandle, commands_dir: PathBuf, allow_duplicates: bool) {
             .unwrap_or_else(|| commands_dir.join("../scripts"));
         // Ensure the scripts directory exists so the watcher can be registered.
         let _ = std::fs::create_dir_all(&scripts_dir);
-        // Seed hello.sh on first launch (when it does not yet exist).
-        let hello_sh = scripts_dir.join("hello.sh");
-        if !hello_sh.exists() {
-            if let Ok(()) = std::fs::write(&hello_sh, HELLO_SH) {
-                #[cfg(unix)]
-                {
+        // Seed hello.sh on first launch on macOS / Linux (when it does not yet exist).
+        #[cfg(unix)]
+        {
+            let hello_sh = scripts_dir.join("hello.sh");
+            if !hello_sh.exists() {
+                if let Ok(()) = std::fs::write(&hello_sh, HELLO_SH) {
                     use std::os::unix::fs::PermissionsExt;
                     if let Ok(meta) = std::fs::metadata(&hello_sh) {
                         let mut perms = meta.permissions();
@@ -85,6 +92,14 @@ pub fn start(app: AppHandle, commands_dir: PathBuf, allow_duplicates: bool) {
                         let _ = std::fs::set_permissions(&hello_sh, perms);
                     }
                 }
+            }
+        }
+        // Seed hello.ps1 on first launch on Windows (when it does not yet exist).
+        #[cfg(windows)]
+        {
+            let hello_ps1 = scripts_dir.join("hello.ps1");
+            if !hello_ps1.exists() {
+                let _ = std::fs::write(&hello_ps1, HELLO_PS1);
             }
         }
         if let Err(e) = watcher.watch(&scripts_dir, RecursiveMode::Recursive) {
