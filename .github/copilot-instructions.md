@@ -95,10 +95,10 @@ All system actions the launcher can perform:
     - …
     ```
 
-    **`.vibe/decisions.md`** — append one bullet per decision (title + one-line outcome only, no rationale or risks). For reversals, prefix the title with `(reversal)` so they are easy to scan:
+    **`.vibe/decisions.md`** — append one bullet per decision (title + one-line outcome only, no rationale or risks). Treat this file as an **append-only log** — never modify or remove an existing bullet. For reversals, add a new bullet at the end referencing the original decision; do not alter the original bullet:
     ```
     - **<Short title>** — <chosen option in a few words> _(YYYY-MM-DD)_
-    - **<Short title> (reversal)** — switched from <old> to <new>; <one-line reason> _(YYYY-MM-DD)_
+    - **<Short title> (reversal of: "<original title>" YYYY-MM-DD)** — switched from <old> to <new>; <one-line reason> _(YYYY-MM-DD)_
     ```
 
     Both files live in `.vibe/` at the repo root and are committed alongside the code change they relate to.

@@ -215,7 +215,7 @@ _Date: 2026-03-12_
 - Pros: universal Wayland support; no C dep
 - Cons: no `get_active_window` equivalent (cannot capture focus); alarming permission prompt; input injection only
 
-### Reversal
+### Reversal of: "Linux focus tracking: xdotool subprocess vs Rust xcb/x11rb crate"
 _Original decision:_ "Linux focus tracking: xdotool subprocess vs Rust xcb/x11rb crate" chose `xdotool` subprocess _(2026-03-11)_
 _Trigger:_ User questioned whether `xdotool` would work inside a Flatpak sandbox; investigation confirmed the host PATH is not accessible at runtime inside the sandbox.
 _Why we changed route:_ `libxdo-sys` links against `libxdo` at compile time so it can be bundled directly into the Flatpak and requires no runtime binary on the host. It also removes the user-facing system dependency on `xdotool` for non-Flatpak installs.
