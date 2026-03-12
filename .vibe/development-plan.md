@@ -1005,7 +1005,7 @@ effective_input = raw_input                         (context empty OR raw_input 
 
 ---
 
-## Stage 23 — Cross-Platform Clipboard (Linux & Windows)
+## Stage 23 — Cross-Platform Clipboard (Linux & Windows) ✅
 
 ### Goal
 Replace the macOS-only `pbcopy` clipboard implementation with the `arboard` crate so that `copy_text` and `paste_text` work on Linux and Windows without per-action code changes.

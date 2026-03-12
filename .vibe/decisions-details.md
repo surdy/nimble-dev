@@ -77,3 +77,24 @@ Chosen Option A (`windows-sys`). It is the minimal, Microsoft-maintained, active
 - Raw `unsafe` code must be carefully reviewed to avoid undefined behaviour from dangling HWNDs
 - `SetForegroundWindow` is subject to Windows focus-stealing prevention rules; it may silently fail if the calling process is not the foreground process — the `HWND` should be stored and the call made immediately after the launcher hides, before Windows decides to block it
 - Feature flags in `windows-sys` must be kept in sync if additional Win32 APIs are needed later
+
+---
+
+## arboard crate: unconditional vs macOS-excluded target dependency
+_Date: 2026-03-11_
+
+### Options evaluated
+**Option A — Unconditional `[dependencies]` entry**
+- Pros: simpler Cargo.toml; `arboard` compiles on all platforms regardless of use; no need for `#[cfg(not(target_os = "macos"))]` on the dependency
+- Cons: adds unused compile overhead on macOS (arboard's macOS backend is compiled but never called); slightly larger macOS binary
+
+**Option B — `[target.'cfg(not(target_os = "macos"))'.dependencies]`**
+- Pros: arboard is only compiled on platforms where it is actually used; cleaner separation
+- Cons: more complex Cargo.toml; if the macOS `pbcopy` path is ever replaced by `arboard`, the dependency entry must be moved
+
+### Decision
+Chosen Option A (unconditional). The compile cost on macOS is minimal and the simplicity of a single dependency entry outweighs it. The `arboard` crate documents that it gates its platform backends internally, so the macOS overhead is contained.
+
+### Risks & pitfalls
+- If `arboard` introduces a macOS build failure in a future version, it would break the macOS build even though it is not used there
+- The unused macOS backend code slightly increases binary size on macOS; acceptable for now
