@@ -1,0 +1,198 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+
+jobs:
+  # ── Build binaries on each platform ───────────────────────────────────────
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            platform: macos
+          - os: ubuntu-22.04
+            platform: linux
+          - os: windows-latest
+            platform: windows
+
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust (stable)
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Cache Cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-${{ hashFiles('src-tauri/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
+
+      - name: Cache node_modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}
+          restore-keys: ${{ runner.os }}-node-
+
+      - name: Install Linux system dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libgtk-3-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            libxdo-dev \
+            flatpak \
+            flatpak-builder
+          flatpak remote-add --user --if-not-exists flathub \
+            https://flathub.org/repo/flathub.flatpakrepo
+          flatpak install --user --noninteractive flathub \
+            org.gnome.Sdk//45 \
+            org.gnome.Platform//45
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build (macOS - dmg)
+        if: runner.os == 'macOS'
+        run: npm run tauri build -- --bundles dmg
+
+      - name: Build binary (Linux)
+        if: runner.os == 'Linux'
+        run: npm run tauri build -- --no-bundle
+
+      - name: Build Flatpak
+        if: runner.os == 'Linux'
+        run: |
+          flatpak-builder --force-clean --user \
+            --repo=flatpak-repo \
+            build-dir \
+            flatpak/app.contextactions.App.json
+          flatpak build-bundle flatpak-repo \
+            context-actions.flatpak \
+            app.contextactions.App
+
+      - name: Build (Windows - msi)
+        if: runner.os == 'Windows'
+        run: npm run tauri build -- --bundles msi
+
+      - name: Upload macOS artifact
+        if: runner.os == 'macOS'
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifact-macos
+          path: src-tauri/target/release/bundle/dmg/*.dmg
+
+      - name: Upload Linux artifact
+        if: runner.os == 'Linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifact-linux
+          path: context-actions.flatpak
+
+      - name: Upload Windows artifact
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifact-windows
+          path: src-tauri/target/release/bundle/msi/*.msi
+
+  # ── Publish GitHub Release + update Homebrew tap + submit WinGet PR ────────
+  publish:
+    needs: build
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Collect artifact paths and compute SHA256 checksums
+        id: sha
+        run: |
+          DMG=$(ls artifacts/artifact-macos/*.dmg | head -1)
+          FLATPAK=$(ls artifacts/artifact-linux/*.flatpak | head -1)
+          MSI=$(ls artifacts/artifact-windows/*.msi | head -1)
+          echo "dmg_path=$DMG" >> $GITHUB_OUTPUT
+          echo "flatpak_path=$FLATPAK" >> $GITHUB_OUTPUT
+          echo "msi_path=$MSI" >> $GITHUB_OUTPUT
+          echo "dmg_sha=$(sha256sum $DMG | awk '{print $1}')" >> $GITHUB_OUTPUT
+          echo "flatpak_sha=$(sha256sum $FLATPAK | awk '{print $1}')" >> $GITHUB_OUTPUT
+          echo "msi_sha=$(sha256sum $MSI | awk '{print $1}')" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        id: release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            ${{ steps.sha.outputs.dmg_path }}
+            ${{ steps.sha.outputs.flatpak_path }}
+            ${{ steps.sha.outputs.msi_path }}
+
+      - name: Update Homebrew tap
+        run: |
+          TAG=${{ github.ref_name }}
+          VER=${TAG#v}
+          DMG_NAME=$(basename "${{ steps.sha.outputs.dmg_path }}")
+          FLATPAK_NAME=$(basename "${{ steps.sha.outputs.flatpak_path }}")
+          RELEASE_BASE="https://github.com/surdy/contexts-launcher/releases/download/${TAG}"
+
+          eval "$(ssh-agent -s)"
+          echo "${{ secrets.TAP_DEPLOY_KEY }}" | ssh-add -
+          git clone git@github.com:surdy/homebrew-tap.git /tmp/homebrew-tap
+          cd /tmp/homebrew-tap
+
+          sed -i "s|version \".*\"|version \"${VER}\"|" Formula/context-actions.rb
+          sed -i "s|PLACEHOLDER_MACOS_ARM_SHA256|${{ steps.sha.outputs.dmg_sha }}|" Formula/context-actions.rb
+          sed -i "s|PLACEHOLDER_MACOS_X86_SHA256|${{ steps.sha.outputs.dmg_sha }}|" Formula/context-actions.rb
+          sed -i "s|PLACEHOLDER_LINUX_X86_SHA256|${{ steps.sha.outputs.flatpak_sha }}|" Formula/context-actions.rb
+          sed -i "s|context-actions-aarch64-apple-darwin.tar.gz|${DMG_NAME}|" Formula/context-actions.rb
+          sed -i "s|context-actions-x86_64-apple-darwin.tar.gz|${DMG_NAME}|" Formula/context-actions.rb
+          sed -i "s|context-actions-x86_64-unknown-linux-gnu.tar.gz|${FLATPAK_NAME}|" Formula/context-actions.rb
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Formula/context-actions.rb
+          git diff --cached --quiet || git commit -m "chore: update context-actions to ${VER}"
+          git push origin main
+
+      - name: Submit WinGet PR
+        run: |
+          TAG=${{ github.ref_name }}
+          VER=${TAG#v}
+          MSI_NAME=$(basename "${{ steps.sha.outputs.msi_path }}")
+          MSI_URL="https://github.com/surdy/contexts-launcher/releases/download/${TAG}/${MSI_NAME}"
+
+          # Install wingetcreate (.NET tool)
+          dotnet tool install --global wingetcreate 2>/dev/null || true
+          export PATH="$PATH:$HOME/.dotnet/tools"
+
+          wingetcreate update Surdy.ContextActions \
+            --version "${VER}" \
+            --urls "${MSI_URL}" \
+            --submit \
+            --token "${{ secrets.WINGET_PAT }}"
