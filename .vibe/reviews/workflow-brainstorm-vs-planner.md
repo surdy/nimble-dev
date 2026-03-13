@@ -27,6 +27,16 @@ The filed review in `.vibe/reviews/` is the formal handoff artifact between the 
 
 A single agent shifts modes at "I've decided on X" — but you lose enforcement. The agent can start updating the roadmap mid-exploration before you're ready.
 
+### Tool constraints are a feature, not a limitation
+
+Each chat mode declares exactly which tools it is allowed to use in its frontmatter. The VS Code Copilot runtime enforces this — the mode is physically incapable of calling a tool outside its declared list, regardless of what you ask it to do.
+
+For `Explore`, this means removing `editFiles` and `runCommands`. Without those tools, the mode **cannot** write files or execute terminal commands — even accidentally, even mid-conversation after you say "Approach 2 seems better". No roadmap edits, no dev plan stages, no git commits until you deliberately switch to `Planner`.
+
+For `Planner`, the inverse: `editFiles` and `runCommands` are present because the entire point is to make concrete changes. The system prompt keeps it scoped to specific write targets (`docs/roadmap.md`, `.vibe/development-plan.md`).
+
+The filed review in `.vibe/reviews/` becomes the trust boundary between the two modes: `Explore` can only produce it, `Planner` can only consume it. Neither mode can drift into the other's territory.
+
 ---
 
 ## Alternatives considered
