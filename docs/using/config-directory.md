@@ -22,7 +22,6 @@ Nimble/
   commands/         ← YAML command files (watched and hot-reloaded by Nimble)
     examples/       ← seeded on first launch if commands/ is empty
     …               ← your own files and subdirectories
-  lists/            ← named list files for the static_list action type
   scripts/          ← executable scripts for the dynamic_list action type
 ```
 
@@ -66,30 +65,17 @@ commands/
   snippets/
     email-signature.yaml
     legal-disclaimer.yaml
+  show-team-emails/
+    show-team-emails.yaml      ← static_list command
+    team-emails.yaml           ← list file, co-located with its command
   work/
     open-jira.yaml
     paste-standup-template.yaml
 ```
 
+Commands that use a `static_list` action keep their list file in the same directory as the command YAML. See [Advanced — Static List](advanced/static-list.md) for details.
+
 For the full command YAML schema, action types, and live-reload details see [Configuring Commands](configuring-commands.md).
-
----
-
-## `lists/`
-
-Contains named list files used by the `static_list` action type. Each file is a YAML array of items that the launcher can display inline when the corresponding command phrase is typed.
-
-File names (without the `.yaml` extension) are how commands reference their list:
-```yaml
-action:
-  type: static_list
-  config:
-    list: team-emails    # reads lists/team-emails.yaml
-```
-
-Changes to files in `lists/` are detected by the file watcher and will refresh any list currently displayed in the launcher within the ~300 ms debounce window.
-
-For the full list file schema and behaviour details see [Advanced — Static List](advanced/static-list.md).
 
 ---
 

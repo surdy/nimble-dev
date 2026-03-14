@@ -301,14 +301,16 @@ fn list_commands(app: tauri::AppHandle) -> Result<commands::LoadResult, String> 
     commands::load_from_dir(&config_dir.join("commands"), allow_duplicates)
 }
 
-/// Load a named list from `config_dir/lists/<list_name>.yaml` and return its items.
+/// Load a named list from `<commands_dir>/<command_dir>/<list_name>.yaml`.
+/// The list file is co-located with the command YAML that references it.
 #[tauri::command]
-fn load_list(app: tauri::AppHandle, list_name: String) -> Result<Vec<commands::ListItem>, String> {
+fn load_list(app: tauri::AppHandle, command_dir: String, list_name: String) -> Result<Vec<commands::ListItem>, String> {
     let config_dir = app
         .path()
         .app_config_dir()
         .map_err(|e| e.to_string())?;
-    commands::load_list(&config_dir, &list_name)
+    let dir = config_dir.join("commands").join(&command_dir);
+    commands::load_list(&dir, &list_name)
 }
 
 /// Run a script from `config_dir/scripts/<script_name>` and return the items it produces.

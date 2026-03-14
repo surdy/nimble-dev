@@ -27,11 +27,11 @@ example-config/
 │       ├── paste-team-emails-as-task.yaml
 │       ├── copy-email.yaml
 │       ├── copy-uuid.yaml
-│       ├── show-team-emails.yaml
+│       ├── show-team-emails/     # static_list — command + list co-located
+│       │   ├── show-team-emails.yaml
+│       │   └── team-emails.yaml
 │       ├── dynamic-list-example.yaml
 │       └── script-action-example.yaml
-├── lists/
-│   └── team-emails.yaml   # used by show-team-emails.yaml
 └── scripts/
     ├── hello.sh            # dynamic_list — filterable greeting list
     ├── timestamp.sh        # script_action — outputs current date/time

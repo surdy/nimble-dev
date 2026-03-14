@@ -4,11 +4,33 @@ Displays a named list of items inline in the launcher the moment the typed phras
 
 ---
 
+## Directory layout
+
+A `static_list` command requires two files — the command YAML and the list YAML — living together in the same subdirectory of `commands/`:
+
+```
+commands/
+  show-team-emails/
+    show-team-emails.yaml      ← command YAML
+    team-emails.yaml           ← list file (referenced by name)
+```
+
+The command YAML references the list file by name (without the `.yaml` extension):
+
+```yaml
+action:
+  type: static_list
+  config:
+    list: team-emails          # resolves to team-emails.yaml in the same directory
+```
+
+---
+
 ## List file format
 
-List files live in the `lists/` subdirectory of your config directory (see [Config Directory](../config-directory.md)). Each file is a YAML array of items with a required `title` and an optional `subtext`.
+Each list file is a YAML array of items with a required `title` and an optional `subtext`.
 
-**`lists/team-emails.yaml`:**
+**`commands/show-team-emails/team-emails.yaml`:**
 ```yaml
 # Team email addresses
 - title: Alice Smith
@@ -31,8 +53,6 @@ Blank lines between items and `#` comments are valid YAML and are encouraged for
 ---
 
 ## Command YAML
-
-Reference the list file by name (without the `.yaml` extension). The `item_action` field is optional — omit it if you only need the list for reference.
 
 ```yaml
 # Minimal — selecting an item just dismisses the launcher

@@ -61,7 +61,7 @@ action:
     text: <string>       # the text to copy to the clipboard
 
     # --- static_list ---
-    list: <string>       # name of the list file in lists/ (without .yaml extension)
+    list: <string>       # name of the list file (without .yaml) co-located with the command
     item_action: paste_text | copy_text | open_url   # optional
 
     # --- dynamic_list ---

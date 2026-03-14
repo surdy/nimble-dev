@@ -117,8 +117,9 @@
 
     if (staticMatch && staticMatch.action.type === "static_list") {
       const listName = staticMatch.action.config.list;
+      const commandDir = staticMatch.source_dir;
       activeListCmd = staticMatch;
-      invoke<ListItem[]>("load_list", { listName })
+      invoke<ListItem[]>("load_list", { commandDir, listName })
         .then(items => { listItems = items; selectedIndex = 0; })
         .catch(() => { listItems = []; });
       return;
@@ -480,7 +481,8 @@
         // If a list is currently displayed, refresh it in case its file changed
         if (activeListCmd && activeListCmd.action.type === "static_list") {
           const listName = activeListCmd.action.config.list;
-          invoke<ListItem[]>("load_list", { listName })
+          const commandDir = activeListCmd.source_dir;
+          invoke<ListItem[]>("load_list", { commandDir, listName })
             .then(items => { listItems = items; })
             .catch(() => { listItems = []; });
         } else if (activeListCmd && activeListCmd.action.type === "dynamic_list") {

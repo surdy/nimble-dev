@@ -35,7 +35,7 @@ pub enum ItemAction {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StaticListConfig {
-    /// Name of the list file (without extension) inside `config_dir/lists/`.
+    /// Name of the list file (without extension) co-located with the command YAML.
     pub list: String,
     /// Optional action to perform when an item is selected.
     /// If absent, selecting an item dismisses the launcher without any further action.
@@ -121,6 +121,10 @@ pub struct Command {
     #[serde(default = "default_true")]
     pub enabled: bool,
     pub action: Action,
+    /// Directory containing the command YAML file, relative to the commands
+    /// root. Set at load time — not present in the YAML file itself.
+    #[serde(default)]
+    pub source_dir: String,
 }
 
 fn default_true() -> bool {
@@ -230,13 +234,25 @@ action:
 "#,
     ),
     (
-        "examples/show-team-emails.yaml",
+        "examples/show-team-emails/show-team-emails.yaml",
         r#"phrase: team emails
 title: Team email addresses
 action:
   type: static_list
   config:
     list: team-emails
+"#,
+    ),
+    (
+        "examples/show-team-emails/team-emails.yaml",
+        r#"- title: Alice Smith
+  subtext: alice@example.com
+
+- title: Bob Jones
+  subtext: bob@example.com
+
+- title: Carol White
+  subtext: carol@example.com
 "#,
     ),
     (
@@ -266,17 +282,20 @@ action:
 
 // ── List loader ────────────────────────────────────────────────────────────────
 
-/// Load a named list from `config_dir/lists/<list_name>.yaml`.
+/// Load a named list from `<command_dir>/<list_name>.yaml`.
+///
+/// `command_dir` is the absolute path to the directory containing the command
+/// YAML that references this list. The list file lives alongside the command.
 ///
 /// `list_name` must be a plain filename (no path separators or `..` components).
 /// Returns `Err` if the name is unsafe, the file is missing, or parsing fails.
-pub fn load_list(config_dir: &Path, list_name: &str) -> Result<Vec<ListItem>, String> {
-    // Security: reject names that could escape the lists/ directory.
+pub fn load_list(command_dir: &Path, list_name: &str) -> Result<Vec<ListItem>, String> {
+    // Security: reject names that could escape the command directory.
     if list_name.contains('/') || list_name.contains('\\') || list_name.contains("..") {
         return Err(format!("Invalid list name: {list_name:?}"));
     }
 
-    let path = config_dir.join("lists").join(format!("{list_name}.yaml"));
+    let path = command_dir.join(format!("{list_name}.yaml"));
     let yaml = fs::read_to_string(&path)
         .map_err(|e| format!("Could not read list {:?}: {e}", path.display()))?;
     serde_yaml::from_str::<Vec<ListItem>>(&yaml)
@@ -536,6 +555,16 @@ pub fn load_from_dir(config_dir: &Path, allow_duplicates: bool) -> Result<LoadRe
                         }
                         seen.insert(key, display);
                     }
+                    // Record the directory containing this command file, relative
+                    // to the commands root, so the frontend can pass it back when
+                    // loading co-located list files.
+                    let source_dir = path
+                        .parent()
+                        .and_then(|p| p.strip_prefix(config_dir).ok())
+                        .map(|p| p.display().to_string())
+                        .unwrap_or_default();
+                    let mut cmd = cmd;
+                    cmd.source_dir = source_dir;
                     commands.push(cmd);
                 }
             },
@@ -661,7 +690,7 @@ mod tests {
         let dir = TempDir::new().unwrap();
         write_yaml(
             &dir,
-            "show.yaml",
+            "sub/show.yaml",
             "phrase: team emails\ntitle: Team emails\naction:\n  type: static_list\n  config:\n    list: team-emails\n",
         );
         let result = load_from_dir(dir.path(), true).unwrap();
@@ -672,6 +701,20 @@ mod tests {
         } else {
             panic!("expected StaticList action");
         }
+        // source_dir should reflect the subdirectory
+        assert_eq!(result.commands[0].source_dir, "sub");
+    }
+
+    #[test]
+    fn source_dir_is_empty_for_root_commands() {
+        let dir = TempDir::new().unwrap();
+        write_yaml(
+            &dir,
+            "open.yaml",
+            "phrase: open google\ntitle: Open Google\naction:\n  type: open_url\n  config:\n    url: https://www.google.com\n",
+        );
+        let result = load_from_dir(dir.path(), true).unwrap();
+        assert_eq!(result.commands[0].source_dir, "");
     }
 
     #[test]
@@ -691,8 +734,7 @@ mod tests {
     }
 
     fn write_list(dir: &TempDir, name: &str, content: &str) {
-        let path = dir.path().join("lists").join(format!("{name}.yaml"));
-        fs::create_dir_all(path.parent().unwrap()).unwrap();
+        let path = dir.path().join(format!("{name}.yaml"));
         fs::write(path, content).unwrap();
     }
 
@@ -723,7 +765,6 @@ mod tests {
     #[test]
     fn load_list_missing_file_returns_err() {
         let dir = TempDir::new().unwrap();
-        fs::create_dir_all(dir.path().join("lists")).unwrap();
         assert!(load_list(dir.path(), "nonexistent").is_err());
     }
 

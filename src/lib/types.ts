@@ -73,6 +73,8 @@ export interface Command {
   phrase: string;
   title: string;
   action: Action;
+  /** Directory containing the command YAML, relative to commands root. Set at load time. */
+  source_dir: string;
 }
 
 export interface DuplicateWarning {
