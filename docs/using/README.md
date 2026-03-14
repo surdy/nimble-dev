@@ -1,6 +1,6 @@
-# Using Context Actions
+# Using Nimble
 
-Welcome to the Context Actions user documentation. Use the guides below to get up and running, then explore the advanced features at your own pace.
+Welcome to the Nimble user documentation. Use the guides below to get up and running, then explore the advanced features at your own pace.
 
 ---
 
@@ -10,7 +10,7 @@ Welcome to the Context Actions user documentation. Use the guides below to get u
 |-------|-------------|
 | [First run](first-run.md) | Choose your global shortcut and open the launcher for the first time |
 | [Configuring commands](configuring-commands.md) | YAML schema, directory layout, enable/disable, live reload |
-| [Config directory structure](config-directory.md) | Where Context Actions stores your commands, lists, and scripts |
+| [Config directory structure](config-directory.md) | Where Nimble stores your commands, lists, and scripts |
 
 ## Actions
 

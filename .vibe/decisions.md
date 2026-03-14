@@ -1,4 +1,4 @@
-# Decisions — Context Actions (Summary)
+# Decisions — Nimble (Summary)
 
 One-line record of every meaningful decision. See `decisions-details.md` for full rationale and risk analysis.
 
@@ -16,3 +16,5 @@ One-line record of every meaningful decision. See `decisions-details.md` for ful
 - **CI Linux packaging** — Flatpak (sandboxed, modern Linux standard; GNOME SDK 45 installed in CI) over AppImage or deb _(2026-03-12)_
 - **CI Rust toolchain action** — `dtolnay/rust-toolchain@stable` (actively maintained, fast) over deprecated `actions-rs` _(2026-03-12)_
 - **Linux focus tracking (reversal of: "Linux focus tracking" 2026-03-11)** — switched from `xdotool` subprocess to `libxdo-sys` FFI; `xdotool` incompatible with Flatpak sandbox _(2026-03-12)_
+
+- **App renamed to Nimble** — product name, binary name, bundle identifier, config directory, and all documentation updated from "Context Actions" / "context-actions" / "ContextActions" to "Nimble" / "nimble" _(2025-07-14)_

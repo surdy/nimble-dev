@@ -1,4 +1,4 @@
-# Context Actions
+# Nimble
 
 A fast, cross-platform desktop launcher driven entirely by commands — think Alfred or Raycast, built around multi-word phrase commands with real-time partial matching and extensibility through sandboxed scripts.
 
@@ -6,9 +6,9 @@ A fast, cross-platform desktop launcher driven entirely by commands — think Al
 
 ## How it works
 
-You define commands by dropping YAML files into a config directory on your machine. Each file maps a **phrase** (the words you type) to an **action** (open a URL, paste text, run a script, etc.). Context Actions watches that directory and hot-reloads commands the moment you save a file — no restart needed.
+You define commands by dropping YAML files into a config directory on your machine. Each file maps a **phrase** (the words you type) to an **action** (open a URL, paste text, run a script, etc.). Nimble watches that directory and hot-reloads commands the moment you save a file — no restart needed.
 
-When you invoke the launcher and start typing, Context Actions shows partial matches in real time. As you type more of the phrase the results narrow down; when you hit the full phrase of a list command the list expands automatically. Press `Enter` or click to execute.
+When you invoke the launcher and start typing, Nimble shows partial matches in real time. As you type more of the phrase the results narrow down; when you hit the full phrase of a list command the list expands automatically. Press `Enter` or click to execute.
 
 ---
 
@@ -40,34 +40,34 @@ When you invoke the launcher and start typing, Context Actions shows partial mat
 
 ### macOS
 
-1. Download the latest `.dmg` from the [Releases page](https://github.com/your-org/context-actions/releases)
-2. Open the `.dmg`, drag **Context Actions.app** into **Applications**, then eject the disk image
+1. Download the latest `.dmg` from the [Releases page](https://github.com/your-org/nimble/releases)
+2. Open the `.dmg`, drag **Nimble.app** into **Applications**, then eject the disk image
 
-**Gatekeeper warning** — because Context Actions is not yet notarized by Apple, macOS will block the first launch. To allow it:
+**Gatekeeper warning** — because Nimble is not yet notarized by Apple, macOS will block the first launch. To allow it:
 
 1. Open **System Settings → Privacy & Security**
 2. Scroll to the **Security** section and click **Open Anyway**
 3. Confirm by clicking **Open** in the dialog
 
-> **Alternative:** Right-click **Context Actions.app** in Finder and choose **Open** — the dialog will include an **Open** button even for unsigned apps.
+> **Alternative:** Right-click **Nimble.app** in Finder and choose **Open** — the dialog will include an **Open** button even for unsigned apps.
 
 **Accessibility permission** — required for the Paste Text action to simulate `⌘V`:
 
 1. Open **System Settings → Privacy & Security → Accessibility**
-2. Click **+** and add **Context Actions.app**, then enable its toggle
+2. Click **+** and add **Nimble.app**, then enable its toggle
 
 Without this, paste commands write to the clipboard but skip the keystroke simulation.
 
 ### Linux
 
-1. Download the latest `.flatpak` from the [Releases page](https://github.com/your-org/context-actions/releases)
+1. Download the latest `.flatpak` from the [Releases page](https://github.com/your-org/nimble/releases)
 2. Install it:
    ```bash
-   flatpak install --user context-actions.flatpak
+   flatpak install --user nimble.flatpak
    ```
 3. Run it:
    ```bash
-   flatpak run ContextActions
+   flatpak run Nimble
    ```
 
 > **Runtime dependency:** `xdotool` must be available inside the Flatpak sandbox for the Paste Text action to restore focus on X11. The distributed Flatpak includes this.
@@ -76,15 +76,15 @@ Without this, paste commands write to the clipboard but skip the keystroke simul
 
 ### Windows
 
-1. Download the latest `.msi` from the [Releases page](https://github.com/your-org/context-actions/releases)
+1. Download the latest `.msi` from the [Releases page](https://github.com/your-org/nimble/releases)
 2. Run the installer
-3. Launch **Context Actions** from the Start Menu or system tray
+3. Launch **Nimble** from the Start Menu or system tray
 
 **SmartScreen warning** — because the installer is not yet code-signed, Windows SmartScreen may show a warning on first run. Click **More info → Run anyway** to proceed.
 
 ---
 
-## Using Context Actions
+## Using Nimble
 
 | Guide | Description |
 |-------|-------------|
@@ -100,10 +100,10 @@ Without this, paste commands write to the clipboard but skip the keystroke simul
 
 ## Your first command
 
-Once Context Actions is running and your shortcut is set, open the commands directory and create a file:
+Once Nimble is running and your shortcut is set, open the commands directory and create a file:
 
 ```
-~/Library/Application Support/ContextActions/commands/open-github.yaml
+~/Library/Application Support/Nimble/commands/open-github.yaml
 ```
 
 ```yaml

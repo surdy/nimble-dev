@@ -1,4 +1,4 @@
-# Context Actions — GitHub Copilot Instructions
+# Nimble — GitHub Copilot Instructions
 
 ## Project Overview
 Contexts is a cross-platform desktop launcher (similar to Alfred, Spotlight, Raycast) that is primarily command-driven. Users type multi-word phrase commands and the launcher shows partial matches with suggested completions in real time.
@@ -37,7 +37,7 @@ All system actions the launcher can perform:
 7. **Keep `docs/using/config-directory.md` up to date** whenever a new subdirectory is introduced in the config directory (e.g. for scripts, settings, or any future data type). Add a dedicated section describing the subdirectory's purpose and any relevant file format notes.
 8. **Keep `docs/using/advanced/writing-scripts.md` up to date** whenever the `dynamic_list` script interface changes (output format, arg modes, security boundaries, or timeout behaviour). Also keep `docs/using/configuring-commands.md` current with the full YAML schema for all action types.
 9. **Update `example-config/` for every new action type or config feature.** Add at least one representative command YAML (and any required list/script files) to `example-config/` so the repository always contains a copy-pasteable reference that exercises every supported capability. Update `example-config/README.md` to document the new entry.
-10. **Install live examples in the local app config directory after every new feature.** After implementing a new action type or config feature, add a working example directly to `~/Library/Application Support/ContextActions/` (macOS) so it is immediately testable in the running app. Mirror the same files that were added to `example-config/`.
+10. **Install live examples in the local app config directory after every new feature.** After implementing a new action type or config feature, add a working example directly to `~/Library/Application Support/Nimble/` (macOS) so it is immediately testable in the running app. Mirror the same files that were added to `example-config/`.
 11. **Update `docs/roadmap.md` when a planned item is implemented.** Mark the corresponding roadmap item with a `[x]` checkbox and update its description to reflect the final implementation if it differs from the original wording.
 
 ## Tech Stack

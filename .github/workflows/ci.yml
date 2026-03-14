@@ -82,10 +82,10 @@ jobs:
           flatpak-builder --force-clean --user \
             --repo=flatpak-repo \
             build-dir \
-            flatpak/app.contextactions.App.json
+            flatpak/app.nimble.App.json
           flatpak build-bundle flatpak-repo \
-            context-actions.flatpak \
-            app.contextactions.App
+            nimble.flatpak \
+            app.nimble.App
 
       - name: Build (Windows - msi)
         if: runner.os == 'Windows'
@@ -96,19 +96,19 @@ jobs:
         if: runner.os == 'macOS'
         uses: actions/upload-artifact@v4
         with:
-          name: context-actions-macos
+          name: nimble-macos
           path: src-tauri/target/release/bundle/dmg/*.dmg
 
       - name: Upload Linux artefact
         if: runner.os == 'Linux'
         uses: actions/upload-artifact@v4
         with:
-          name: context-actions-linux
-          path: context-actions.flatpak
+          name: nimble-linux
+          path: nimble.flatpak
 
       - name: Upload Windows artefact
         if: runner.os == 'Windows'
         uses: actions/upload-artifact@v4
         with:
-          name: context-actions-windows
+          name: nimble-windows
           path: src-tauri/target/release/bundle/msi/*.msi

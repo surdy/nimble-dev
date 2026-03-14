@@ -1,6 +1,6 @@
 # Config Directory Structure
 
-Context Actions stores all per-user data in a single platform-specific config directory. The directory and its subdirectories are created automatically on first launch.
+Nimble stores all per-user data in a single platform-specific config directory. The directory and its subdirectories are created automatically on first launch.
 
 ---
 
@@ -8,18 +8,18 @@ Context Actions stores all per-user data in a single platform-specific config di
 
 | Platform | Path |
 |----------|------|
-| macOS | `~/Library/Application Support/ContextActions/` |
-| Linux | `$XDG_CONFIG_HOME/ContextActions/` (falls back to `~/.config/ContextActions/`) |
-| Windows | `%APPDATA%\ContextActions\` |
+| macOS | `~/Library/Application Support/Nimble/` |
+| Linux | `$XDG_CONFIG_HOME/Nimble/` (falls back to `~/.config/Nimble/`) |
+| Windows | `%APPDATA%\Nimble\` |
 
 ---
 
 ## Subdirectory layout
 
 ```
-ContextActions/
+Nimble/
   settings.yaml     ← application settings (hotkey, show_context_chip, allow_duplicates)
-  commands/         ← YAML command files (watched and hot-reloaded by Context Actions)
+  commands/         ← YAML command files (watched and hot-reloaded by Nimble)
     examples/       ← seeded on first launch if commands/ is empty
     …               ← your own files and subdirectories
   lists/            ← named list files for the static_list action type
@@ -32,7 +32,7 @@ Each subdirectory holds a distinct type of data. New subdirectories will be intr
 
 ## `settings.yaml`
 
-The `settings.yaml` file at the root of the config directory controls application-level behaviour. It is created automatically the first time you run Context Actions.
+The `settings.yaml` file at the root of the config directory controls application-level behaviour. It is created automatically the first time you run Nimble.
 
 ```yaml
 # hotkey: Super+Space   # uncomment and set your preferred global shortcut
@@ -55,7 +55,7 @@ allow_duplicates: true
 
 ## `commands/`
 
-Contains all YAML command files. Context Actions watches this subdirectory recursively and reloads commands within ~300 ms whenever a file is added, changed, or removed — no restart required.
+Contains all YAML command files. Nimble watches this subdirectory recursively and reloads commands within ~300 ms whenever a file is added, changed, or removed — no restart required.
 
 You can organise your command files into any subdir structure you like:
 
@@ -95,7 +95,7 @@ For the full list file schema and behaviour details see [Advanced — Static Lis
 
 ## `scripts/`
 
-Contains executable scripts used by the `dynamic_list` action type. Scripts can be any executable file — shell scripts, Python programs, compiled binaries, etc. Each script writes its output to stdout and Context Actions parses the result.
+Contains executable scripts used by the `dynamic_list` action type. Scripts can be any executable file — shell scripts, Python programs, compiled binaries, etc. Each script writes its output to stdout and Nimble parses the result.
 
 File names (without extension) are how commands reference their script:
 ```yaml
@@ -109,7 +109,7 @@ action:
 - **Plain text** — the entire stdout is used as the title of a single result item.
 - **JSON array** — an array of `{ "title": "...", "subtext": "..." }` objects (subtext optional).
 
-A seed example (`scripts/hello.sh`) is created automatically on first launch. Context Actions watches this directory and re-runs the active script when any file in `scripts/` changes, so edits take effect immediately.
+A seed example (`scripts/hello.sh`) is created automatically on first launch. Nimble watches this directory and re-runs the active script when any file in `scripts/` changes, so edits take effect immediately.
 
 > **Linux build dependency:** The paste-text focus-restoration feature requires `libxdo-dev` at compile time (the `xdo` crate links against it). Install it with your package manager (e.g. `sudo apt install libxdo-dev`). No runtime binary is needed. Under a pure Wayland session, focus restoration is skipped and the clipboard is set; paste manually with Ctrl+V.
 

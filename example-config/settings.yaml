@@ -1,4 +1,4 @@
-# Context Actions — application settings
+# Nimble — application settings
 #
 # This file is read once at startup. Changes to show_context_chip and
 # allow_duplicates take effect on the next relaunch.

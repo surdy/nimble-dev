@@ -1,6 +1,6 @@
 # First Run
 
-When you launch Context Actions for the first time you will see the onboarding screen. This only happens once — every subsequent launch goes straight to the background.
+When you launch Nimble for the first time you will see the onboarding screen. This only happens once — every subsequent launch goes straight to the background.
 
 ---
 
@@ -29,7 +29,7 @@ Once you confirm your shortcut:
 
 - The launcher hides itself and continues running silently in the background
 - No Dock icon is shown
-- Your shortcut is saved to local storage and automatically re-registered every time Context Actions starts
+- Your shortcut is saved to local storage and automatically re-registered every time Nimble starts
 
 Press your shortcut at any time to summon the command bar. Press it again — or press `Escape`, or click anywhere outside the window — to dismiss it.
 
@@ -43,7 +43,7 @@ To pick a new shortcut, open the app's built-in DevTools console and run:
 localStorage.removeItem('ctx_hotkey')
 ```
 
-Then quit and relaunch Context Actions — the onboarding screen will appear again so you can choose a new combination.
+Then quit and relaunch Nimble — the onboarding screen will appear again so you can choose a new combination.
 
 > A proper "change shortcut" UI will be added in a future release.
 
@@ -58,12 +58,12 @@ Then quit and relaunch Context Actions — the onboarding screen will appear aga
 
 ## Your first command
 
-After the shortcut is set the launcher is ready to use. Out of the box, Context Actions ships with a few example commands in your `commands/examples/` folder. Try invoking the launcher and typing `open` — you should see them appear.
+After the shortcut is set the launcher is ready to use. Out of the box, Nimble ships with a few example commands in your `commands/examples/` folder. Try invoking the launcher and typing `open` — you should see them appear.
 
 To create your own command, open your `commands/` directory:
 
 ```
-~/Library/Application Support/ContextActions/commands/
+~/Library/Application Support/Nimble/commands/
 ```
 
 Create a file — for example `open-github.yaml` — with this content:
@@ -77,6 +77,6 @@ action:
     url: https://github.com
 ```
 
-Save the file. Within 300 ms Context Actions reloads automatically. Invoke the launcher and start typing `open github` — the result appears as you type. Press `Enter` or click it to open the URL in your browser.
+Save the file. Within 300 ms Nimble reloads automatically. Invoke the launcher and start typing `open github` — the result appears as you type. Press `Enter` or click it to open the URL in your browser.
 
 That one file is all it takes. Every other action type (`paste_text`, `copy_text`, `static_list`, `dynamic_list`) follows the same pattern — just a different `action` block. See [Basic Functionality](basic/README.md) to continue.

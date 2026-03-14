@@ -515,7 +515,7 @@
     tabindex="-1"
     onkeydown={handleOnboardingKeydown}
   >
-    <p class="ob-title">Welcome to Context Actions</p>
+    <p class="ob-title">Welcome to Nimble</p>
     <p class="ob-sub">Press the key combination you want to use<br>to open the launcher from anywhere.</p>
 
     <div class="shortcut-preview" class:active={!!capturedShortcut}>

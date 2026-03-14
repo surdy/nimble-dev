@@ -6,7 +6,7 @@ A **context** is a word or phrase that is silently appended to every command you
 
 ## How it works
 
-When a context is active, Context Actions substitutes your raw input with:
+When a context is active, Nimble substitutes your raw input with:
 
 ```
 effective input = raw input + " " + context
@@ -68,7 +68,7 @@ Press Enter to clear the context. All matching returns to normal.
 The examples below use commands that ship in the `example-config/` directory. Copy that directory into your live config to follow along:
 
 ```bash
-cp -r example-config/* ~/Library/Application\ Support/ContextActions/
+cp -r example-config/* ~/Library/Application\ Support/Nimble/
 ```
 
 ### Test 1 — Context as phrase completion (`open_url`)

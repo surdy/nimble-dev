@@ -1,6 +1,6 @@
 # Development Environment Setup
 
-This guide walks you through setting up your machine to build and run Context Actions locally.
+This guide walks you through setting up your machine to build and run Nimble locally.
 
 ---
 
@@ -100,7 +100,7 @@ cargo --version   # e.g. cargo 1.94.0
 
 ```bash
 git clone <repository-url>
-cd context-actions
+cd nimble
 ```
 
 ---

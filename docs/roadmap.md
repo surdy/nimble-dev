@@ -1,4 +1,4 @@
-# Context Actions — Roadmap
+# Nimble — Roadmap
 
 ---
 
@@ -35,7 +35,7 @@
 ### Distribution & Updates
 - [x] Add license — MIT license added
 - [x] GitHub Actions CI — automated builds for macOS, Windows, and Linux on every push
-- [ ] Homebrew tap — `brew install context-actions` via a dedicated tap repository
+- [ ] Homebrew tap — `brew install nimble` via a dedicated tap repository
 - [ ] Update notifications — show an indicator when a newer version is available
 - [ ] Beta channel — opt-in channel for pre-release builds
 - [ ] `ctx update` command — trigger an in-app update from the launcher itself

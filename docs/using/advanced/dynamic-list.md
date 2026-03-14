@@ -8,9 +8,9 @@ Scripts live in the `scripts/` subdirectory of your config directory (see [Confi
 
 ## Script output format
 
-Each script writes to stdout and Context Actions parses the result:
+Each script writes to stdout and Nimble parses the result:
 
-| Output type | How Context Actions interprets it |
+| Output type | How Nimble interprets it |
 |-------------|----------------------|
 | **JSON array** | Array of `{ "title": "...", "subtext": "..." }` objects (subtext optional) |
 | **Plain text** | Entire stdout (trimmed) becomes the title of a single result item |
@@ -74,7 +74,7 @@ For `optional` and `required` modes the script is re-invoked as the user types, 
 
 ## `item_action`
 
-When an item is selected, Context Actions uses the item's **`subtext`** as the value for the action (falling back to `title` if `subtext` is absent). This means `subtext` serves a dual purpose: it's the secondary line shown in the UI *and* the payload that gets pasted, copied, or opened.
+When an item is selected, Nimble uses the item's **`subtext`** as the value for the action (falling back to `title` if `subtext` is absent). This means `subtext` serves a dual purpose: it's the secondary line shown in the UI *and* the payload that gets pasted, copied, or opened.
 
 | `item_action` value | What happens on selection |
 |---------------------|---------------------------|

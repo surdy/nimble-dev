@@ -1,13 +1,13 @@
 ---
 agent: agent
-description: Implement a new built-in action type for Context Actions end-to-end — Rust backend, frontend, tests, docs, example config, and commit.
+description: Implement a new built-in action type for Nimble end-to-end — Rust backend, frontend, tests, docs, example config, and commit.
 tools:
   - editFiles
   - runCommands
   - codebase
 ---
 
-You are implementing a new built-in action type for the Context Actions launcher.
+You are implementing a new built-in action type for the Nimble launcher.
 Work through the checklist below **in order**, completing each step fully before moving to the next.
 Never skip a step. After each numbered step, confirm it is done before proceeding.
 
@@ -80,7 +80,7 @@ Confirm all tests still pass.
 - Create `example-config/commands/examples/<action-name>-example.yaml` with a minimal working command using the new action type.
 - If the action requires additional files (lists, scripts), add them to `example-config/lists/` or `example-config/scripts/` as appropriate.
 - Update `example-config/README.md`: add a row to the examples table documenting the new entry.
-- Copy the same files to `~/Library/Application Support/ContextActions/` so the running app can exercise them immediately.
+- Copy the same files to `~/Library/Application Support/Nimble/` so the running app can exercise them immediately.
 
 ## Step 8 — Documentation
 

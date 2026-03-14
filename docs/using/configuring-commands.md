@@ -1,6 +1,6 @@
 # Configuring Commands
 
-Commands are stored as individual YAML files inside the `commands/` subdirectory of the platform-specific config directory. Context Actions watches this subdirectory recursively and reloads commands automatically whenever a file is added, changed, or removed — no restart required.
+Commands are stored as individual YAML files inside the `commands/` subdirectory of the platform-specific config directory. Nimble watches this subdirectory recursively and reloads commands automatically whenever a file is added, changed, or removed — no restart required.
 
 For the overall config directory layout see [Config Directory Structure](config-directory.md).
 
@@ -10,18 +10,18 @@ For the overall config directory layout see [Config Directory Structure](config-
 
 | Platform | Path |
 |----------|------|
-| macOS | `~/Library/Application Support/ContextActions/commands/` |
-| Linux | `$XDG_CONFIG_HOME/ContextActions/commands/` (falls back to `~/.config/ContextActions/commands/`) |
-| Windows | `%APPDATA%\ContextActions\commands\` |
+| macOS | `~/Library/Application Support/Nimble/commands/` |
+| Linux | `$XDG_CONFIG_HOME/Nimble/commands/` (falls back to `~/.config/Nimble/commands/`) |
+| Windows | `%APPDATA%\Nimble\commands\` |
 
 > **Tip:** open a new command file in your editor directly from shell:  
-> `code ~/Library/Application\ Support/ContextActions/commands/my-command.yaml`
+> `code ~/Library/Application\ Support/Nimble/commands/my-command.yaml`
 
 ---
 
 ## One command per file
 
-Each `.yaml` (or `.yml`) file contains exactly one command. Files can be nested in any subdirectory structure you like — Context Actions discovers them all recursively.
+Each `.yaml` (or `.yml`) file contains exactly one command. Files can be nested in any subdirectory structure you like — Nimble discovers them all recursively.
 
 ```
 commands/
@@ -139,7 +139,7 @@ action:
 
 ## Live reload
 
-Context Actions watches your config directory with a file-system watcher. After you save any `.yaml` file the launcher updates itself within 300 ms. You do **not** need to restart the app.
+Nimble watches your config directory with a file-system watcher. After you save any `.yaml` file the launcher updates itself within 300 ms. You do **not** need to restart the app.
 
 Events that trigger a reload:
 - Creating a new `.yaml`/`.yml` file anywhere in the config tree

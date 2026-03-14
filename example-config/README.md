@@ -1,10 +1,10 @@
 # Example Config Directory
 
-This directory mirrors the layout of the Context Actions config directory on disk. Copy its contents into your own config directory to get started with a full set of working examples.
+This directory mirrors the layout of the Nimble config directory on disk. Copy its contents into your own config directory to get started with a full set of working examples.
 
 **Config directory location (macOS):**
 ```
-~/Library/Application Support/ContextActions/
+~/Library/Application Support/Nimble/
 ```
 
 ## Structure

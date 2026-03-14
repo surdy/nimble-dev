@@ -38,4 +38,4 @@ Typing `search google rust programming` opens `https://www.google.com/search?q=r
 
 ## Supported URL schemes
 
-Context Actions accepts any valid URL scheme — not just `http` and `https`. This means deep links for desktop apps (e.g. `slack://`, `obsidian://`) and other protocols (e.g. `mailto:`, `tel:`) all work out of the box. See [Tips & Tricks](../tips-and-tricks.md) for examples.
+Nimble accepts any valid URL scheme — not just `http` and `https`. This means deep links for desktop apps (e.g. `slack://`, `obsidian://`) and other protocols (e.g. `mailto:`, `tel:`) all work out of the box. See [Tips & Tricks](../tips-and-tricks.md) for examples.
