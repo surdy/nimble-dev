@@ -32,20 +32,20 @@
   // Whether the context chip should be rendered (from settings.yaml)
   let showContextChip = $state(true);
 
-  // Built-in ctx commands — always present, titles reflect current activeContext
+  // Built-in /ctx commands — always present, titles reflect current activeContext
   const builtinCommands: Command[] = $derived([
     {
-      phrase: "ctx set",
+      phrase: "/ctx set",
       title: activeContext ? `Change context (current: "${activeContext}")` : "Set context",
       action: { type: "builtin", config: { action: "ctx_set" } },
     },
     {
-      phrase: "ctx reset",
+      phrase: "/ctx reset",
       title: "Reset context",
       action: { type: "builtin", config: { action: "ctx_reset" } },
     },
     {
-      phrase: "ctx show",
+      phrase: "/ctx show",
       title: activeContext ? `Active context: "${activeContext}"` : "No context active",
       action: { type: "builtin", config: { action: "ctx_show" } },
     },
@@ -59,12 +59,12 @@
   const MAX_RESULTS = 8;
   const ROW_H = 56; // px per result row
 
-  // When a context is active and the user is not typing a ctx command, append
+  // When a context is active and the user is not typing a / command, append
   // the context to raw input so commands are matched against the full phrase.
   // Requires non-empty raw input: an empty input must always produce no results,
   // regardless of context, to avoid unexpected matches on launcher open.
   const effectiveInput = $derived(
-    activeContext && input.trim() !== "" && !input.trim().toLowerCase().startsWith("ctx")
+    activeContext && input.trim() !== "" && !input.trim().startsWith("/")
       ? input.trim() + " " + activeContext
       : input.trim()
   );
@@ -83,9 +83,9 @@
           .slice(0, MAX_RESULTS)
   );
 
-  // Built-in ctx commands filtered by the current raw input (only when input starts with "ctx")
+  // Built-in / commands filtered by the current raw input (only when input starts with "/")
   const filteredBuiltins: Command[] = $derived(
-    input.trim().toLowerCase().startsWith("ctx")
+    input.trim().startsWith("/")
       ? builtinCommands.filter(cmd => {
           const phrase = cmd.phrase.toLowerCase();
           const typed  = input.trim().toLowerCase();
@@ -375,8 +375,8 @@
     } else if (cmd.action.type === "builtin") {
       const builtinAction = cmd.action.config.action;
       if (builtinAction === "ctx_set") {
-        const suffix = input.trim().toLowerCase().startsWith("ctx set ")
-          ? input.trim().slice("ctx set ".length).trim()
+        const suffix = input.trim().toLowerCase().startsWith("/ctx set ")
+          ? input.trim().slice("/ctx set ".length).trim()
           : "";
         if (suffix) activeContext = suffix;
         input = "";
@@ -598,7 +598,7 @@
           {#each allFiltered as cmd, i}
             {@const rawTyped   = input.trim()}
             {@const builtinAction = cmd.action.type === "builtin" ? cmd.action.config.action : null}
-            {@const ctxSetValue = builtinAction === "ctx_set" && rawTyped.toLowerCase().startsWith("ctx set ") ? rawTyped.slice("ctx set ".length).trim() : ""}
+            {@const ctxSetValue = builtinAction === "ctx_set" && rawTyped.toLowerCase().startsWith("/ctx set ") ? rawTyped.slice("/ctx set ".length).trim() : ""}
             {@const isParamMode = builtinAction === null && effectiveInput.toLowerCase().startsWith(cmd.phrase.toLowerCase() + " ")}
             {@const paramText  = isParamMode ? effectiveInput.slice(cmd.phrase.length + 1) : ""}
             {@const hl        = highlight(cmd.phrase, effectiveInput)}

@@ -139,8 +139,8 @@ pub struct DuplicateWarning {
     pub ignored: String,
 }
 
-/// A warning produced when a YAML file defines a command whose phrase uses
-/// the reserved `ctx` prefix.
+/// A warning produced when a YAML file defines a command whose phrase starts
+/// with the reserved `/` sigil (built-in app commands).
 #[derive(Debug, Clone, Serialize)]
 pub struct ReservedPhraseWarning {
     /// The rejected phrase as written in the YAML file.
@@ -154,7 +154,7 @@ pub struct ReservedPhraseWarning {
 pub struct LoadResult {
     pub commands: Vec<Command>,
     pub duplicates: Vec<DuplicateWarning>,
-    /// Commands rejected because their phrase starts with the reserved `ctx` prefix.
+    /// Commands rejected because their phrase starts with the reserved `/` sigil.
     pub reserved: Vec<ReservedPhraseWarning>,
 }
 
@@ -511,10 +511,9 @@ pub fn load_from_dir(config_dir: &Path, allow_duplicates: bool) -> Result<LoadRe
                 Ok(cmd) if !cmd.enabled => {} // disabled — silently skip
                 Ok(cmd) => {
                     let key = cmd.phrase.to_lowercase();
-                    // Reserved namespace: reject phrases that equal "ctx" or start
-                    // with "ctx " (case-insensitive). These are reserved for built-in
-                    // context-management commands.
-                    if key == "ctx" || key.starts_with("ctx ") {
+                    // Reserved namespace: reject any phrase that starts with `/`.
+                    // These are reserved for built-in app commands (e.g. `/ctx set`, `/ctx reset`).
+                    if key.starts_with('/') {
                         eprintln!("[ctx] reserved phrase {:?} in {display}, skipping", cmd.phrase);
                         reserved.push(ReservedPhraseWarning {
                             phrase: cmd.phrase,
@@ -977,56 +976,56 @@ mod tests {
     // ── Reserved namespace ────────────────────────────────────────────────────
 
     #[test]
-    fn reserved_ctx_phrase_is_rejected() {
+    fn reserved_slash_phrase_is_rejected() {
         let dir = TempDir::new().unwrap();
         write_yaml(
             &dir,
-            "ctx.yaml",
-            "phrase: ctx set foo\ntitle: Bad\naction:\n  type: open_url\n  config:\n    url: https://example.com\n",
+            "slash.yaml",
+            "phrase: /ctx set foo\ntitle: Bad\naction:\n  type: open_url\n  config:\n    url: https://example.com\n",
         );
         let result = load_from_dir(dir.path(), true).unwrap();
-        assert!(result.commands.is_empty(), "ctx phrase must not load as a command");
+        assert!(result.commands.is_empty(), "/phrase must not load as a command");
         assert_eq!(result.reserved.len(), 1);
-        assert_eq!(result.reserved[0].phrase, "ctx set foo");
+        assert_eq!(result.reserved[0].phrase, "/ctx set foo");
     }
 
     #[test]
-    fn reserved_ctx_phrase_case_insensitive() {
+    fn reserved_slash_any_suffix_is_rejected() {
         let dir = TempDir::new().unwrap();
         write_yaml(
             &dir,
-            "ctx.yaml",
-            "phrase: CTX reset\ntitle: Bad\naction:\n  type: open_url\n  config:\n    url: https://example.com\n",
+            "slash2.yaml",
+            "phrase: /ctx reset\ntitle: Bad\naction:\n  type: open_url\n  config:\n    url: https://example.com\n",
         );
         let result = load_from_dir(dir.path(), true).unwrap();
         assert!(result.commands.is_empty());
         assert_eq!(result.reserved.len(), 1);
-        assert_eq!(result.reserved[0].phrase, "CTX reset");
+        assert_eq!(result.reserved[0].phrase, "/ctx reset");
     }
 
     #[test]
-    fn ctxfoo_no_space_is_accepted() {
+    fn phrase_with_slash_not_at_start_is_accepted() {
         let dir = TempDir::new().unwrap();
         write_yaml(
             &dir,
-            "ctxfoo.yaml",
-            "phrase: ctxfoo bar\ntitle: Not reserved\naction:\n  type: open_url\n  config:\n    url: https://example.com\n",
+            "no-slash.yaml",
+            "phrase: open github/issues\ntitle: Not reserved\naction:\n  type: open_url\n  config:\n    url: https://github.com\n",
         );
         let result = load_from_dir(dir.path(), true).unwrap();
-        assert_eq!(result.commands.len(), 1, "ctxfoo does not start with the ctx prefix");
+        assert_eq!(result.commands.len(), 1, "slash not at start is not reserved");
         assert!(result.reserved.is_empty());
     }
 
     #[test]
-    fn open_ctx_phrase_is_accepted() {
+    fn normal_phrase_is_accepted() {
         let dir = TempDir::new().unwrap();
         write_yaml(
             &dir,
-            "open-ctx.yaml",
-            "phrase: open ctx\ntitle: Contains ctx\naction:\n  type: open_url\n  config:\n    url: https://example.com\n",
+            "open-google.yaml",
+            "phrase: open google\ntitle: Open Google\naction:\n  type: open_url\n  config:\n    url: https://www.google.com\n",
         );
         let result = load_from_dir(dir.path(), true).unwrap();
-        assert_eq!(result.commands.len(), 1, "phrase does not start with ctx");
+        assert_eq!(result.commands.len(), 1, "normal phrase is not reserved");
         assert!(result.reserved.is_empty());
     }
 

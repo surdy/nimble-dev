@@ -243,7 +243,7 @@ A **context** is a word or phrase that is silently appended to every command you
 ### Topic-locked web search
 
 ```
-ctx set rust programming   → Enter
+/ctx set rust programming   → Enter
 ```
 
 Now type `search google` and press Enter → opens `google.com/search?q=rust+programming`. The context fills the `{param}` slot automatically.
@@ -257,7 +257,7 @@ ctx reset   → Enter
 ### Single-word site navigation
 
 ```
-ctx set reddit   → Enter
+/ctx set reddit   → Enter
 ```
 
 Type `open` → matches the `open reddit` command immediately. No need to type the full phrase every time.
@@ -271,4 +271,4 @@ The context supplies the *end* of a phrase; you type the beginning. For example,
 
 For a static list with phrase `team emails`, set context to `emails` and type `team` — effective input is `"team emails"` — the list auto-expands.
 
-For the full reference including the built-in `ctx set / reset / show` commands see [Contexts](advanced/context.md).
+For the full reference including the built-in `/ctx set / /ctx reset / /ctx show` commands see [Contexts](advanced/context.md).

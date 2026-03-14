@@ -24,29 +24,29 @@ When no context is set the launcher behaves exactly as usual.
 
 ## Managing contexts with built-in commands
 
-Three built-in commands, always available, control the active context. Type `ctx` to see all three:
+Three built-in commands, always available, control the active context. Type `/` to see all three:
 
 | Command | What it does |
 |---------|-------------|
-| `ctx set <value>` | Sets the context to `<value>` |
-| `ctx reset` | Clears the active context |
-| `ctx show` | Displays the current context in the result row title |
+| `/ctx set <value>` | Sets the context to `<value>` |
+| `/ctx reset` | Clears the active context |
+| `/ctx show` | Displays the current context in the result row title |
 
 These commands never dismiss the launcher — the window stays open so you can immediately see the effect and start typing.
 
 ### Setting a context
 
-Type `ctx set` followed by a space and your context value, then press Enter:
+Type `/ctx set` followed by a space and your context value, then press Enter:
 
 ```
-ctx set reddit
+/ctx set reddit
 ```
 
 The input is cleared and the launcher stays open. You can now type any partial phrase and matching will happen as if you had added `" reddit"` to everything you type.
 
 ### Previewing the value before confirming
 
-While typing `ctx set <value>`, the `ctx set` result row shows a subtext preview:
+While typing `/ctx set <value>`, the `/ctx set` result row shows a subtext preview:
 
 ```
 → set context to "reddit"
@@ -57,7 +57,7 @@ This confirms what will be stored before you press Enter.
 ### Clearing the context
 
 ```
-ctx reset
+/ctx reset
 ```
 
 Press Enter to clear the context. All matching returns to normal.
@@ -65,7 +65,7 @@ Press Enter to clear the context. All matching returns to normal.
 ### Checking the current context
 
 ```
-ctx show
+/ctx show
 ```
 
 The result row title updates to show `Active context: "reddit"` (or `No context active` if none is set).
@@ -84,7 +84,7 @@ cp -r example-config/* ~/Library/Application\ Support/ContextActions/
 
 **Goal:** type `open` and have it match `open reddit` automatically.
 
-1. Open the launcher and run `ctx set reddit` → press **Enter**.  
+1. Open the launcher and run `/ctx set reddit` → press **Enter**.  
    The input clears; the launcher stays open.
 2. Type `open`.  
    You should see `open-reddit.yaml`'s entry (`Open Reddit`) in the results, because the effective input is `"open reddit"`.
@@ -96,7 +96,7 @@ cp -r example-config/* ~/Library/Application\ Support/ContextActions/
 
 **Goal:** type `search google` and have the context value pass as the query.
 
-1. Run `ctx set rust programming` → **Enter**.
+1. Run `/ctx set rust programming` → **Enter**.
 2. Type `search google` → press **Enter**.  
    Your browser opens `https://www.google.com/search?q=rust+programming`.
 
@@ -106,20 +106,20 @@ cp -r example-config/* ~/Library/Application\ Support/ContextActions/
 
 The context supplies the *end* of a phrase, so you type the beginning and the context completes it. For the `team emails` static list (phrase: `team emails`):
 
-1. Run `ctx set emails` → **Enter**.
+1. Run `/ctx set emails` → **Enter**.
 2. Type `team`.
    `effectiveInput = "team" + " " + "emails" = "team emails"` — an exact match with the phrase.
    The `team-emails` static list expands immediately, without pressing Enter.
 3. Select an item to paste its value.
 
-Regardless of what context is active, typing `ctx` always works normally. Effective input is not applied when the raw input starts with `ctx`.
+Regardless of what context is active, typing `/` always works normally. Effective input is not applied when the raw input starts with `/`.
 
-1. While `activeContext = "reddit"`, type `ctx show`.  
+1. While `activeContext = "reddit"`, type `/ctx show`.  
    The result row shows `Active context: "reddit"` — the context did not affect the matching of the built-in command itself.
 
 ### Test 5 — Clearing the context
 
-1. Type `ctx reset` → **Enter**.  
+1. Type `/ctx reset` → **Enter**.  
    The context is cleared.
 2. Type `open` — now only commands whose phrase literally contains `"open"` are shown.
 
@@ -127,15 +127,15 @@ Regardless of what context is active, typing `ctx` always works normally. Effect
 
 ## Reserved namespace
 
-User-defined YAML commands whose phrase starts with `ctx` (case-insensitive) are automatically rejected at load time. If any such file exists, the warnings bar increments its count. This ensures the built-in context commands are never shadowed by user commands.
+User-defined YAML commands whose phrase starts with `/` are automatically rejected at load time. If any such file exists, the warnings bar increments its count. This ensures the built-in app commands are never shadowed by user commands.
 
 Accepted examples:
-- `"open ctx"` — starts with `open`, not `ctx`
-- `"ctxfoo"` — no space after `ctx`, not treated as the reserved prefix
+- `"open github/issues"` — `/` is not the first character
+- `"search/replace"` — same rule
 
 Rejected examples:
-- `"ctx my command"` — starts with `ctx ` (followed by space)
-- `"CTX reset"` — case-insensitive match
+- `"/ctx set my command"` — starts with `/`
+- `"/ctx reset"` — starts with `/`
 
 ---
 
@@ -146,7 +146,7 @@ Rejected examples:
 Set context to a site keyword, then use short phrases to navigate:
 
 ```
-ctx set github
+/ctx set github
 ```
 
 Then type:
@@ -158,7 +158,7 @@ Then type:
 Set context to a search topic once at the start of a research session:
 
 ```
-ctx set typescript generics
+/ctx set typescript generics
 ```
 
 Then type `search google` → opens `google.com/search?q=typescript+generics` without retyping the topic each time.
@@ -166,7 +166,7 @@ Then type `search google` → opens `google.com/search?q=typescript+generics` wi
 ### Clearing when done
 
 ```
-ctx reset
+/ctx reset
 ```
 
 All commands go back to matching against raw input only.

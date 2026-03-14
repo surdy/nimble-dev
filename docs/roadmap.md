@@ -20,7 +20,7 @@
 - [x] Action: `static_list` — keyword-triggered inline list from a `lists/` YAML file; items can paste, copy, or open a URL
 - [x] Action: `dynamic_list` — script-backed list with `none` / `optional` / `required` argument modes
 - [x] Action: `script_action` — run a script and pipe its output into `open_url`, `paste_text`, or `copy_text`; supports prefix/suffix wrapping
-- [x] Contexts — `ctx set / reset / show` built-in commands; active context appended to all typed phrases automatically
+- [x] Contexts — `/ctx set / /ctx reset / /ctx show` built-in commands; active context appended to all typed phrases automatically
 - [x] Context chip — pill badge in the launcher bar showing the active context with a one-click clear button
 - [x] Duplicate-command warnings — banner shown when two files define the same phrase (`allow_duplicates: false`)
 - [x] System tray icon — persistent tray presence with show/hide and quit options
