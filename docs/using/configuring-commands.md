@@ -156,4 +156,4 @@ Events that trigger a reload:
 
 ## Reserved phrase prefix
 
-Phrases that start with `/` are reserved for built-in app commands (e.g. `/ctx set`, `/ctx reset`, `/ctx show`). Any command file whose `phrase` starts with `/` will be rejected at load time and a warning will appear in the launcher. Rename the phrase to avoid the conflict.
+Phrases that start with `/` are reserved for built-in app commands (e.g. `/ctx set`, `/ctx reset`). Any command file whose `phrase` starts with `/` will be rejected at load time and a warning will appear in the launcher. Rename the phrase to avoid the conflict.

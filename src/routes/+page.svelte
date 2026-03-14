@@ -44,11 +44,6 @@
       title: "Reset context",
       action: { type: "builtin", config: { action: "ctx_reset" } },
     },
-    {
-      phrase: "/ctx show",
-      title: activeContext ? `Active context: "${activeContext}"` : "No context active",
-      action: { type: "builtin", config: { action: "ctx_show" } },
-    },
   ]);
 
   // List expansion state — populated when input exactly matches a static_list phrase
@@ -383,9 +378,6 @@
         // do NOT dismiss — launcher stays open so the user sees the updated context
       } else if (builtinAction === "ctx_reset") {
         activeContext = "";
-        input = "";
-        // do NOT dismiss
-      } else if (builtinAction === "ctx_show") {
         input = "";
         // do NOT dismiss
       }

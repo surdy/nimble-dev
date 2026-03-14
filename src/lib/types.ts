@@ -57,7 +57,7 @@ export interface ListItem {
 
 /** Frontend-only built-in action config. Never appears in YAML files. */
 export interface BuiltinConfig {
-  action: "ctx_set" | "ctx_reset" | "ctx_show";
+  action: "ctx_set" | "ctx_reset";
 }
 
 export type Action =

@@ -24,13 +24,12 @@ When no context is set the launcher behaves exactly as usual.
 
 ## Managing contexts with built-in commands
 
-Three built-in commands, always available, control the active context. Type `/` to see all three:
+Two built-in commands, always available, control the active context. Type `/` to see them:
 
 | Command | What it does |
 |---------|-------------|
 | `/ctx set <value>` | Sets the context to `<value>` |
 | `/ctx reset` | Clears the active context |
-| `/ctx show` | Displays the current context in the result row title |
 
 These commands never dismiss the launcher — the window stays open so you can immediately see the effect and start typing.
 
@@ -61,14 +60,6 @@ This confirms what will be stored before you press Enter.
 ```
 
 Press Enter to clear the context. All matching returns to normal.
-
-### Checking the current context
-
-```
-/ctx show
-```
-
-The result row title updates to show `Active context: "reddit"` (or `No context active` if none is set).
 
 ---
 
@@ -114,10 +105,7 @@ The context supplies the *end* of a phrase, so you type the beginning and the co
 
 Regardless of what context is active, typing `/` always works normally. Effective input is not applied when the raw input starts with `/`.
 
-1. While `activeContext = "reddit"`, type `/ctx show`.  
-   The result row shows `Active context: "reddit"` — the context did not affect the matching of the built-in command itself.
-
-### Test 5 — Clearing the context
+### Test 4 — Clearing the context
 
 1. Type `/ctx reset` → **Enter**.  
    The context is cleared.
