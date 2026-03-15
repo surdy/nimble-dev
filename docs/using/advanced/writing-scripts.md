@@ -104,10 +104,68 @@ See [Dynamic List](dynamic-list.md) for the full YAML schema and argument mode r
 
 ## Security boundaries
 
-- `script` field values containing `/`, `\`, or `..` are **rejected** at invocation time. Scripts must be plain filenames co-located with the command YAML — no subdirectories or path traversal.
+- By default, `script` and `list` field values containing `/`, `\`, or `..` are **rejected** at invocation time. Plain filenames must be co-located with the command YAML — no subdirectories or path traversal.
+- When a `script` or `list` value uses `${VAR}` substitution, the resolved path may point outside the command directory. This is allowed by default (`allow_external_paths: true` in `settings.yaml`). Set `allow_external_paths: false` to restrict all resolved paths to the command directory.
 - Scripts run with the **same user privileges** as the Nimble launcher process. They are never elevated.
 - Scripts **cannot** directly trigger launcher actions. They can only produce output. The launcher decides what to do with each item based on `item_action`.
 - Script output is parsed and validated. Malformed JSON is treated as plain text; an entirely unparseable response shows an empty list.
+
+---
+
+## External scripts and lists
+
+By default, `script:` and `list:` fields must be plain filenames co-located with the command YAML. To reference files outside the command directory, use `${VAR}` substitution.
+
+### How it works
+
+Any `${VAR}` token in a `script:` or `list:` field is replaced with the variable's value before the path is resolved. Variables are looked up in this order:
+
+1. Built-in `NIMBLE_*` variables (e.g. `NIMBLE_CONFIG_DIR`, `NIMBLE_COMMAND_DIR`)
+2. User-defined variables (global `env.yaml` → sidecar `env.yaml` → inline `env:`)
+
+If the resolved path is absolute, it is used directly. If relative, it is resolved against the command directory.
+
+### Example: shared scripts directory
+
+```yaml
+# ~/Library/Application Support/Nimble/env.yaml
+SHARED_SCRIPTS: /opt/team/scripts
+```
+
+```yaml
+# commands/team-emails.yaml
+phrase: team emails
+title: Team email addresses
+action:
+  type: dynamic_list
+  config:
+    script: ${SHARED_SCRIPTS}/contacts.sh
+    arg: none
+```
+
+### Example: using NIMBLE_CONFIG_DIR
+
+```yaml
+# References a script in the config root's scripts/ folder
+phrase: run utility
+title: Run shared utility
+action:
+  type: script_action
+  config:
+    script: ${NIMBLE_CONFIG_DIR}/scripts/utility.sh
+    result_action: paste_text
+```
+
+### Disabling external paths
+
+If you want to restrict scripts and lists to their co-located directories only, set `allow_external_paths: false` in `settings.yaml`:
+
+```yaml
+# ~/Library/Application Support/Nimble/settings.yaml
+allow_external_paths: false
+```
+
+When disabled, any `${VAR}`-substituted path that resolves outside the command directory is rejected with an error. Plain filenames (without `${…}`) are always co-located and unaffected by this setting.
 
 ---
 

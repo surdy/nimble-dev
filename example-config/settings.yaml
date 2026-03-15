@@ -15,3 +15,8 @@ show_context_chip: true
 # loaded without warnings. Set to false to enable first-file-wins deduplication
 # and surface warnings for any conflicting phrases.
 allow_duplicates: true
+
+# When true (default), ${VAR}-substituted script/list paths may resolve
+# outside the command directory. Set to false to restrict resolved paths to
+# the command directory only.
+allow_external_paths: true

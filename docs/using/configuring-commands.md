@@ -63,16 +63,19 @@ action:
     text: <string>       # the text to copy to the clipboard
 
     # --- static_list ---
-    list: <string>       # name of the list file (without .yaml) co-located with the command
+    list: <string>       # name of the list file (without .yaml) co-located with the command,
+                         # or a ${VAR}-substituted path to an external list file
     item_action: paste_text | copy_text | open_url   # optional
 
     # --- dynamic_list ---
-    script: <string>     # name of the script file co-located with this command YAML
+    script: <string>     # name of the script file co-located with this command YAML,
+                         # or a ${VAR}-substituted path to an external script
     arg: none | optional | required   # default: none
     item_action: paste_text | copy_text | open_url   # optional
 
     # --- script_action ---
-    script: <string>     # name of the script file co-located with this command YAML
+    script: <string>     # name of the script file co-located with this command YAML,
+                         # or a ${VAR}-substituted path to an external script
     arg: none | optional | required   # default: none
     result_action: open_url | paste_text | copy_text   # required
     prefix: <string>     # optional — prepended to each value (paste_text / copy_text only)

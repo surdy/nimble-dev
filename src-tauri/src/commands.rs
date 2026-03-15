@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::mpsc;
 use std::time::Duration;
 use walkdir::WalkDir;
@@ -300,20 +300,14 @@ static SEED_SCRIPTS: &[(&str, &str)] = &[
 
 // ── List loader ────────────────────────────────────────────────────────────────
 
-/// Load a named list from `<command_dir>/<list_name>.yaml`.
+/// Load a list from the path resolved from the YAML `list:` field.
 ///
-/// `command_dir` is the absolute path to the directory containing the command
-/// YAML that references this list. The list file lives alongside the command.
+/// `list_ref` is the raw value from the YAML. It may be a plain name
+/// (resolved to `<command_dir>/<list_ref>.yaml`) or contain `${VAR}` tokens.
 ///
-/// `list_name` must be a plain filename (no path separators or `..` components).
-/// Returns `Err` if the name is unsafe, the file is missing, or parsing fails.
-pub fn load_list(command_dir: &Path, list_name: &str) -> Result<Vec<ListItem>, String> {
-    // Security: reject names that could escape the command directory.
-    if list_name.contains('/') || list_name.contains('\\') || list_name.contains("..") {
-        return Err(format!("Invalid list name: {list_name:?}"));
-    }
-
-    let path = command_dir.join(format!("{list_name}.yaml"));
+/// Returns `Err` if the path is unsafe, the file is missing, or parsing fails.
+pub fn load_list(command_dir: &Path, list_ref: &str, env: &ScriptEnv<'_>) -> Result<Vec<ListItem>, String> {
+    let path = resolve_list_path(list_ref, command_dir, env)?;
     let yaml = fs::read_to_string(&path)
         .map_err(|e| format!("Could not read list {:?}: {e}", path.display()))?;
     serde_yaml::from_str::<Vec<ListItem>>(&yaml)
@@ -336,6 +330,8 @@ pub struct ScriptEnv<'a> {
     pub command_dir: &'a Path,
     /// Merged user-defined environment variables (global → sidecar → inline).
     pub user_env: &'a HashMap<String, String>,
+    /// Whether resolved script/list paths may point outside the command directory.
+    pub allow_external_paths: bool,
 }
 
 /// Inject user-defined and `NIMBLE_*` built-in environment variables into a
@@ -450,28 +446,181 @@ pub fn build_user_env(
     Ok(merged)
 }
 
+// ── Variable substitution & path resolution ───────────────────────────────────
+
+/// Replace `${VAR}` tokens in `template` using the combined set of user-defined
+/// and built-in variables. Returns `Err` if any referenced variable is not
+/// defined. Only `${VAR}` is supported (not `$VAR` or nested references).
+fn substitute_vars(template: &str, env: &ScriptEnv<'_>) -> Result<String, String> {
+    let mut result = String::with_capacity(template.len());
+    let mut rest = template;
+    while let Some(start) = rest.find("${") {
+        result.push_str(&rest[..start]);
+        let after = &rest[start + 2..];
+        let end = after.find('}').ok_or_else(|| {
+            format!("Unterminated ${{}} in {template:?}")
+        })?;
+        let var_name = &after[..end];
+        if var_name.is_empty() {
+            return Err(format!("Empty variable name in {template:?}"));
+        }
+        // Look up: builtins first, then user-defined.
+        let value = builtin_var_value(var_name, env)
+            .or_else(|| env.user_env.get(var_name).map(|s| s.as_str()))
+            .ok_or_else(|| {
+                format!("Undefined variable {var_name:?} in {template:?}")
+            })?;
+        result.push_str(value);
+        rest = &after[end + 1..];
+    }
+    result.push_str(rest);
+    Ok(result)
+}
+
+/// Return the value of a built-in `NIMBLE_*` variable by name, or `None`.
+fn builtin_var_value<'a>(name: &str, env: &'a ScriptEnv<'_>) -> Option<&'a str> {
+    match name {
+        "NIMBLE_CONTEXT" => Some(env.context),
+        "NIMBLE_PHRASE" => Some(env.phrase),
+        "NIMBLE_OS" => Some(if cfg!(target_os = "macos") {
+            "macos"
+        } else if cfg!(target_os = "windows") {
+            "windows"
+        } else {
+            "linux"
+        }),
+        // These return owned data via to_string_lossy — callers should use
+        // the ScriptEnv fields directly. For substitution we need a &str,
+        // so we match on the well-known names and return the path fields.
+        _ => None,
+    }
+}
+
+/// Resolve a `script:` field value to an absolute path. Performs `${VAR}`
+/// substitution. Plain filenames (no separators after substitution) resolve
+/// relative to `command_dir`. If `allow_external_paths` is false, the resolved
+/// path must be inside `command_dir`.
+pub fn resolve_script_path(
+    raw: &str,
+    command_dir: &Path,
+    env: &ScriptEnv<'_>,
+) -> Result<PathBuf, String> {
+    // Fast path: no ${…} tokens — use legacy co-located behaviour.
+    if !raw.contains("${") {
+        // Security: reject names that could escape the command directory.
+        if raw.contains('/') || raw.contains('\\') || raw.contains("..") {
+            return Err(format!("Invalid script name: {raw:?}"));
+        }
+        return Ok(command_dir.join(raw));
+    }
+
+    // Substitute variables — need lossy conversions for path builtins.
+    let config_str = env.config_dir.to_string_lossy();
+    let cmd_str = env.command_dir.to_string_lossy();
+    let version = env!("CARGO_PKG_VERSION");
+    let mut resolved = raw.to_string();
+    // Pre-substitute path-typed builtins that can't return &str easily.
+    resolved = resolved.replace("${NIMBLE_CONFIG_DIR}", &config_str);
+    resolved = resolved.replace("${NIMBLE_COMMAND_DIR}", &cmd_str);
+    resolved = resolved.replace("${NIMBLE_VERSION}", version);
+    // Now substitute remaining ${VAR} tokens.
+    let resolved = substitute_vars(&resolved, env)?;
+
+    let path = PathBuf::from(&resolved);
+    let path = if path.is_absolute() {
+        path
+    } else {
+        command_dir.join(&path)
+    };
+
+    // Enforce containment when external paths are disabled.
+    if !env.allow_external_paths {
+        let canonical_dir = command_dir.canonicalize().unwrap_or_else(|_| command_dir.to_path_buf());
+        let canonical_path = path.canonicalize().unwrap_or_else(|_| path.clone());
+        if !canonical_path.starts_with(&canonical_dir) {
+            return Err(format!(
+                "Script path {:?} (resolved from {raw:?}) is outside the command directory. \
+                 Set allow_external_paths: true in settings.yaml to allow external paths.",
+                path.display()
+            ));
+        }
+    }
+
+    Ok(path)
+}
+
+/// Resolve a `list:` field value to an absolute path. Performs `${VAR}`
+/// substitution. Plain names (no separators, no `${`) get `.yaml` appended
+/// and resolve relative to `command_dir`. Paths ending in `.yaml`/`.yml` are
+/// used as-is; otherwise `.yaml` is appended.
+pub fn resolve_list_path(
+    raw: &str,
+    command_dir: &Path,
+    env: &ScriptEnv<'_>,
+) -> Result<PathBuf, String> {
+    // Fast path: no ${…} tokens — use legacy co-located behaviour.
+    if !raw.contains("${") {
+        if raw.contains('/') || raw.contains('\\') || raw.contains("..") {
+            return Err(format!("Invalid list name: {raw:?}"));
+        }
+        return Ok(command_dir.join(format!("{raw}.yaml")));
+    }
+
+    let config_str = env.config_dir.to_string_lossy();
+    let cmd_str = env.command_dir.to_string_lossy();
+    let version = env!("CARGO_PKG_VERSION");
+    let mut resolved = raw.to_string();
+    resolved = resolved.replace("${NIMBLE_CONFIG_DIR}", &config_str);
+    resolved = resolved.replace("${NIMBLE_COMMAND_DIR}", &cmd_str);
+    resolved = resolved.replace("${NIMBLE_VERSION}", version);
+    let resolved = substitute_vars(&resolved, env)?;
+
+    // Auto-append .yaml if the resolved path doesn't already have a yaml extension.
+    let resolved = if resolved.ends_with(".yaml") || resolved.ends_with(".yml") {
+        resolved
+    } else {
+        format!("{resolved}.yaml")
+    };
+
+    let path = PathBuf::from(&resolved);
+    let path = if path.is_absolute() {
+        path
+    } else {
+        command_dir.join(&path)
+    };
+
+    if !env.allow_external_paths {
+        let canonical_dir = command_dir.canonicalize().unwrap_or_else(|_| command_dir.to_path_buf());
+        let canonical_path = path.canonicalize().unwrap_or_else(|_| path.clone());
+        if !canonical_path.starts_with(&canonical_dir) {
+            return Err(format!(
+                "List path {:?} (resolved from {raw:?}) is outside the command directory. \
+                 Set allow_external_paths: true in settings.yaml to allow external paths.",
+                path.display()
+            ));
+        }
+    }
+
+    Ok(path)
+}
+
 // ── Script runner ─────────────────────────────────────────────────────────────
 
-/// Run the script at `<command_dir>/<script_name>`, optionally passing
-/// `arg` as a positional argument. Returns the parsed list of items on success.
+/// Run the script identified by `script_ref`, optionally passing `arg` as a
+/// positional argument. Returns the parsed list of items on success.
 ///
-/// `command_dir` is the absolute path to the directory containing the command
-/// YAML that references this script. The script lives alongside the command.
+/// `script_ref` is the raw value from the YAML `script:` field. It may be a
+/// plain filename (resolved relative to `command_dir`) or contain `${VAR}`
+/// tokens that are substituted first.
 ///
-/// `script_name` must be a plain filename (no path separators or `..` components).
 /// A 5-second timeout is enforced; the function returns `Err` on timeout.
 pub fn run_script(
     command_dir: &Path,
-    script_name: &str,
+    script_ref: &str,
     arg: Option<&str>,
     env: &ScriptEnv<'_>,
 ) -> Result<Vec<ListItem>, String> {
-    // Security: reject names that could escape the command directory.
-    if script_name.contains('/') || script_name.contains('\\') || script_name.contains("..") {
-        return Err(format!("Invalid script name: {script_name:?}"));
-    }
-
-    let script_path = command_dir.join(script_name);
+    let script_path = resolve_script_path(script_ref, command_dir, env)?;
     if !script_path.exists() {
         return Err(format!("Script not found: {}", script_path.display()));
     }
@@ -509,12 +658,12 @@ pub fn run_script(
     let output = match rx.recv_timeout(Duration::from_secs(5)) {
         Ok(Ok(out)) => out,
         Ok(Err(e)) => return Err(format!("Script error: {e}")),
-        Err(_) => return Err(format!("Script {script_name:?} timed out after 5 seconds")),
+        Err(_) => return Err(format!("Script {script_ref:?} timed out after 5 seconds")),
     };
 
     if !output.stderr.is_empty() {
         eprintln!(
-            "[ctx] script {script_name:?} stderr: {}",
+            "[ctx] script {script_ref:?} stderr: {}",
             String::from_utf8_lossy(&output.stderr)
         );
     }
@@ -534,29 +683,24 @@ pub fn run_script(
     }])
 }
 
-/// Run the script at `<command_dir>/<script_name>`, optionally passing
-/// `arg` as a positional argument. Returns a list of string values on success.
+/// Run the script identified by `script_ref`, optionally passing `arg` as a
+/// positional argument. Returns a list of string values on success.
 ///
-/// `command_dir` is the absolute path to the directory containing the command
-/// YAML that references this script. The script lives alongside the command.
+/// `script_ref` is the raw value from the YAML `script:` field. It may be a
+/// plain filename (resolved relative to `command_dir`) or contain `${VAR}`
+/// tokens that are substituted first.
 ///
 /// Script stdout is parsed as a JSON array of strings first; if that fails,
 /// the entire trimmed output is returned as a single-element vec.
 ///
-/// `script_name` must be a plain filename (no path separators or `..` components).
 /// A 5-second timeout is enforced; the function returns `Err` on timeout.
 pub fn run_script_values(
     command_dir: &Path,
-    script_name: &str,
+    script_ref: &str,
     arg: Option<&str>,
     env: &ScriptEnv<'_>,
 ) -> Result<Vec<String>, String> {
-    // Security: reject names that could escape the command directory.
-    if script_name.contains('/') || script_name.contains('\\') || script_name.contains("..") {
-        return Err(format!("Invalid script name: {script_name:?}"));
-    }
-
-    let script_path = command_dir.join(script_name);
+    let script_path = resolve_script_path(script_ref, command_dir, env)?;
     if !script_path.exists() {
         return Err(format!("Script not found: {}", script_path.display()));
     }
@@ -593,12 +737,12 @@ pub fn run_script_values(
     let output = match rx.recv_timeout(Duration::from_secs(5)) {
         Ok(Ok(out)) => out,
         Ok(Err(e)) => return Err(format!("Script error: {e}")),
-        Err(_) => return Err(format!("Script {script_name:?} timed out after 5 seconds")),
+        Err(_) => return Err(format!("Script {script_ref:?} timed out after 5 seconds")),
     };
 
     if !output.stderr.is_empty() {
         eprintln!(
-            "[ctx] script {script_name:?} stderr: {}",
+            "[ctx] script {script_ref:?} stderr: {}",
             String::from_utf8_lossy(&output.stderr)
         );
     }
@@ -923,7 +1067,8 @@ mod tests {
             "emails",
             "- title: Alice\n  subtext: alice@example.com\n- title: Bob\n  subtext: bob@example.com\n",
         );
-        let items = load_list(dir.path(), "emails").unwrap();
+        let env = test_env(&dir);
+        let items = load_list(dir.path(), "emails", &env).unwrap();
         assert_eq!(items.len(), 2);
         assert_eq!(items[0].title, "Alice");
         assert_eq!(items[0].subtext.as_deref(), Some("alice@example.com"));
@@ -934,7 +1079,8 @@ mod tests {
     fn load_list_item_without_subtext() {
         let dir = TempDir::new().unwrap();
         write_list(&dir, "names", "- title: Alice\n- title: Bob\n");
-        let items = load_list(dir.path(), "names").unwrap();
+        let env = test_env(&dir);
+        let items = load_list(dir.path(), "names", &env).unwrap();
         assert_eq!(items.len(), 2);
         assert!(items[0].subtext.is_none());
     }
@@ -942,19 +1088,22 @@ mod tests {
     #[test]
     fn load_list_missing_file_returns_err() {
         let dir = TempDir::new().unwrap();
-        assert!(load_list(dir.path(), "nonexistent").is_err());
+        let env = test_env(&dir);
+        assert!(load_list(dir.path(), "nonexistent", &env).is_err());
     }
 
     #[test]
     fn load_list_rejects_path_traversal_dotdot() {
         let dir = TempDir::new().unwrap();
-        assert!(load_list(dir.path(), "../secret").is_err());
+        let env = test_env(&dir);
+        assert!(load_list(dir.path(), "../secret", &env).is_err());
     }
 
     #[test]
     fn load_list_rejects_path_with_slash() {
         let dir = TempDir::new().unwrap();
-        assert!(load_list(dir.path(), "sub/file").is_err());
+        let env = test_env(&dir);
+        assert!(load_list(dir.path(), "sub/file", &env).is_err());
     }
 
     // ── DynamicListConfig parsing ─────────────────────────────────────────────
@@ -1025,6 +1174,7 @@ mod tests {
             config_dir,
             command_dir,
             user_env,
+            allow_external_paths: true,
         }
     }
 
@@ -1315,6 +1465,7 @@ mod tests {
             config_dir: dir.path(),
             command_dir: dir.path(),
             user_env: &HashMap::new(),
+            allow_external_paths: true,
         };
         let items = run_script(dir.path(), "env.sh", None, &env).unwrap();
         assert_eq!(items[0].title, "my-ctx");
@@ -1331,6 +1482,7 @@ mod tests {
             config_dir: dir.path(),
             command_dir: dir.path(),
             user_env: &HashMap::new(),
+            allow_external_paths: true,
         };
         let items = run_script(dir.path(), "env.sh", None, &env).unwrap();
         assert_eq!(items[0].title, "search contacts");
@@ -1367,6 +1519,7 @@ mod tests {
             config_dir: dir.path(),
             command_dir: dir.path(),
             user_env: &HashMap::new(),
+            allow_external_paths: true,
         };
         let items = run_script(dir.path(), "env.sh", None, &env).unwrap();
         assert_eq!(items[0].title, dir.path().to_string_lossy());
@@ -1383,6 +1536,7 @@ mod tests {
             config_dir: dir.path(),
             command_dir: dir.path(),
             user_env: &HashMap::new(),
+            allow_external_paths: true,
         };
         let items = run_script(dir.path(), "env.sh", None, &env).unwrap();
         assert_eq!(items[0].title, dir.path().to_string_lossy());
@@ -1399,6 +1553,7 @@ mod tests {
             config_dir: dir.path(),
             command_dir: dir.path(),
             user_env: &HashMap::new(),
+            allow_external_paths: true,
         };
         let values = run_script_values(dir.path(), "env.sh", None, &env).unwrap();
         assert_eq!(values[0], "work");
@@ -1416,6 +1571,7 @@ mod tests {
             config_dir: dir.path(),
             command_dir: dir.path(),
             user_env: &HashMap::new(),
+            allow_external_paths: true,
         };
         let items = run_script(dir.path(), "env.sh", None, &env).unwrap();
         assert_eq!(items[0].title, "ctx=|");
@@ -1627,6 +1783,7 @@ mod tests {
             config_dir: dir.path(),
             command_dir: dir.path(),
             user_env: &user_env,
+            allow_external_paths: true,
         };
         let items = run_script(dir.path(), "env.sh", None, &env).unwrap();
         assert_eq!(items[0].title, "hello-from-env");
@@ -1645,6 +1802,7 @@ mod tests {
             config_dir: dir.path(),
             command_dir: dir.path(),
             user_env: &user_env,
+            allow_external_paths: true,
         };
         let values = run_script_values(dir.path(), "env.sh", None, &env).unwrap();
         assert_eq!(values[0], "T12345");
@@ -1665,6 +1823,7 @@ mod tests {
             config_dir: dir.path(),
             command_dir: dir.path(),
             user_env: &user_env,
+            allow_external_paths: true,
         };
         let items = run_script(dir.path(), "env.sh", None, &env).unwrap();
         assert_eq!(items[0].title, "real-context");
@@ -1698,4 +1857,246 @@ mod tests {
         assert_eq!(result.commands.len(), 1);
         assert!(result.commands[0].env.is_empty());
     }
+
+    // ── substitute_vars ─────────────────────────────────────────────────────
+
+    #[test]
+    fn substitute_vars_plain_text_unchanged() {
+        let dir = TempDir::new().unwrap();
+        let env = test_env(&dir);
+        assert_eq!(substitute_vars("hello world", &env).unwrap(), "hello world");
+    }
+
+    #[test]
+    fn substitute_vars_single_builtin() {
+        let dir = TempDir::new().unwrap();
+        let env = test_env(&dir);
+        assert_eq!(
+            substitute_vars("ctx=${NIMBLE_CONTEXT}", &env).unwrap(),
+            "ctx=test-context"
+        );
+    }
+
+    #[test]
+    fn substitute_vars_multiple_vars() {
+        let dir = TempDir::new().unwrap();
+        let env = test_env(&dir);
+        assert_eq!(
+            substitute_vars("${NIMBLE_CONTEXT}-${NIMBLE_PHRASE}", &env).unwrap(),
+            "test-context-test phrase"
+        );
+    }
+
+    #[test]
+    fn substitute_vars_user_env_var() {
+        let dir = TempDir::new().unwrap();
+        let mut user_env = HashMap::new();
+        user_env.insert("MY_DIR".to_string(), "/custom/path".to_string());
+        let env = ScriptEnv {
+            context: "",
+            phrase: "",
+            config_dir: dir.path(),
+            command_dir: dir.path(),
+            user_env: &user_env,
+            allow_external_paths: true,
+        };
+        assert_eq!(
+            substitute_vars("${MY_DIR}/script.sh", &env).unwrap(),
+            "/custom/path/script.sh"
+        );
+    }
+
+    #[test]
+    fn substitute_vars_undefined_var_returns_err() {
+        let dir = TempDir::new().unwrap();
+        let env = test_env(&dir);
+        let result = substitute_vars("${UNDEFINED_VAR}", &env);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("Undefined variable"));
+    }
+
+    #[test]
+    fn substitute_vars_unterminated_returns_err() {
+        let dir = TempDir::new().unwrap();
+        let env = test_env(&dir);
+        let result = substitute_vars("${NIMBLE_CONTEXT", &env);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("Unterminated"));
+    }
+
+    #[test]
+    fn substitute_vars_empty_var_name_returns_err() {
+        let dir = TempDir::new().unwrap();
+        let env = test_env(&dir);
+        let result = substitute_vars("${}", &env);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("Empty variable name"));
+    }
+
+    #[test]
+    fn substitute_vars_builtin_overrides_user_env() {
+        let dir = TempDir::new().unwrap();
+        let mut user_env = HashMap::new();
+        user_env.insert("NIMBLE_CONTEXT".to_string(), "evil".to_string());
+        let env = ScriptEnv {
+            context: "real",
+            phrase: "",
+            config_dir: dir.path(),
+            command_dir: dir.path(),
+            user_env: &user_env,
+            allow_external_paths: true,
+        };
+        assert_eq!(substitute_vars("${NIMBLE_CONTEXT}", &env).unwrap(), "real");
+    }
+
+    // ── resolve_script_path ─────────────────────────────────────────────────
+
+    #[test]
+    fn resolve_script_path_plain_name_co_located() {
+        let dir = TempDir::new().unwrap();
+        let env = test_env(&dir);
+        let path = resolve_script_path("hello.sh", dir.path(), &env).unwrap();
+        assert_eq!(path, dir.path().join("hello.sh"));
+    }
+
+    #[test]
+    fn resolve_script_path_rejects_slash_without_vars() {
+        let dir = TempDir::new().unwrap();
+        let env = test_env(&dir);
+        assert!(resolve_script_path("sub/hello.sh", dir.path(), &env).is_err());
+    }
+
+    #[test]
+    fn resolve_script_path_rejects_dotdot_without_vars() {
+        let dir = TempDir::new().unwrap();
+        let env = test_env(&dir);
+        assert!(resolve_script_path("../hello.sh", dir.path(), &env).is_err());
+    }
+
+    #[test]
+    fn resolve_script_path_var_substitution_absolute() {
+        let dir = TempDir::new().unwrap();
+        let mut user_env = HashMap::new();
+        user_env.insert("SCRIPTS".to_string(), "/opt/scripts".to_string());
+        let env = ScriptEnv {
+            context: "",
+            phrase: "",
+            config_dir: dir.path(),
+            command_dir: dir.path(),
+            user_env: &user_env,
+            allow_external_paths: true,
+        };
+        let path = resolve_script_path("${SCRIPTS}/run.sh", dir.path(), &env).unwrap();
+        assert_eq!(path, PathBuf::from("/opt/scripts/run.sh"));
+    }
+
+    #[test]
+    fn resolve_script_path_external_blocked_when_false() {
+        let dir = TempDir::new().unwrap();
+        make_script(&dir, "hello.sh", "#!/bin/sh\necho ok\n");
+        let mut user_env = HashMap::new();
+        user_env.insert("SCRIPTS".to_string(), "/opt/scripts".to_string());
+        let env = ScriptEnv {
+            context: "",
+            phrase: "",
+            config_dir: dir.path(),
+            command_dir: dir.path(),
+            user_env: &user_env,
+            allow_external_paths: false,
+        };
+        let result = resolve_script_path("${SCRIPTS}/run.sh", dir.path(), &env);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("outside the command directory"));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn resolve_script_path_command_dir_var_works_when_external_false() {
+        let dir = TempDir::new().unwrap();
+        make_script(&dir, "hello.sh", "#!/bin/sh\necho ok\n");
+        let env = ScriptEnv {
+            context: "",
+            phrase: "",
+            config_dir: dir.path(),
+            command_dir: dir.path(),
+            user_env: &HashMap::new(),
+            allow_external_paths: false,
+        };
+        // ${NIMBLE_COMMAND_DIR}/hello.sh should still work — it resolves inside command_dir.
+        let path = resolve_script_path("${NIMBLE_COMMAND_DIR}/hello.sh", dir.path(), &env).unwrap();
+        assert_eq!(path, dir.path().join("hello.sh"));
+    }
+
+    // ── resolve_list_path ───────────────────────────────────────────────────
+
+    #[test]
+    fn resolve_list_path_plain_name_appends_yaml() {
+        let dir = TempDir::new().unwrap();
+        let env = test_env(&dir);
+        let path = resolve_list_path("emails", dir.path(), &env).unwrap();
+        assert_eq!(path, dir.path().join("emails.yaml"));
+    }
+
+    #[test]
+    fn resolve_list_path_rejects_slash_without_vars() {
+        let dir = TempDir::new().unwrap();
+        let env = test_env(&dir);
+        assert!(resolve_list_path("sub/emails", dir.path(), &env).is_err());
+    }
+
+    #[test]
+    fn resolve_list_path_var_substitution_with_yaml_extension() {
+        let dir = TempDir::new().unwrap();
+        let mut user_env = HashMap::new();
+        user_env.insert("LISTS".to_string(), "/shared/lists".to_string());
+        let env = ScriptEnv {
+            context: "",
+            phrase: "",
+            config_dir: dir.path(),
+            command_dir: dir.path(),
+            user_env: &user_env,
+            allow_external_paths: true,
+        };
+        let path = resolve_list_path("${LISTS}/team.yaml", dir.path(), &env).unwrap();
+        assert_eq!(path, PathBuf::from("/shared/lists/team.yaml"));
+    }
+
+    #[test]
+    fn resolve_list_path_auto_appends_yaml_after_var() {
+        let dir = TempDir::new().unwrap();
+        let mut user_env = HashMap::new();
+        user_env.insert("LISTS".to_string(), "/shared".to_string());
+        let env = ScriptEnv {
+            context: "",
+            phrase: "",
+            config_dir: dir.path(),
+            command_dir: dir.path(),
+            user_env: &user_env,
+            allow_external_paths: true,
+        };
+        let path = resolve_list_path("${LISTS}/team", dir.path(), &env).unwrap();
+        assert_eq!(path, PathBuf::from("/shared/team.yaml"));
+    }
+
+    #[test]
+    fn resolve_list_path_external_blocked_when_false() {
+        let dir = TempDir::new().unwrap();
+        let mut user_env = HashMap::new();
+        user_env.insert("LISTS".to_string(), "/opt/lists".to_string());
+        let env = ScriptEnv {
+            context: "",
+            phrase: "",
+            config_dir: dir.path(),
+            command_dir: dir.path(),
+            user_env: &user_env,
+            allow_external_paths: false,
+        };
+        let result = resolve_list_path("${LISTS}/team", dir.path(), &env);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("outside the command directory"));
+    }
+
+    // ── settings: allow_external_paths ──────────────────────────────────────
+
+    // (settings tests for allow_external_paths are in settings.rs)
 }

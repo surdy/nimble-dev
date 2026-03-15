@@ -2,7 +2,7 @@
 
 Runs an external script and displays its output as a list of items the moment the phrase is matched. Like [Static List](static-list.md), no `Enter` is required to expand the list. Scripts can optionally accept a typed argument to filter or parameterise their output in real time.
 
-Scripts are co-located with their command YAML file in the same directory inside `commands/`. They can be any executable — shell scripts, Python programs, compiled binaries, etc.
+Scripts are co-located with their command YAML file in the same directory inside `commands/`. They can be any executable — shell scripts, Python programs, compiled binaries, etc. You can also reference external scripts using `${VAR}` substitution in the `script:` field — see [External scripts and lists](writing-scripts.md#external-scripts-and-lists).
 
 All scripts automatically receive [built-in `NIMBLE_*` environment variables](writing-scripts.md#built-in-environment-variables) with context, paths, and platform metadata. You can also define your own variables via [user-defined environment variables](writing-scripts.md#user-defined-environment-variables).
 

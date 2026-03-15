@@ -17,7 +17,8 @@ title: <string>           # human-readable label shown in results
 action:
   type: script_action
   config:
-    script: <string>      # script filename co-located with this YAML (no path separators)
+    script: <string>      # script filename co-located with this YAML (no path separators),
+                          # or a ${VAR}-substituted path to an external script
     arg: none | optional | required   # default: none
     result_action: open_url | paste_text | copy_text
     prefix: <string>      # optional — prepended to each value (paste_text / copy_text only)

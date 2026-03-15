@@ -119,7 +119,7 @@
       const listName = staticMatch.action.config.list;
       const commandDir = staticMatch.source_dir;
       activeListCmd = staticMatch;
-      invoke<ListItem[]>("load_list", { commandDir, listName })
+      invoke<ListItem[]>("load_list", { commandDir, listName, inlineEnv: staticMatch.env, context: activeContext, phrase: staticMatch.phrase })
         .then(items => { listItems = items; selectedIndex = 0; })
         .catch(() => { listItems = []; });
       return;
@@ -488,7 +488,7 @@
         if (activeListCmd && activeListCmd.action.type === "static_list") {
           const listName = activeListCmd.action.config.list;
           const commandDir = activeListCmd.source_dir;
-          invoke<ListItem[]>("load_list", { commandDir, listName })
+          invoke<ListItem[]>("load_list", { commandDir, listName, inlineEnv: activeListCmd.env, context: activeContext, phrase: activeListCmd.phrase })
             .then(items => { listItems = items; })
             .catch(() => { listItems = []; });
         } else if (activeListCmd && activeListCmd.action.type === "dynamic_list") {

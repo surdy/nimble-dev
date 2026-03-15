@@ -278,3 +278,24 @@ Option B. Three layers: global `env.yaml` at config root → sidecar `env.yaml` 
 ### Risks & pitfalls
 - Users may expect parent directory env.yaml to cascade (documented as same-dir only)
 - Numeric/boolean YAML values in inline `env:` require quoting (serde_yaml limitation for HashMap<String, String>); env.yaml uses serde_yaml::Mapping with automatic coercion
+
+---
+
+## External paths: default-on with opt-out vs default-off with opt-in
+_Date: 2025-07-15_
+
+### Options evaluated
+**Option A — Default off (opt-in)**
+- Pros: maximally restrictive; external paths only when user explicitly enables
+- Cons: breaks the "just works" promise for power users who want shared scripts; additional friction
+
+**Option B — Default on (opt-out)**
+- Pros: external `${VAR}` paths work immediately once user adds them; zero config for the common case; containment still available via `allow_external_paths: false`
+- Cons: slightly less secure by default; user must know about the toggle if they want lockdown
+
+### Decision
+Option B. `allow_external_paths: true` by default. External paths only activate when the user explicitly writes `${VAR}` tokens in `script:` or `list:` fields — plain filenames are always co-located and unaffected by this setting. The opt-out toggle gives security-conscious users a containment boundary. Substitution uses builtins first (NIMBLE_CONFIG_DIR, NIMBLE_COMMAND_DIR, etc.) then user-defined env vars.
+
+### Risks & pitfalls
+- Path resolution uses `canonicalize()` for containment enforcement, which requires the file to exist; non-existent external paths are rejected by containment check
+- Users may be confused if `allow_external_paths: false` blocks a `${NIMBLE_COMMAND_DIR}/...` path that actually points inside the command dir (edge case with symlinks)

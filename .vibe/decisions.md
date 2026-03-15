@@ -19,3 +19,4 @@ One-line record of every meaningful decision. See `decisions-details.md` for ful
 
 - **App renamed to Nimble** — product name, binary name, bundle identifier, config directory, and all documentation updated from "Context Actions" / "context-actions" / "ContextActions" to "Nimble" / "nimble" _(2025-07-14)_
 - **User-defined env variable layering** — three layers (global env.yaml, sidecar env.yaml, inline env:) with deterministic override order; no directory walking for sidecar; NIMBLE_ prefix reserved _(2026-03-15)_
+- **External paths default-on with opt-out** — `allow_external_paths: true` by default; `${VAR}` substitution in script/list fields; opt-out via settings.yaml for containment _(2025-07-15)_

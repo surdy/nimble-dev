@@ -42,6 +42,10 @@ show_context_chip: true
 # When false, the first file that defines a phrase wins and duplicate
 # phrases in other files generate warnings. Default is true (all loaded).
 allow_duplicates: true
+
+# When false, ${VAR}-substituted script/list paths must resolve inside
+# the command directory. Default is true (external paths allowed).
+allow_external_paths: true
 ```
 
 **`hotkey`** — The global shortcut that summons the launcher from anywhere. You normally set this via the onboarding screen; editing it here manually is possible but requires a restart. Deleting this line triggers the onboarding screen on the next launch.
@@ -49,6 +53,8 @@ allow_duplicates: true
 **`show_context_chip`** — When `true` (default), a pill badge showing the active context is displayed inside the launcher bar alongside a clear button. Set to `false` to hide it. Takes effect on next relaunch.
 
 **`allow_duplicates`** — When `true` (default), all command files are loaded regardless of phrase conflicts. Set to `false` to enable first-file-wins deduplication and surface warnings for any conflicting phrases. Takes effect on next relaunch.
+
+**`allow_external_paths`** — When `true` (default), `script:` and `list:` fields that use `${VAR}` substitution may resolve to paths outside the command directory. Set to `false` to restrict all resolved paths to the command directory. See [Writing Scripts — External scripts and lists](advanced/writing-scripts.md#external-scripts-and-lists).
 
 ---
 

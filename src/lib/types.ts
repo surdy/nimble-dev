@@ -107,4 +107,5 @@ export interface AppSettings {
   hotkey?: string;
   show_context_chip: boolean;
   allow_duplicates: boolean;
+  allow_external_paths: boolean;
 }

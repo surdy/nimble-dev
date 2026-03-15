@@ -15,7 +15,7 @@ commands/
     team-emails.yaml           ← list file (referenced by name)
 ```
 
-The command YAML references the list file by name (without the `.yaml` extension):
+The command YAML references the list file by name (without the `.yaml` extension), or uses a `${VAR}`-substituted path for external lists (see [External scripts and lists](writing-scripts.md#external-scripts-and-lists)):
 
 ```yaml
 action:

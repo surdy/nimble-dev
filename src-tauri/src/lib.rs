@@ -302,15 +302,33 @@ fn list_commands(app: tauri::AppHandle) -> Result<commands::LoadResult, String> 
 }
 
 /// Load a named list from `<commands_dir>/<command_dir>/<list_name>.yaml`.
-/// The list file is co-located with the command YAML that references it.
+/// The list file is co-located with the command YAML that references it,
+/// unless `${VAR}` substitution resolves it to an external path.
 #[tauri::command]
-fn load_list(app: tauri::AppHandle, command_dir: String, list_name: String) -> Result<Vec<commands::ListItem>, String> {
+fn load_list(
+    app: tauri::AppHandle,
+    command_dir: String,
+    list_name: String,
+    inline_env: std::collections::HashMap<String, String>,
+    context: String,
+    phrase: String,
+) -> Result<Vec<commands::ListItem>, String> {
     let config_dir = app
         .path()
         .app_config_dir()
         .map_err(|e| e.to_string())?;
     let dir = config_dir.join("commands").join(&command_dir);
-    commands::load_list(&dir, &list_name)
+    let allow_external = app.state::<SettingsState>().0.lock().unwrap().allow_external_paths;
+    let user_env = commands::build_user_env(&config_dir, &dir, &inline_env)?;
+    let env = commands::ScriptEnv {
+        context: &context,
+        phrase: &phrase,
+        config_dir: &config_dir,
+        command_dir: &dir,
+        user_env: &user_env,
+        allow_external_paths: allow_external,
+    };
+    commands::load_list(&dir, &list_name, &env)
 }
 
 /// Run a script co-located with the command YAML and return the items it produces.
@@ -330,6 +348,7 @@ fn run_dynamic_list(
         .app_config_dir()
         .map_err(|e| e.to_string())?;
     let dir = config_dir.join("commands").join(&command_dir);
+    let allow_external = app.state::<SettingsState>().0.lock().unwrap().allow_external_paths;
     let user_env = commands::build_user_env(&config_dir, &dir, &inline_env)?;
     let env = commands::ScriptEnv {
         context: &context,
@@ -337,6 +356,7 @@ fn run_dynamic_list(
         config_dir: &config_dir,
         command_dir: &dir,
         user_env: &user_env,
+        allow_external_paths: allow_external,
     };
     commands::run_script(&dir, &script_name, arg.as_deref(), &env)
 }
@@ -359,6 +379,7 @@ fn run_script_action(
         .app_config_dir()
         .map_err(|e| e.to_string())?;
     let dir = config_dir.join("commands").join(&command_dir);
+    let allow_external = app.state::<SettingsState>().0.lock().unwrap().allow_external_paths;
     let user_env = commands::build_user_env(&config_dir, &dir, &inline_env)?;
     let env = commands::ScriptEnv {
         context: &context,
@@ -366,6 +387,7 @@ fn run_script_action(
         config_dir: &config_dir,
         command_dir: &dir,
         user_env: &user_env,
+        allow_external_paths: allow_external,
     };
     commands::run_script_values(&dir, &script_name, arg.as_deref(), &env)
 }

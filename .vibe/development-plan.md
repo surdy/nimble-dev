@@ -38,6 +38,7 @@ Iterative implementation plan for Context Actions, from bare minimum working she
 | 28 ✅ | Built-in script environment variables | Inject `NIMBLE_*` variables into every script execution path |
 | 29 ✅ | User-defined script variables | Add global and command-scoped user variables with deterministic precedence |
 | 30 | Script debugging and verbose logs | Add debug mode with `NIMBLE_DEBUG` and structured script diagnostics |
+| 31 ✅ | External script/list paths | `${VAR}` substitution in `script:` / `list:` fields; `allow_external_paths` setting |
 
 ---
 
@@ -1360,5 +1361,61 @@ Introduce an explicit script debug mode with predictable diagnostics, including 
 - Users can enable script debug mode via settings
 - Scripts receive `NIMBLE_DEBUG=1` only in debug mode
 - Verbose script diagnostics are available without changing script behavior in normal mode
+
+## Stage 31 — External Script/List Paths ✅
+
+### Goal
+Allow `script:` and `list:` fields to reference files outside the command directory via `${VAR}` token substitution, with a safety toggle (`allow_external_paths`) in `settings.yaml`.
+
+### Scope
+
+- Add `${VAR}` substitution to `script:` and `list:` field values.
+- Variables are resolved against built-in `NIMBLE_*` vars first, then user-defined env.
+- Plain filenames (no `${…}`) retain the legacy co-located behaviour unchanged.
+- Add `allow_external_paths: bool` to `settings.yaml` (default `true`).
+- When `false`, resolved paths must stay inside the command directory.
+
+### Tasks
+
+#### Backend — `commands.rs`
+- `substitute_vars(template, env)` — replaces `${VAR}` tokens; errors on undefined/unterminated.
+- `builtin_var_value(name, env)` — returns `NIMBLE_CONTEXT`, `NIMBLE_PHRASE`, `NIMBLE_OS`.
+- `resolve_script_path(raw, command_dir, env)` — resolves `script:` value; pre-substitutes `NIMBLE_CONFIG_DIR`, `NIMBLE_COMMAND_DIR`, `NIMBLE_VERSION`; enforces containment when `allow_external_paths` is `false`.
+- `resolve_list_path(raw, command_dir, env)` — same for `list:` value; auto-appends `.yaml`.
+- Updated `run_script()`, `run_script_values()`, `load_list()` to use the new resolvers.
+- Added `allow_external_paths` field to `ScriptEnv`.
+
+#### Backend — `settings.rs`
+- Added `allow_external_paths: bool` (default `true`) to `AppSettings`.
+
+#### Backend — `lib.rs` (Tauri handlers)
+- `load_list` handler now accepts `inline_env`, `context`, `phrase` and reads `allow_external_paths` from `SettingsState`.
+- `run_dynamic_list` and `run_script_action` pass `allow_external_paths` through `ScriptEnv`.
+
+#### Frontend
+- Updated both `load_list` invoke calls with `inlineEnv`, `context`, `phrase`.
+- Added `allow_external_paths: boolean` to `AppSettings` TypeScript interface.
+
+#### Tests (19 new, 114 total)
+- `substitute_vars`: plain text, single builtin, multiple vars, user env, undefined error, unterminated error, empty name error, builtin-overrides-user.
+- `resolve_script_path`: plain name, rejects slash, rejects dotdot, var expansion absolute, external blocked, command_dir var when external false.
+- `resolve_list_path`: plain name appends yaml, rejects slash, var with yaml ext, auto-append yaml, external blocked.
+- `settings.rs`: `can_disable_allow_external_paths`, malformed yaml includes default.
+
+#### Docs
+- `writing-scripts.md`: updated security section; added "External scripts and lists" section.
+- `configuring-commands.md`: schema updated with `${VAR}` comments.
+- `config-directory.md`: `settings.yaml` section includes `allow_external_paths`.
+- `dynamic-list.md`, `script-action.md`, `static-list.md`: brief cross-references.
+
+#### Examples
+- `example-config/scripts/greeting.sh` — shared script.
+- `example-config/commands/examples/shared-greeting.yaml` — dynamic_list using `${NIMBLE_CONFIG_DIR}`.
+- `example-config/settings.yaml` updated with `allow_external_paths: true`.
+
+### Done when
+- `${VAR}` tokens in `script:` and `list:` fields resolve correctly.
+- External paths are allowed by default and can be restricted via `allow_external_paths: false`.
+- 114 tests pass; no regressions.
 
 

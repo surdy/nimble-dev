@@ -26,6 +26,13 @@ pub struct AppSettings {
     /// surfaced in the UI for every collision.
     #[serde(default = "default_true")]
     pub allow_duplicates: bool,
+
+    /// Whether `script:` and `list:` fields can resolve to paths outside the
+    /// command directory via `${VAR}` substitution.
+    /// `true` (default) — external paths are allowed.
+    /// `false` — resolved paths must stay inside the command directory.
+    #[serde(default = "default_true")]
+    pub allow_external_paths: bool,
 }
 
 impl Default for AppSettings {
@@ -34,6 +41,7 @@ impl Default for AppSettings {
             hotkey: None,
             show_context_chip: true,
             allow_duplicates: true,
+            allow_external_paths: true,
         }
     }
 }
@@ -80,6 +88,7 @@ mod tests {
         assert_eq!(s.hotkey, None);
         assert!(s.show_context_chip);
         assert!(s.allow_duplicates);
+        assert!(s.allow_external_paths);
     }
 
     #[test]
@@ -122,12 +131,14 @@ mod tests {
             hotkey: Some("Super+Space".to_string()),
             show_context_chip: false,
             allow_duplicates: false,
+            allow_external_paths: false,
         };
         save(dir.path(), &original).unwrap();
         let reloaded = load(dir.path());
         assert_eq!(reloaded.hotkey, original.hotkey);
         assert_eq!(reloaded.show_context_chip, original.show_context_chip);
         assert_eq!(reloaded.allow_duplicates, original.allow_duplicates);
+        assert_eq!(reloaded.allow_external_paths, original.allow_external_paths);
     }
 
     #[test]
@@ -147,5 +158,18 @@ mod tests {
         assert_eq!(s.hotkey, None);
         assert!(s.show_context_chip);
         assert!(s.allow_duplicates);
+        assert!(s.allow_external_paths);
+    }
+
+    #[test]
+    fn can_disable_allow_external_paths() {
+        let dir = TempDir::new().unwrap();
+        std::fs::write(
+            dir.path().join("settings.yaml"),
+            "allow_external_paths: false\n",
+        )
+        .unwrap();
+        let s = load(dir.path());
+        assert!(!s.allow_external_paths);
     }
 }
