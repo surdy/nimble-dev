@@ -12,32 +12,38 @@ This directory mirrors the layout of the Nimble config directory on disk. Copy i
 ```
 example-config/
 ├── settings.yaml           # application settings (hotkey, chip, dedup)
-├── commands/
-│   └── examples/          # one YAML file per command
-│       ├── open-google.yaml
-│       ├── open-github.yaml
-│       ├── open-reddit.yaml
-│       ├── open-slack.yaml
-│       ├── open-notes.yaml
-│       ├── open-morning-sites.yaml
-│       ├── search-google.yaml
-│       ├── paste-email.yaml
-│       ├── paste-greeting.yaml
-│       ├── paste-team-emails.yaml
-│       ├── paste-team-emails-as-task.yaml
-│       ├── copy-email.yaml
-│       ├── copy-uuid.yaml
-│       ├── show-team-emails/     # static_list — command + list co-located
-│       │   ├── show-team-emails.yaml
-│       │   └── team-emails.yaml
-│       ├── dynamic-list-example.yaml
-│       └── script-action-example.yaml
-└── scripts/
-    ├── hello.sh            # dynamic_list — filterable greeting list
-    ├── timestamp.sh        # script_action — outputs current date/time
-    ├── uuid.sh             # script_action — generates a random UUID
-    ├── team-emails.sh      # script_action — returns list of email addresses
-    └── morning-sites.sh    # script_action — returns list of URLs to open
+└── commands/
+    └── examples/
+        ├── open-google.yaml
+        ├── open-github.yaml
+        ├── open-reddit.yaml
+        ├── open-slack.yaml
+        ├── open-notes.yaml
+        ├── search-google.yaml
+        ├── paste-email.yaml
+        ├── paste-greeting.yaml
+        ├── copy-email.yaml
+        ├── show-team-emails/         # static_list — command + list co-located
+        │   ├── show-team-emails.yaml
+        │   └── team-emails.yaml
+        ├── say-hello/                # dynamic_list — command + script co-located
+        │   ├── say-hello.yaml
+        │   └── hello.sh
+        ├── paste-timestamp/          # script_action — command + script co-located
+        │   ├── paste-timestamp.yaml
+        │   └── timestamp.sh
+        ├── copy-uuid/
+        │   ├── copy-uuid.yaml
+        │   └── uuid.sh
+        ├── open-morning-sites/
+        │   ├── open-morning-sites.yaml
+        │   └── morning-sites.sh
+        ├── paste-team-emails/
+        │   ├── paste-team-emails.yaml
+        │   └── team-emails.sh
+        └── paste-team-emails-as-task/
+            ├── paste-team-emails-as-task.yaml
+            └── team-emails.sh
 ```
 
 ## Examples covered

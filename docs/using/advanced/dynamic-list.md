@@ -2,7 +2,7 @@
 
 Runs an external script and displays its output as a list of items the moment the phrase is matched. Like [Static List](static-list.md), no `Enter` is required to expand the list. Scripts can optionally accept a typed argument to filter or parameterise their output in real time.
 
-Scripts live in the `scripts/` subdirectory of your config directory (see [Config Directory](../config-directory.md)). They can be any executable — shell scripts, Python programs, compiled binaries, etc.
+Scripts are co-located with their command YAML file in the same directory inside `commands/`. They can be any executable — shell scripts, Python programs, compiled binaries, etc.
 
 ---
 
@@ -30,6 +30,7 @@ Each script writes to stdout and Nimble parses the result:
 
 ```yaml
 # Runs once on exact match; extra typing collapses the list
+# Script lives alongside this YAML (e.g., commands/team-emails/team-emails.sh)
 phrase: team emails
 title: Team email addresses
 action:

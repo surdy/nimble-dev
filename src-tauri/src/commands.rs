@@ -256,18 +256,19 @@ action:
 "#,
     ),
     (
-        "examples/dynamic-list-example.yaml",
-        r#"phrase: hello script
-title: Hello from script
+        "examples/say-hello/say-hello.yaml",
+        r#"phrase: say hello
+title: Say hello (dynamic list example)
 action:
   type: dynamic_list
   config:
     script: hello.sh
-    arg: none
+    arg: optional
+    item_action: paste_text
 "#,
     ),
     (
-        "examples/script-action-example.yaml",
+        "examples/paste-timestamp/paste-timestamp.yaml",
         r#"phrase: paste timestamp
 title: Paste current date/time
 action:
@@ -277,6 +278,19 @@ action:
     arg: none
     result_action: paste_text
 "#,
+    ),
+];
+
+/// Seed scripts that are co-located with their command YAML files.
+/// Each entry is (relative path inside config dir, content, executable flag).
+static SEED_SCRIPTS: &[(&str, &str)] = &[
+    (
+        "examples/say-hello/hello.sh",
+        "#!/bin/sh\n# Example dynamic_list script.\n# Output a JSON array of objects with \"title\" and optional \"subtext\" fields,\n# or plain text for a single-item result.\nQUERY=\"$1\"\n\nif [ -z \"$QUERY\" ]; then\n  echo '[{\"title\":\"Hello, World!\",\"subtext\":\"A classic greeting\"},{\"title\":\"Hello, Alice\",\"subtext\":\"alice@example.com\"},{\"title\":\"Hello, Bob\",\"subtext\":\"bob@example.com\"}]'\nelse\n  echo \"[{\\\"title\\\":\\\"Hello, $QUERY\\\",\\\"subtext\\\":\\\"You searched for $QUERY\\\"}]\"\nfi\n",
+    ),
+    (
+        "examples/paste-timestamp/timestamp.sh",
+        "#!/bin/sh\ndate\n",
     ),
 ];
 
@@ -304,22 +318,25 @@ pub fn load_list(command_dir: &Path, list_name: &str) -> Result<Vec<ListItem>, S
 
 // ── Script runner ─────────────────────────────────────────────────────────────
 
-/// Run the script at `config_dir/scripts/<script_name>`, optionally passing
+/// Run the script at `<command_dir>/<script_name>`, optionally passing
 /// `arg` as a positional argument. Returns the parsed list of items on success.
+///
+/// `command_dir` is the absolute path to the directory containing the command
+/// YAML that references this script. The script lives alongside the command.
 ///
 /// `script_name` must be a plain filename (no path separators or `..` components).
 /// A 5-second timeout is enforced; the function returns `Err` on timeout.
 pub fn run_script(
-    config_dir: &Path,
+    command_dir: &Path,
     script_name: &str,
     arg: Option<&str>,
 ) -> Result<Vec<ListItem>, String> {
-    // Security: reject names that could escape the scripts/ directory.
+    // Security: reject names that could escape the command directory.
     if script_name.contains('/') || script_name.contains('\\') || script_name.contains("..") {
         return Err(format!("Invalid script name: {script_name:?}"));
     }
 
-    let script_path = config_dir.join("scripts").join(script_name);
+    let script_path = command_dir.join(script_name);
     if !script_path.exists() {
         return Err(format!("Script not found: {}", script_path.display()));
     }
@@ -381,8 +398,11 @@ pub fn run_script(
     }])
 }
 
-/// Run the script at `config_dir/scripts/<script_name>`, optionally passing
+/// Run the script at `<command_dir>/<script_name>`, optionally passing
 /// `arg` as a positional argument. Returns a list of string values on success.
+///
+/// `command_dir` is the absolute path to the directory containing the command
+/// YAML that references this script. The script lives alongside the command.
 ///
 /// Script stdout is parsed as a JSON array of strings first; if that fails,
 /// the entire trimmed output is returned as a single-element vec.
@@ -390,16 +410,16 @@ pub fn run_script(
 /// `script_name` must be a plain filename (no path separators or `..` components).
 /// A 5-second timeout is enforced; the function returns `Err` on timeout.
 pub fn run_script_values(
-    config_dir: &Path,
+    command_dir: &Path,
     script_name: &str,
     arg: Option<&str>,
 ) -> Result<Vec<String>, String> {
-    // Security: reject names that could escape the scripts/ directory.
+    // Security: reject names that could escape the command directory.
     if script_name.contains('/') || script_name.contains('\\') || script_name.contains("..") {
         return Err(format!("Invalid script name: {script_name:?}"));
     }
 
-    let script_path = config_dir.join("scripts").join(script_name);
+    let script_path = command_dir.join(script_name);
     if !script_path.exists() {
         return Err(format!("Script not found: {}", script_path.display()));
     }
@@ -497,6 +517,25 @@ pub fn load_from_dir(config_dir: &Path, allow_duplicates: bool) -> Result<LoadRe
             }
             fs::write(&dest, content)
                 .map_err(|e| format!("Could not write {}: {e}", dest.display()))?;
+        }
+        // Seed co-located scripts and mark them executable.
+        for (rel_path, content) in SEED_SCRIPTS {
+            let dest = config_dir.join(rel_path);
+            if let Some(parent) = dest.parent() {
+                fs::create_dir_all(parent)
+                    .map_err(|e| format!("Could not create {}: {e}", parent.display()))?;
+            }
+            fs::write(&dest, content)
+                .map_err(|e| format!("Could not write {}: {e}", dest.display()))?;
+            #[cfg(unix)]
+            {
+                use std::os::unix::fs::PermissionsExt;
+                if let Ok(meta) = fs::metadata(&dest) {
+                    let mut perms = meta.permissions();
+                    perms.set_mode(0o755);
+                    let _ = fs::set_permissions(&dest, perms);
+                }
+            }
         }
     }
 
@@ -851,16 +890,13 @@ mod tests {
     #[test]
     fn run_script_missing_script_returns_err() {
         let dir = TempDir::new().unwrap();
-        fs::create_dir_all(dir.path().join("scripts")).unwrap();
         assert!(run_script(dir.path(), "nonexistent.sh", None).is_err());
     }
 
     #[cfg(unix)]
     fn make_script(dir: &TempDir, name: &str, content: &str) {
         use std::os::unix::fs::PermissionsExt;
-        let scripts_dir = dir.path().join("scripts");
-        fs::create_dir_all(&scripts_dir).unwrap();
-        let path = scripts_dir.join(name);
+        let path = dir.path().join(name);
         fs::write(&path, content).unwrap();
         let mut perms = fs::metadata(&path).unwrap().permissions();
         perms.set_mode(0o755);
@@ -919,7 +955,6 @@ mod tests {
     #[test]
     fn run_script_values_missing_script_returns_err() {
         let dir = TempDir::new().unwrap();
-        fs::create_dir_all(dir.path().join("scripts")).unwrap();
         assert!(run_script_values(dir.path(), "nonexistent.sh", None).is_err());
     }
 

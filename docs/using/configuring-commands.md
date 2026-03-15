@@ -65,12 +65,12 @@ action:
     item_action: paste_text | copy_text | open_url   # optional
 
     # --- dynamic_list ---
-    script: <string>     # name of the script file in scripts/ (without path)
+    script: <string>     # name of the script file co-located with this command YAML
     arg: none | optional | required   # default: none
     item_action: paste_text | copy_text | open_url   # optional
 
     # --- script_action ---
-    script: <string>     # name of the script file in scripts/ (without path)
+    script: <string>     # name of the script file co-located with this command YAML
     arg: none | optional | required   # default: none
     result_action: open_url | paste_text | copy_text   # required
     prefix: <string>     # optional — prepended to each value (paste_text / copy_text only)

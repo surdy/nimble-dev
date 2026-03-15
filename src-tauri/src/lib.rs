@@ -313,11 +313,12 @@ fn load_list(app: tauri::AppHandle, command_dir: String, list_name: String) -> R
     commands::load_list(&dir, &list_name)
 }
 
-/// Run a script from `config_dir/scripts/<script_name>` and return the items it produces.
+/// Run a script co-located with the command YAML and return the items it produces.
 /// The optional `arg` is passed as a positional argument to the script.
 #[tauri::command]
 fn run_dynamic_list(
     app: tauri::AppHandle,
+    command_dir: String,
     script_name: String,
     arg: Option<String>,
 ) -> Result<Vec<commands::ListItem>, String> {
@@ -325,15 +326,17 @@ fn run_dynamic_list(
         .path()
         .app_config_dir()
         .map_err(|e| e.to_string())?;
-    commands::run_script(&config_dir, &script_name, arg.as_deref())
+    let dir = config_dir.join("commands").join(&command_dir);
+    commands::run_script(&dir, &script_name, arg.as_deref())
 }
 
-/// Run a script from `config_dir/scripts/<script_name>` and return its output as a list of
+/// Run a script co-located with the command YAML and return its output as a list of
 /// string values. Used by `script_action` commands — the launcher applies the returned values
 /// directly via its built-in open_url / paste_text / copy_text actions.
 #[tauri::command]
 fn run_script_action(
     app: tauri::AppHandle,
+    command_dir: String,
     script_name: String,
     arg: Option<String>,
 ) -> Result<Vec<String>, String> {
@@ -341,7 +344,8 @@ fn run_script_action(
         .path()
         .app_config_dir()
         .map_err(|e| e.to_string())?;
-    commands::run_script_values(&config_dir, &script_name, arg.as_deref())
+    let dir = config_dir.join("commands").join(&command_dir);
+    commands::run_script_values(&dir, &script_name, arg.as_deref())
 }
 
 /// Dismiss the launcher intentionally (Escape key, hotkey while visible, tray Hide).

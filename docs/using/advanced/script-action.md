@@ -15,7 +15,7 @@ title: <string>           # human-readable label shown in results
 action:
   type: script_action
   config:
-    script: <string>      # script filename in config_dir/scripts/ (no path separators)
+    script: <string>      # script filename co-located with this YAML (no path separators)
     arg: none | optional | required   # default: none
     result_action: open_url | paste_text | copy_text
     prefix: <string>      # optional — prepended to each value (paste_text / copy_text only)
@@ -26,18 +26,9 @@ action:
 
 ## Minimal example — paste current timestamp
 
-Create `scripts/timestamp.sh`:
+Create a subdirectory in `commands/` with the command YAML and script together:
 
-```sh
-#!/bin/sh
-date
-```
-
-```sh
-chmod +x ~/Library/Application\ Support/Nimble/scripts/timestamp.sh
-```
-
-Create `commands/paste-timestamp.yaml`:
+**`commands/paste-timestamp/paste-timestamp.yaml`:**
 
 ```yaml
 phrase: paste timestamp
@@ -48,6 +39,17 @@ action:
     script: timestamp.sh
     arg: none
     result_action: paste_text
+```
+
+**`commands/paste-timestamp/timestamp.sh`:**
+
+```sh
+#!/bin/sh
+date
+```
+
+```sh
+chmod +x ~/Library/Application\ Support/Nimble/commands/paste-timestamp/timestamp.sh
 ```
 
 Type `paste timestamp` and press **Enter** — the current date/time is pasted at the cursor.
@@ -142,7 +144,7 @@ Identical to `paste_text` but copies the combined text to the clipboard instead 
 ## Script requirements
 
 - Scripts must be executable (`chmod +x`).
-- Scripts are resolved from `config_dir/scripts/` — filename only, no subdirectory paths or `..` components allowed.
+- Scripts are co-located with their command YAML file — filename only, no subdirectory paths or `..` components allowed.
 - Scripts run in a sandboxed subprocess: they can read files and make network calls but **cannot** directly trigger launcher actions. All actions go through the launcher's built-in layer.
 
 ---

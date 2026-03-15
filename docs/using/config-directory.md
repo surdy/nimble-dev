@@ -22,10 +22,9 @@ Nimble/
   commands/         ← YAML command files (watched and hot-reloaded by Nimble)
     examples/       ← seeded on first launch if commands/ is empty
     …               ← your own files and subdirectories
-  scripts/          ← executable scripts for the dynamic_list action type
 ```
 
-Each subdirectory holds a distinct type of data. New subdirectories will be introduced in future releases as new features are added; each will be documented in this file.
+All command-related files — YAML configs, list files, and scripts — live within the `commands/` tree. New subdirectories will be introduced in future releases as new features are added; each will be documented in this file.
 
 ---
 
@@ -68,38 +67,17 @@ commands/
   show-team-emails/
     show-team-emails.yaml      ← static_list command
     team-emails.yaml           ← list file, co-located with its command
+  say-hello/
+    say-hello.yaml             ← dynamic_list command
+    hello.sh                   ← script, co-located with its command
   work/
     open-jira.yaml
     paste-standup-template.yaml
 ```
 
-Commands that use a `static_list` action keep their list file in the same directory as the command YAML. See [Advanced — Static List](advanced/static-list.md) for details.
+Commands that use a `static_list` action keep their list file in the same directory as the command YAML. Commands that use `dynamic_list` or `script_action` keep their script in the same directory. See [Advanced — Static List](advanced/static-list.md), [Advanced — Dynamic List](advanced/dynamic-list.md), and [Advanced — Script Action](advanced/script-action.md) for details.
 
 For the full command YAML schema, action types, and live-reload details see [Configuring Commands](configuring-commands.md).
-
----
-
-## `scripts/`
-
-Contains executable scripts used by the `dynamic_list` action type. Scripts can be any executable file — shell scripts, Python programs, compiled binaries, etc. Each script writes its output to stdout and Nimble parses the result.
-
-File names (without extension) are how commands reference their script:
-```yaml
-action:
-  type: dynamic_list
-  config:
-    script: team-emails.sh    # runs scripts/team-emails.sh
-```
-
-**Output format:**
-- **Plain text** — the entire stdout is used as the title of a single result item.
-- **JSON array** — an array of `{ "title": "...", "subtext": "..." }` objects (subtext optional).
-
-A seed example (`scripts/hello.sh`) is created automatically on first launch. Nimble watches this directory and re-runs the active script when any file in `scripts/` changes, so edits take effect immediately.
-
-> **Linux build dependency:** The paste-text focus-restoration feature requires `libxdo-dev` at compile time (the `xdo` crate links against it). Install it with your package manager (e.g. `sudo apt install libxdo-dev`). No runtime binary is needed. Under a pure Wayland session, focus restoration is skipped and the clipboard is set; paste manually with Ctrl+V.
-
-For full details and examples see [Writing Scripts](advanced/writing-scripts.md).
 
 ---
 

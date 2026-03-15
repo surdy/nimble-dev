@@ -1,12 +1,12 @@
 # Writing Scripts
 
-The `dynamic_list` and `script_action` actions can run any executable you place in the `scripts/` directory of your config folder.
+The `dynamic_list` and `script_action` actions can run any executable co-located with the command YAML file.
 
 ---
 
 ## Overview
 
-Scripts live in the `scripts/` subdirectory of your config directory. Any executable file can be used: shell scripts, Python programs, Node.js scripts, compiled binaries, etc. Nimble spawns the script, captures its stdout, and renders the output as a list of selectable items.
+Scripts live in the same directory as their command YAML file inside `commands/`. Any executable file can be used: shell scripts, Python programs, Node.js scripts, compiled binaries, etc. Nimble spawns the script, captures its stdout, and renders the output as a list of selectable items.
 
 ---
 
@@ -63,7 +63,15 @@ Nimble enforces a **5-second timeout**. If the script does not exit within 5 sec
 
 ## Registering a script as a command
 
-Create a YAML command file in `commands/` that references the script by filename:
+Create a subdirectory in `commands/` containing both the command YAML and the script:
+
+```
+commands/search-contacts/
+  search-contacts.yaml    ← command YAML
+  contacts.sh             ← script, co-located
+```
+
+**`commands/search-contacts/search-contacts.yaml`:**
 
 ```yaml
 phrase: search contacts
@@ -71,7 +79,7 @@ title: Search contacts
 action:
   type: dynamic_list
   config:
-    script: contacts.sh     # resolves to scripts/contacts.sh
+    script: contacts.sh     # resolves to the same directory as this YAML
     arg: optional           # none | optional | required
     item_action: paste_text # optional; same as static_list
 ```
@@ -96,7 +104,7 @@ See [Dynamic List](dynamic-list.md) for the full YAML schema and argument mode r
 
 ## Security boundaries
 
-- `script` field values containing `/`, `\`, or `..` are **rejected** at invocation time. Scripts must be plain filenames inside `scripts/` — no subdirectories or path traversal.
+- `script` field values containing `/`, `\`, or `..` are **rejected** at invocation time. Scripts must be plain filenames co-located with the command YAML — no subdirectories or path traversal.
 - Scripts run with the **same user privileges** as the Nimble launcher process. They are never elevated.
 - Scripts **cannot** directly trigger launcher actions. They can only produce output. The launcher decides what to do with each item based on `item_action`.
 - Script output is parsed and validated. Malformed JSON is treated as plain text; an entirely unparseable response shows an empty list.
@@ -107,7 +115,7 @@ See [Dynamic List](dynamic-list.md) for the full YAML schema and argument mode r
 
 1. **Run the script directly** from your terminal to see its output and any errors:
    ```sh
-   ~/Library/Application\ Support/Nimble/scripts/my-script.sh "test arg"
+   ~/Library/Application\ Support/Nimble/commands/search-contacts/contacts.sh "test arg"
    ```
 
 2. **Check stderr** — Nimble logs scripts' stderr output with `[ctx] script "..." stderr:` prefix. Look in the app's log output (visible when running via `npm run tauri dev`).
@@ -116,7 +124,7 @@ See [Dynamic List](dynamic-list.md) for the full YAML schema and argument mode r
 
 4. **Check permissions** — on macOS/Linux the script file must be executable:
    ```sh
-   chmod +x ~/Library/Application\ Support/Nimble/scripts/my-script.sh
+   chmod +x ~/Library/Application\ Support/Nimble/commands/search-contacts/contacts.sh
    ```
 
 5. **Live reload** — editing any file in `scripts/` triggers a reload. If a dynamic list is currently displayed it re-runs automatically within the 300 ms debounce window.
