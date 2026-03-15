@@ -36,7 +36,7 @@ Iterative implementation plan for Context Actions, from bare minimum working she
 | 26 ✅ | Cross-platform CI & packaging | GitHub Actions matrix (macOS/Linux/Windows); `.dmg`, `.flatpak`, `.msi` artefacts; per-platform build docs |
 | 27 ✅ | Co-located resources | **Breaking change:** static lists and scripts moved from `lists/` and `scripts/` to sit next to their command YAML |
 | 28 ✅ | Built-in script environment variables | Inject `NIMBLE_*` variables into every script execution path |
-| 29 | User-defined script variables | Add global and command-scoped user variables with deterministic precedence |
+| 29 ✅ | User-defined script variables | Add global and command-scoped user variables with deterministic precedence |
 | 30 | Script debugging and verbose logs | Add debug mode with `NIMBLE_DEBUG` and structured script diagnostics |
 
 ---

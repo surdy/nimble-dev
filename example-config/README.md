@@ -12,6 +12,7 @@ This directory mirrors the layout of the Nimble config directory on disk. Copy i
 ```
 example-config/
 ├── settings.yaml           # application settings (hotkey, chip, dedup)
+├── env.yaml                # global user-defined environment variables for scripts
 └── commands/
     └── examples/
         ├── open-google.yaml
@@ -41,9 +42,13 @@ example-config/
         ├── paste-team-emails/
         │   ├── paste-team-emails.yaml
         │   └── team-emails.sh
-        └── paste-team-emails-as-task/
-            ├── paste-team-emails-as-task.yaml
-            └── team-emails.sh
+        ├── paste-team-emails-as-task/
+        │   ├── paste-team-emails-as-task.yaml
+        │   └── team-emails.sh
+        └── show-user-env/            # user-defined env demo (global + sidecar + inline)
+            ├── show-user-env.yaml
+            ├── env.yaml              # sidecar env vars for this command
+            └── user-env.sh
 ```
 
 ## Examples covered
@@ -66,3 +71,4 @@ example-config/
 | `team emails` | `static_list` | Shows pickable list of team email addresses |
 | `say hello` | `dynamic_list` | Shows a filterable list of greetings |
 | `paste timestamp` | `script_action` | Pastes the current date/time |
+| `show user env` | `dynamic_list` | Shows user-defined env vars (global + sidecar + inline demo) |

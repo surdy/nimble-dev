@@ -4,7 +4,7 @@ Runs an external script and displays its output as a list of items the moment th
 
 Scripts are co-located with their command YAML file in the same directory inside `commands/`. They can be any executable — shell scripts, Python programs, compiled binaries, etc.
 
-All scripts automatically receive [built-in `NIMBLE_*` environment variables](writing-scripts.md#built-in-environment-variables) with context, paths, and platform metadata.
+All scripts automatically receive [built-in `NIMBLE_*` environment variables](writing-scripts.md#built-in-environment-variables) with context, paths, and platform metadata. You can also define your own variables via [user-defined environment variables](writing-scripts.md#user-defined-environment-variables).
 
 ---
 

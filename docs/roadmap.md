@@ -50,6 +50,7 @@
 - [ ] Bug / issue reporter — `ctx report issue` opens a pre-filled GitHub issue in the browser with version and platform info attached
 - [ ] Global variables — built-in variables (e.g. `{{date}}`, `{{clipboard}}`) and user-defined variables reusable across any command's URL, text, or script arguments
 - [x] Built-in script environment variables — inject `NIMBLE_*` variables (`NIMBLE_CONTEXT`, `NIMBLE_PHRASE`, `NIMBLE_CONFIG_DIR`, `NIMBLE_COMMAND_DIR`, `NIMBLE_OS`, `NIMBLE_VERSION`) into every script execution
+- [x] User-defined script variables — global `env.yaml`, command-dir sidecar `env.yaml`, and inline `env:` with deterministic precedence; reserved `NIMBLE_*` keys protected
 - [ ] Script debugging & verbose logs — add `script_debug` setting, inject `NIMBLE_DEBUG=1` for script runs in debug mode, and improve script execution diagnostics
 - [ ] Profiles — named configuration profiles (e.g. `work`, `home`) each with their own command set, scripts, and settings; switch profiles from the launcher or on a schedule
 

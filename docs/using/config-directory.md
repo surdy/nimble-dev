@@ -19,6 +19,7 @@ Nimble stores all per-user data in a single platform-specific config directory. 
 ```
 Nimble/
   settings.yaml     ← application settings (hotkey, show_context_chip, allow_duplicates)
+  env.yaml          ← global user-defined environment variables for scripts (optional)
   commands/         ← YAML command files (watched and hot-reloaded by Nimble)
     examples/       ← seeded on first launch if commands/ is empty
     …               ← your own files and subdirectories
@@ -48,6 +49,22 @@ allow_duplicates: true
 **`show_context_chip`** — When `true` (default), a pill badge showing the active context is displayed inside the launcher bar alongside a clear button. Set to `false` to hide it. Takes effect on next relaunch.
 
 **`allow_duplicates`** — When `true` (default), all command files are loaded regardless of phrase conflicts. Set to `false` to enable first-file-wins deduplication and surface warnings for any conflicting phrases. Takes effect on next relaunch.
+
+---
+
+## `env.yaml`
+
+An optional file at the config root that defines **global user-defined environment variables** injected into every script run by `dynamic_list` or `script_action` commands.
+
+```yaml
+# ~/Library/Application Support/Nimble/env.yaml
+WORK_EMAIL: alice@example.com
+JIRA_BASE_URL: https://mycompany.atlassian.net
+```
+
+Keys must match `[A-Za-z_][A-Za-z0-9_]*`. Keys starting with `NIMBLE_` are reserved and rejected. Values are strings (numeric and boolean YAML values are coerced automatically).
+
+You can also define **command-scoped** variables by placing an `env.yaml` in the same directory as a command YAML, or by adding an inline `env:` block in the command YAML itself. See [Writing Scripts — User-defined environment variables](advanced/writing-scripts.md#user-defined-environment-variables) for precedence rules and examples.
 
 ---
 

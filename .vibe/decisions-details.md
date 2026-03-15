@@ -255,3 +255,26 @@ Switched to `libxdo-sys` 0.11. Removes the `xdotool` runtime dependency, makes t
 - `libxdo-sys` requires `libxdo-dev` at compile time on Linux (CI installs it; documented in development-setup.md)
 - The Flatpak manifest must include libxdo as a bundled module before publishing to Flathub
 - X11 only — Wayland focus capture remains unsupported (same limitation as `xdotool`)
+
+## User-defined env variable layering
+_Date: 2026-03-15_
+
+### Options evaluated
+**Option A — settings.yaml env section**
+- Pros: single file, no new files to explain
+- Cons: mixes app config with script data; no command-scoped override without extra syntax
+
+**Option B — separate env.yaml files + inline env: block**
+- Pros: clean separation (settings = app, env = scripts); sidecar pattern consistent with co-located scripts/lists; three layers give fine-grained control with simple mental model
+- Cons: one more file type to learn; env.yaml filename is special
+
+**Option C — .env files**
+- Pros: familiar to dotenv users
+- Cons: requires custom parser; no YAML consistency; no scalar coercion
+
+### Decision
+Option B. Three layers: global `env.yaml` at config root → sidecar `env.yaml` in command directory → inline `env:` in command YAML. No directory walking — sidecar only applies to commands in the same directory. Keys validated against `[A-Za-z_][A-Za-z0-9_]*`; `NIMBLE_` prefix is reserved and rejected. Builtins injected after user env so they always win.
+
+### Risks & pitfalls
+- Users may expect parent directory env.yaml to cascade (documented as same-dir only)
+- Numeric/boolean YAML values in inline `env:` require quoting (serde_yaml limitation for HashMap<String, String>); env.yaml uses serde_yaml::Mapping with automatic coercion

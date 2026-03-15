@@ -46,6 +46,8 @@ title: <string>          # human-readable label shown as the result title
 
 # Optional fields
 enabled: true            # set to false to disable without deleting the file (default: true)
+env:                     # inline user-defined environment variables for scripts (optional)
+  KEY: value
 
 # Required: one action block
 action:

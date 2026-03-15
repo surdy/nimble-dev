@@ -323,17 +323,20 @@ fn run_dynamic_list(
     arg: Option<String>,
     context: String,
     phrase: String,
+    inline_env: std::collections::HashMap<String, String>,
 ) -> Result<Vec<commands::ListItem>, String> {
     let config_dir = app
         .path()
         .app_config_dir()
         .map_err(|e| e.to_string())?;
     let dir = config_dir.join("commands").join(&command_dir);
+    let user_env = commands::build_user_env(&config_dir, &dir, &inline_env)?;
     let env = commands::ScriptEnv {
         context: &context,
         phrase: &phrase,
         config_dir: &config_dir,
         command_dir: &dir,
+        user_env: &user_env,
     };
     commands::run_script(&dir, &script_name, arg.as_deref(), &env)
 }
@@ -349,17 +352,20 @@ fn run_script_action(
     arg: Option<String>,
     context: String,
     phrase: String,
+    inline_env: std::collections::HashMap<String, String>,
 ) -> Result<Vec<String>, String> {
     let config_dir = app
         .path()
         .app_config_dir()
         .map_err(|e| e.to_string())?;
     let dir = config_dir.join("commands").join(&command_dir);
+    let user_env = commands::build_user_env(&config_dir, &dir, &inline_env)?;
     let env = commands::ScriptEnv {
         context: &context,
         phrase: &phrase,
         config_dir: &config_dir,
         command_dir: &dir,
+        user_env: &user_env,
     };
     commands::run_script_values(&dir, &script_name, arg.as_deref(), &env)
 }

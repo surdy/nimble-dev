@@ -18,3 +18,4 @@ One-line record of every meaningful decision. See `decisions-details.md` for ful
 - **Linux focus tracking (reversal of: "Linux focus tracking" 2026-03-11)** — switched from `xdotool` subprocess to `libxdo-sys` FFI; `xdotool` incompatible with Flatpak sandbox _(2026-03-12)_
 
 - **App renamed to Nimble** — product name, binary name, bundle identifier, config directory, and all documentation updated from "Context Actions" / "context-actions" / "ContextActions" to "Nimble" / "nimble" _(2025-07-14)_
+- **User-defined env variable layering** — three layers (global env.yaml, sidecar env.yaml, inline env:) with deterministic override order; no directory walking for sidecar; NIMBLE_ prefix reserved _(2026-03-15)_

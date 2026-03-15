@@ -72,6 +72,8 @@ export type Action =
 export interface Command {
   phrase: string;
   title: string;
+  /** Inline user-defined environment variables. Merged last into script env. */
+  env: Record<string, string>;
   action: Action;
   /** Directory containing the command YAML, relative to commands root. Set at load time. */
   source_dir: string;

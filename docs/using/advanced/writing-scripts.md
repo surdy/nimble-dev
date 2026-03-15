@@ -173,6 +173,81 @@ These variables are always present and read-only. Scripts do not need to declare
 
 ---
 
+## User-defined environment variables
+
+You can inject your own environment variables into scripts using `env.yaml` files and inline `env:` blocks. This is useful for shared values like team IDs, base URLs, or email addresses.
+
+### Precedence
+
+Variables are merged in order (later layers override earlier ones):
+
+| Layer | Location | Scope |
+|-------|----------|-------|
+| 1. Global | `Nimble/env.yaml` (config root) | All commands |
+| 2. Sidecar | `env.yaml` in the command's directory | Commands in that directory |
+| 3. Inline | `env:` block in the command YAML | That command only |
+
+Built-in `NIMBLE_*` variables always take precedence and cannot be overridden.
+
+### Global env.yaml
+
+Create `env.yaml` at the Nimble config root (alongside `settings.yaml`):
+
+```yaml
+# ~/Library/Application Support/Nimble/env.yaml
+WORK_EMAIL: alice@example.com
+JIRA_BASE_URL: https://mycompany.atlassian.net
+TEAM_SLACK_CHANNEL: C0123456789
+```
+
+Every script will receive these as environment variables.
+
+### Sidecar env.yaml
+
+Place an `env.yaml` in the same directory as your command YAML:
+
+```
+commands/jira/
+  env.yaml              ← shared by all commands in this directory
+  create-ticket.yaml
+  create-ticket.sh
+  close-ticket.yaml
+  close-ticket.sh
+```
+
+```yaml
+# commands/jira/env.yaml
+JIRA_PROJECT: MYPROJ
+JIRA_BOARD_ID: "42"
+```
+
+Only commands in that exact directory see these variables. There is no directory walking — a parent directory's `env.yaml` does not apply to subdirectories.
+
+### Inline env
+
+Add an `env:` block at the top level of a command YAML for single-command overrides:
+
+```yaml
+phrase: create bug
+title: Create a bug report
+env:
+  TICKET_TYPE: bug
+action:
+  type: script_action
+  config:
+    script: create-ticket.sh
+    arg: required
+    result_action: open_url
+```
+
+### Key naming rules
+
+- Keys must match `[A-Za-z_][A-Za-z0-9_]*` (letters, digits, underscores).
+- Keys starting with `NIMBLE_` are reserved and rejected.
+- Values are always strings. Numeric and boolean YAML values are coerced to strings automatically in `env.yaml` files. In inline `env:` blocks, quote non-string values (e.g. `PORT: "8080"`).
+
+---
+
 ## Windows: PowerShell scripts
 
 On Windows, use `.ps1` files instead of shell scripts. PowerShell is available on all Windows 10/11 systems without installation.

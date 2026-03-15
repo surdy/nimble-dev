@@ -146,7 +146,7 @@
       if (argMode === "none") {
         if (isExact) {
           activeListCmd = dynMatch;
-          invoke<ListItem[]>("run_dynamic_list", { commandDir, scriptName: config.script, arg: null, context: activeContext, phrase: dynMatch.phrase })
+          invoke<ListItem[]>("run_dynamic_list", { commandDir, scriptName: config.script, arg: null, context: activeContext, phrase: dynMatch.phrase, inlineEnv: dynMatch.env })
             .then(items => { listItems = items; selectedIndex = 0; })
             .catch(() => { listItems = []; });
         } else {
@@ -157,13 +157,13 @@
         activeListCmd = dynMatch;
         if (isExact) {
           // Immediate invocation — no suffix
-          invoke<ListItem[]>("run_dynamic_list", { commandDir, scriptName: config.script, arg: null, context: activeContext, phrase: dynMatch.phrase })
+          invoke<ListItem[]>("run_dynamic_list", { commandDir, scriptName: config.script, arg: null, context: activeContext, phrase: dynMatch.phrase, inlineEnv: dynMatch.env })
             .then(items => { listItems = items; selectedIndex = 0; })
             .catch(() => { listItems = []; });
         } else {
           // Suffix present — debounce re-invocation
           timer = setTimeout(() => {
-            invoke<ListItem[]>("run_dynamic_list", { commandDir, scriptName: config.script, arg: suffix, context: activeContext, phrase: dynMatch.phrase })
+            invoke<ListItem[]>("run_dynamic_list", { commandDir, scriptName: config.script, arg: suffix, context: activeContext, phrase: dynMatch.phrase, inlineEnv: dynMatch.env })
               .then(items => { listItems = items; selectedIndex = 0; })
               .catch(() => { listItems = []; });
           }, 200);
@@ -173,7 +173,7 @@
         if (suffix) {
           activeListCmd = dynMatch;
           timer = setTimeout(() => {
-            invoke<ListItem[]>("run_dynamic_list", { commandDir, scriptName: config.script, arg: suffix, context: activeContext, phrase: dynMatch.phrase })
+            invoke<ListItem[]>("run_dynamic_list", { commandDir, scriptName: config.script, arg: suffix, context: activeContext, phrase: dynMatch.phrase, inlineEnv: dynMatch.env })
               .then(items => { listItems = items; selectedIndex = 0; })
               .catch(() => { listItems = []; });
           }, 200);
@@ -352,6 +352,7 @@
         arg: scriptArg,
         context: activeContext,
         phrase: cmd.phrase,
+        inlineEnv: cmd.env,
       });
 
       if (cfg.result_action === "open_url") {
@@ -495,7 +496,7 @@
           const typed = input.trim().toLowerCase();
           const phrase = activeListCmd.phrase.toLowerCase();
           const suffix = typed.startsWith(phrase + " ") ? typed.slice(phrase.length + 1).trim() : "";
-          invoke<ListItem[]>("run_dynamic_list", { commandDir: activeListCmd.source_dir, scriptName: config.script, arg: suffix || null, context: activeContext, phrase: activeListCmd.phrase })
+          invoke<ListItem[]>("run_dynamic_list", { commandDir: activeListCmd.source_dir, scriptName: config.script, arg: suffix || null, context: activeContext, phrase: activeListCmd.phrase, inlineEnv: activeListCmd.env })
             .then(items => { listItems = items; })
             .catch(() => { listItems = []; });
         }

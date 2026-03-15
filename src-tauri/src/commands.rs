@@ -120,6 +120,10 @@ pub struct Command {
     /// never sent to the frontend.
     #[serde(default = "default_true")]
     pub enabled: bool,
+    /// Inline user-defined environment variables. Merged last (highest
+    /// precedence) into the script env. Keys must not start with `NIMBLE_`.
+    #[serde(default)]
+    pub env: HashMap<String, String>,
     pub action: Action,
     /// Directory containing the command YAML file, relative to the commands
     /// root. Set at load time — not present in the YAML file itself.
@@ -330,11 +334,19 @@ pub struct ScriptEnv<'a> {
     pub config_dir: &'a Path,
     /// Absolute path to the directory containing the command YAML.
     pub command_dir: &'a Path,
+    /// Merged user-defined environment variables (global → sidecar → inline).
+    pub user_env: &'a HashMap<String, String>,
 }
 
-/// Inject `NIMBLE_*` built-in environment variables into a `Command` that is
-/// about to be spawned. Called once per script invocation.
-fn inject_builtin_env(cmd: &mut std::process::Command, env: &ScriptEnv<'_>) {
+/// Inject user-defined and `NIMBLE_*` built-in environment variables into a
+/// `Command` that is about to be spawned. User-defined vars are injected first
+/// so that built-in `NIMBLE_*` keys always take precedence.
+fn inject_env(cmd: &mut std::process::Command, env: &ScriptEnv<'_>) {
+    // User-defined variables (lowest precedence — injected first).
+    for (k, v) in env.user_env {
+        cmd.env(k, v);
+    }
+    // Built-in NIMBLE_* variables (always win).
     cmd.env("NIMBLE_CONTEXT", env.context)
         .env("NIMBLE_PHRASE", env.phrase)
         .env("NIMBLE_CONFIG_DIR", env.config_dir.to_string_lossy().as_ref())
@@ -347,6 +359,95 @@ fn inject_builtin_env(cmd: &mut std::process::Command, env: &ScriptEnv<'_>) {
             "linux"
         })
         .env("NIMBLE_VERSION", env!("CARGO_PKG_VERSION"));
+}
+
+// ── User-defined environment variables ────────────────────────────────────────
+
+/// Validate that an env key uses a portable name and is not in the reserved
+/// `NIMBLE_` namespace. Accepts keys matching `[A-Za-z_][A-Za-z0-9_]*`.
+fn validate_env_key(key: &str, source: &str) -> Result<(), String> {
+    if key.is_empty() {
+        return Err(format!("Empty environment variable key in {source}"));
+    }
+    if key.starts_with("NIMBLE_") {
+        return Err(format!(
+            "Key {key:?} in {source} uses the reserved NIMBLE_ prefix"
+        ));
+    }
+    let mut chars = key.chars();
+    let first = chars.next().unwrap();
+    if !first.is_ascii_alphabetic() && first != '_' {
+        return Err(format!(
+            "Key {key:?} in {source} must start with a letter or underscore"
+        ));
+    }
+    if let Some(bad) = chars.find(|c| !c.is_ascii_alphanumeric() && *c != '_') {
+        return Err(format!(
+            "Key {key:?} in {source} contains invalid character {bad:?}"
+        ));
+    }
+    Ok(())
+}
+
+/// Load an `env.yaml` file as a flat `KEY: value` map. Missing files return an
+/// empty map. Non-scalar values are rejected.
+fn load_env_yaml(path: &Path) -> Result<HashMap<String, String>, String> {
+    if !path.exists() {
+        return Ok(HashMap::new());
+    }
+    let content = fs::read_to_string(path)
+        .map_err(|e| format!("Could not read {}: {e}", path.display()))?;
+    if content.trim().is_empty() {
+        return Ok(HashMap::new());
+    }
+    let mapping: serde_yaml::Mapping = serde_yaml::from_str(&content)
+        .map_err(|e| format!("Could not parse {}: {e}", path.display()))?;
+    let source = path.display().to_string();
+    let mut env = HashMap::new();
+    for (k, v) in mapping {
+        let key = k
+            .as_str()
+            .ok_or_else(|| format!("Non-string key in {source}"))?
+            .to_string();
+        let value = match v {
+            serde_yaml::Value::String(s) => s,
+            serde_yaml::Value::Number(n) => n.to_string(),
+            serde_yaml::Value::Bool(b) => b.to_string(),
+            serde_yaml::Value::Null => String::new(),
+            _ => {
+                return Err(format!(
+                    "Unsupported value for key {key:?} in {source}"
+                ))
+            }
+        };
+        validate_env_key(&key, &source)?;
+        env.insert(key, value);
+    }
+    Ok(env)
+}
+
+/// Build the merged user-defined environment by applying layers in order:
+/// global `env.yaml` → command-dir sidecar `env.yaml` → inline `env:`.
+/// All keys are validated; reserved `NIMBLE_*` keys are rejected.
+pub fn build_user_env(
+    config_dir: &Path,
+    command_dir: &Path,
+    inline_env: &HashMap<String, String>,
+) -> Result<HashMap<String, String>, String> {
+    // Layer 1: global env.yaml at config root.
+    let mut merged = load_env_yaml(&config_dir.join("env.yaml"))?;
+
+    // Layer 2: sidecar env.yaml in the command directory.
+    let sidecar = load_env_yaml(&command_dir.join("env.yaml"))?;
+    merged.extend(sidecar);
+
+    // Layer 3: inline env from command YAML (highest user precedence).
+    for (k, v) in inline_env {
+        validate_env_key(k, "inline env")?;
+        merged.insert(k.clone(), v.clone());
+    }
+
+    Ok(merged)
 }
 
 // ── Script runner ─────────────────────────────────────────────────────────────
@@ -391,7 +492,7 @@ pub fn run_script(
     if let Some(a) = arg {
         cmd.arg(a);
     }
-    inject_builtin_env(&mut cmd, env);
+    inject_env(&mut cmd, env);
     cmd.stdout(std::process::Stdio::piped())
         .stderr(std::process::Stdio::piped());
 
@@ -476,7 +577,7 @@ pub fn run_script_values(
     if let Some(a) = arg {
         cmd.arg(a);
     }
-    inject_builtin_env(&mut cmd, env);
+    inject_env(&mut cmd, env);
     cmd.stdout(std::process::Stdio::piped())
         .stderr(std::process::Stdio::piped());
 
@@ -916,11 +1017,14 @@ mod tests {
         // Leak the path so we get a 'static lifetime — acceptable in tests.
         let config_dir: &'static Path = Box::leak(dir.path().to_path_buf().into_boxed_path());
         let command_dir: &'static Path = config_dir;
+        let user_env: &'static HashMap<String, String> =
+            Box::leak(Box::new(HashMap::new()));
         ScriptEnv {
             context: "test-context",
             phrase: "test phrase",
             config_dir,
             command_dir,
+            user_env,
         }
     }
 
@@ -1210,6 +1314,7 @@ mod tests {
             phrase: "test phrase",
             config_dir: dir.path(),
             command_dir: dir.path(),
+            user_env: &HashMap::new(),
         };
         let items = run_script(dir.path(), "env.sh", None, &env).unwrap();
         assert_eq!(items[0].title, "my-ctx");
@@ -1225,6 +1330,7 @@ mod tests {
             phrase: "search contacts",
             config_dir: dir.path(),
             command_dir: dir.path(),
+            user_env: &HashMap::new(),
         };
         let items = run_script(dir.path(), "env.sh", None, &env).unwrap();
         assert_eq!(items[0].title, "search contacts");
@@ -1260,6 +1366,7 @@ mod tests {
             phrase: "test",
             config_dir: dir.path(),
             command_dir: dir.path(),
+            user_env: &HashMap::new(),
         };
         let items = run_script(dir.path(), "env.sh", None, &env).unwrap();
         assert_eq!(items[0].title, dir.path().to_string_lossy());
@@ -1275,6 +1382,7 @@ mod tests {
             phrase: "test",
             config_dir: dir.path(),
             command_dir: dir.path(),
+            user_env: &HashMap::new(),
         };
         let items = run_script(dir.path(), "env.sh", None, &env).unwrap();
         assert_eq!(items[0].title, dir.path().to_string_lossy());
@@ -1290,6 +1398,7 @@ mod tests {
             phrase: "copy uuid",
             config_dir: dir.path(),
             command_dir: dir.path(),
+            user_env: &HashMap::new(),
         };
         let values = run_script_values(dir.path(), "env.sh", None, &env).unwrap();
         assert_eq!(values[0], "work");
@@ -1306,8 +1415,287 @@ mod tests {
             phrase: "test",
             config_dir: dir.path(),
             command_dir: dir.path(),
+            user_env: &HashMap::new(),
         };
         let items = run_script(dir.path(), "env.sh", None, &env).unwrap();
         assert_eq!(items[0].title, "ctx=|");
+    }
+
+    // ── validate_env_key ────────────────────────────────────────────────────
+
+    #[test]
+    fn validate_env_key_accepts_uppercase() {
+        assert!(validate_env_key("MY_VAR", "test").is_ok());
+    }
+
+    #[test]
+    fn validate_env_key_accepts_lowercase() {
+        assert!(validate_env_key("my_var", "test").is_ok());
+    }
+
+    #[test]
+    fn validate_env_key_accepts_mixed_case_with_digits() {
+        assert!(validate_env_key("Var_123", "test").is_ok());
+    }
+
+    #[test]
+    fn validate_env_key_accepts_underscore_start() {
+        assert!(validate_env_key("_PRIVATE", "test").is_ok());
+    }
+
+    #[test]
+    fn validate_env_key_rejects_empty() {
+        assert!(validate_env_key("", "test").is_err());
+    }
+
+    #[test]
+    fn validate_env_key_rejects_nimble_prefix() {
+        assert!(validate_env_key("NIMBLE_CONTEXT", "test").is_err());
+    }
+
+    #[test]
+    fn validate_env_key_rejects_nimble_custom() {
+        assert!(validate_env_key("NIMBLE_MY_VAR", "test").is_err());
+    }
+
+    #[test]
+    fn validate_env_key_rejects_digit_start() {
+        assert!(validate_env_key("1VAR", "test").is_err());
+    }
+
+    #[test]
+    fn validate_env_key_rejects_hyphen() {
+        assert!(validate_env_key("MY-VAR", "test").is_err());
+    }
+
+    #[test]
+    fn validate_env_key_rejects_dot() {
+        assert!(validate_env_key("MY.VAR", "test").is_err());
+    }
+
+    // ── load_env_yaml ───────────────────────────────────────────────────────
+
+    #[test]
+    fn load_env_yaml_missing_file_returns_empty() {
+        let dir = TempDir::new().unwrap();
+        let result = load_env_yaml(&dir.path().join("env.yaml")).unwrap();
+        assert!(result.is_empty());
+    }
+
+    #[test]
+    fn load_env_yaml_empty_file_returns_empty() {
+        let dir = TempDir::new().unwrap();
+        fs::write(dir.path().join("env.yaml"), "").unwrap();
+        let result = load_env_yaml(&dir.path().join("env.yaml")).unwrap();
+        assert!(result.is_empty());
+    }
+
+    #[test]
+    fn load_env_yaml_parses_string_values() {
+        let dir = TempDir::new().unwrap();
+        fs::write(dir.path().join("env.yaml"), "MY_EMAIL: alice@example.com\nTEAM: engineering\n").unwrap();
+        let result = load_env_yaml(&dir.path().join("env.yaml")).unwrap();
+        assert_eq!(result.get("MY_EMAIL").unwrap(), "alice@example.com");
+        assert_eq!(result.get("TEAM").unwrap(), "engineering");
+    }
+
+    #[test]
+    fn load_env_yaml_coerces_number_to_string() {
+        let dir = TempDir::new().unwrap();
+        fs::write(dir.path().join("env.yaml"), "PORT: 8080\n").unwrap();
+        let result = load_env_yaml(&dir.path().join("env.yaml")).unwrap();
+        assert_eq!(result.get("PORT").unwrap(), "8080");
+    }
+
+    #[test]
+    fn load_env_yaml_coerces_bool_to_string() {
+        let dir = TempDir::new().unwrap();
+        fs::write(dir.path().join("env.yaml"), "ENABLED: true\n").unwrap();
+        let result = load_env_yaml(&dir.path().join("env.yaml")).unwrap();
+        assert_eq!(result.get("ENABLED").unwrap(), "true");
+    }
+
+    #[test]
+    fn load_env_yaml_rejects_nimble_prefix() {
+        let dir = TempDir::new().unwrap();
+        fs::write(dir.path().join("env.yaml"), "NIMBLE_HACK: evil\n").unwrap();
+        assert!(load_env_yaml(&dir.path().join("env.yaml")).is_err());
+    }
+
+    #[test]
+    fn load_env_yaml_rejects_nested_map() {
+        let dir = TempDir::new().unwrap();
+        fs::write(dir.path().join("env.yaml"), "NESTED:\n  a: b\n").unwrap();
+        assert!(load_env_yaml(&dir.path().join("env.yaml")).is_err());
+    }
+
+    // ── build_user_env ──────────────────────────────────────────────────────
+
+    #[test]
+    fn build_user_env_empty_when_no_files() {
+        let dir = TempDir::new().unwrap();
+        let cmd_dir = dir.path().join("commands").join("my-cmd");
+        fs::create_dir_all(&cmd_dir).unwrap();
+        let result = build_user_env(dir.path(), &cmd_dir, &HashMap::new()).unwrap();
+        assert!(result.is_empty());
+    }
+
+    #[test]
+    fn build_user_env_loads_global_env() {
+        let dir = TempDir::new().unwrap();
+        fs::write(dir.path().join("env.yaml"), "TEAM: ops\n").unwrap();
+        let cmd_dir = dir.path().join("commands").join("my-cmd");
+        fs::create_dir_all(&cmd_dir).unwrap();
+        let result = build_user_env(dir.path(), &cmd_dir, &HashMap::new()).unwrap();
+        assert_eq!(result.get("TEAM").unwrap(), "ops");
+    }
+
+    #[test]
+    fn build_user_env_sidecar_overrides_global() {
+        let dir = TempDir::new().unwrap();
+        fs::write(dir.path().join("env.yaml"), "TEAM: ops\nREGION: us\n").unwrap();
+        let cmd_dir = dir.path().join("commands").join("my-cmd");
+        fs::create_dir_all(&cmd_dir).unwrap();
+        fs::write(cmd_dir.join("env.yaml"), "TEAM: dev\n").unwrap();
+        let result = build_user_env(dir.path(), &cmd_dir, &HashMap::new()).unwrap();
+        assert_eq!(result.get("TEAM").unwrap(), "dev");
+        assert_eq!(result.get("REGION").unwrap(), "us");
+    }
+
+    #[test]
+    fn build_user_env_inline_overrides_sidecar() {
+        let dir = TempDir::new().unwrap();
+        let cmd_dir = dir.path().join("commands").join("my-cmd");
+        fs::create_dir_all(&cmd_dir).unwrap();
+        fs::write(cmd_dir.join("env.yaml"), "TEAM: dev\n").unwrap();
+        let mut inline = HashMap::new();
+        inline.insert("TEAM".to_string(), "override".to_string());
+        let result = build_user_env(dir.path(), &cmd_dir, &inline).unwrap();
+        assert_eq!(result.get("TEAM").unwrap(), "override");
+    }
+
+    #[test]
+    fn build_user_env_full_precedence_chain() {
+        let dir = TempDir::new().unwrap();
+        fs::write(dir.path().join("env.yaml"), "A: global\nB: global\nC: global\n").unwrap();
+        let cmd_dir = dir.path().join("commands").join("my-cmd");
+        fs::create_dir_all(&cmd_dir).unwrap();
+        fs::write(cmd_dir.join("env.yaml"), "B: sidecar\nC: sidecar\n").unwrap();
+        let mut inline = HashMap::new();
+        inline.insert("C".to_string(), "inline".to_string());
+        let result = build_user_env(dir.path(), &cmd_dir, &inline).unwrap();
+        assert_eq!(result.get("A").unwrap(), "global");
+        assert_eq!(result.get("B").unwrap(), "sidecar");
+        assert_eq!(result.get("C").unwrap(), "inline");
+    }
+
+    #[test]
+    fn build_user_env_rejects_nimble_in_inline() {
+        let dir = TempDir::new().unwrap();
+        let cmd_dir = dir.path().join("commands").join("my-cmd");
+        fs::create_dir_all(&cmd_dir).unwrap();
+        let mut inline = HashMap::new();
+        inline.insert("NIMBLE_HACK".to_string(), "evil".to_string());
+        assert!(build_user_env(dir.path(), &cmd_dir, &inline).is_err());
+    }
+
+    #[test]
+    fn build_user_env_no_parent_traversal() {
+        // Sidecar is only in the same directory — parent env.yaml is ignored.
+        let dir = TempDir::new().unwrap();
+        let parent = dir.path().join("commands");
+        fs::create_dir_all(&parent).unwrap();
+        fs::write(parent.join("env.yaml"), "PARENT: yes\n").unwrap();
+        let cmd_dir = parent.join("my-cmd");
+        fs::create_dir_all(&cmd_dir).unwrap();
+        let result = build_user_env(dir.path(), &cmd_dir, &HashMap::new()).unwrap();
+        assert!(!result.contains_key("PARENT"));
+    }
+
+    // ── User env injection into scripts ─────────────────────────────────────
+
+    #[cfg(unix)]
+    #[test]
+    fn run_script_injects_user_env() {
+        let dir = TempDir::new().unwrap();
+        make_script(&dir, "env.sh", "#!/bin/sh\necho \"$MY_VAR\"\n");
+        let mut user_env = HashMap::new();
+        user_env.insert("MY_VAR".to_string(), "hello-from-env".to_string());
+        let env = ScriptEnv {
+            context: "",
+            phrase: "test",
+            config_dir: dir.path(),
+            command_dir: dir.path(),
+            user_env: &user_env,
+        };
+        let items = run_script(dir.path(), "env.sh", None, &env).unwrap();
+        assert_eq!(items[0].title, "hello-from-env");
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn run_script_values_injects_user_env() {
+        let dir = TempDir::new().unwrap();
+        make_script(&dir, "env.sh", "#!/bin/sh\necho \"$TEAM_ID\"\n");
+        let mut user_env = HashMap::new();
+        user_env.insert("TEAM_ID".to_string(), "T12345".to_string());
+        let env = ScriptEnv {
+            context: "",
+            phrase: "test",
+            config_dir: dir.path(),
+            command_dir: dir.path(),
+            user_env: &user_env,
+        };
+        let values = run_script_values(dir.path(), "env.sh", None, &env).unwrap();
+        assert_eq!(values[0], "T12345");
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn run_script_builtins_override_user_nimble_prefix() {
+        // Even if user_env somehow contains a NIMBLE_ key (e.g. from a
+        // malformed env.yaml that bypassed validation), builtins always win.
+        let dir = TempDir::new().unwrap();
+        make_script(&dir, "env.sh", "#!/bin/sh\necho \"$NIMBLE_CONTEXT\"\n");
+        let mut user_env = HashMap::new();
+        user_env.insert("NIMBLE_CONTEXT".to_string(), "evil".to_string());
+        let env = ScriptEnv {
+            context: "real-context",
+            phrase: "test",
+            config_dir: dir.path(),
+            command_dir: dir.path(),
+            user_env: &user_env,
+        };
+        let items = run_script(dir.path(), "env.sh", None, &env).unwrap();
+        assert_eq!(items[0].title, "real-context");
+    }
+
+    // ── Inline env in command YAML ──────────────────────────────────────────
+
+    #[test]
+    fn parses_command_yaml_with_inline_env() {
+        let dir = TempDir::new().unwrap();
+        write_yaml(
+            &dir,
+            "my-cmd.yaml",
+            "phrase: test cmd\ntitle: Test\nenv:\n  MY_VAR: hello\n  OTHER: world\naction:\n  type: paste_text\n  config:\n    text: hi\n",
+        );
+        let result = load_from_dir(dir.path(), true).unwrap();
+        assert_eq!(result.commands.len(), 1);
+        assert_eq!(result.commands[0].env.get("MY_VAR").unwrap(), "hello");
+        assert_eq!(result.commands[0].env.get("OTHER").unwrap(), "world");
+    }
+
+    #[test]
+    fn parses_command_yaml_without_inline_env() {
+        let dir = TempDir::new().unwrap();
+        write_yaml(
+            &dir,
+            "my-cmd.yaml",
+            "phrase: test cmd\ntitle: Test\naction:\n  type: paste_text\n  config:\n    text: hi\n",
+        );
+        let result = load_from_dir(dir.path(), true).unwrap();
+        assert_eq!(result.commands.len(), 1);
+        assert!(result.commands[0].env.is_empty());
     }
 }
