@@ -40,7 +40,7 @@ When you invoke the launcher and start typing, Nimble shows partial matches in r
 
 ### macOS
 
-1. Download the latest `.dmg` from the [Releases page](https://github.com/your-org/nimble/releases)
+1. Download the latest `.dmg` from the [Releases page](https://github.com/surdy/nimble/releases)
 2. Open the `.dmg`, drag **Nimble.app** into **Applications**, then eject the disk image
 
 **Gatekeeper warning** — because Nimble is not yet notarized by Apple, macOS will block the first launch. To allow it:
@@ -60,7 +60,7 @@ Without this, paste commands write to the clipboard but skip the keystroke simul
 
 ### Linux
 
-1. Download the latest `.flatpak` from the [Releases page](https://github.com/your-org/nimble/releases)
+1. Download the latest `.flatpak` from the [Releases page](https://github.com/surdy/nimble/releases)
 2. Install it:
    ```bash
    flatpak install --user nimble.flatpak
@@ -76,7 +76,7 @@ Without this, paste commands write to the clipboard but skip the keystroke simul
 
 ### Windows
 
-1. Download the latest `.msi` from the [Releases page](https://github.com/your-org/nimble/releases)
+1. Download the latest `.msi` from the [Releases page](https://github.com/surdy/nimble/releases)
 2. Run the installer
 3. Launch **Nimble** from the Start Menu or system tray
 
@@ -123,7 +123,7 @@ Invoke the launcher with your shortcut, start typing `open github`, and the resu
 
 For a full environment setup guide see [docs/development-setup.md](docs/development-setup.md).
 
-For the implementation roadmap see [docs/development-plan.md](docs/development-plan.md).
+For the implementation roadmap see [docs/roadmap.md](docs/roadmap.md).
 
 ### Quick start
 

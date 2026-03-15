@@ -37,13 +37,10 @@ Press your shortcut at any time to summon the command bar. Press it again — or
 
 ## Changing your shortcut later
 
-To pick a new shortcut, open the app's built-in DevTools console and run:
+Your shortcut is stored in `settings.yaml` inside the [config directory](config-directory.md). To change it, either:
 
-```js
-localStorage.removeItem('ctx_hotkey')
-```
-
-Then quit and relaunch Nimble — the onboarding screen will appear again so you can choose a new combination.
+1. **Edit the file directly** — open `settings.yaml`, change the `hotkey:` value, then restart Nimble.
+2. **Re-trigger onboarding** — delete the `hotkey:` line from `settings.yaml` (or the entire file), then restart Nimble. The onboarding screen will appear again so you can choose a new combination.
 
 > A proper "change shortcut" UI will be added in a future release.
 
@@ -52,7 +49,8 @@ Then quit and relaunch Nimble — the onboarding screen will appear again so you
 ## Supported platforms
 
 - **macOS** — primary target, fully supported
-- Windows and Linux — planned for a future release
+- **Linux** — supported (Flatpak distribution; some Wayland limitations)
+- **Windows** — supported (MSI installer)
 
 ---
 
@@ -79,4 +77,4 @@ action:
 
 Save the file. Within 300 ms Nimble reloads automatically. Invoke the launcher and start typing `open github` — the result appears as you type. Press `Enter` or click it to open the URL in your browser.
 
-That one file is all it takes. Every other action type (`paste_text`, `copy_text`, `static_list`, `dynamic_list`) follows the same pattern — just a different `action` block. See [Basic Functionality](basic/README.md) to continue.
+That one file is all it takes. Every other action type (`paste_text`, `copy_text`, `static_list`, `dynamic_list`, `script_action`) follows the same pattern — just a different `action` block. See [Basic Functionality](basic/README.md) to continue.
