@@ -4,6 +4,8 @@ A `script_action` command runs an external script when you press **Enter** and i
 
 This is the right choice when a script produces a **value to act on** rather than a list of items to browse. To display an interactive list instead, use [Dynamic List](dynamic-list.md).
 
+All scripts automatically receive [built-in `NIMBLE_*` environment variables](writing-scripts.md#built-in-environment-variables) with context, paths, and platform metadata.
+
 ---
 
 ## YAML schema

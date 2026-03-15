@@ -321,13 +321,21 @@ fn run_dynamic_list(
     command_dir: String,
     script_name: String,
     arg: Option<String>,
+    context: String,
+    phrase: String,
 ) -> Result<Vec<commands::ListItem>, String> {
     let config_dir = app
         .path()
         .app_config_dir()
         .map_err(|e| e.to_string())?;
     let dir = config_dir.join("commands").join(&command_dir);
-    commands::run_script(&dir, &script_name, arg.as_deref())
+    let env = commands::ScriptEnv {
+        context: &context,
+        phrase: &phrase,
+        config_dir: &config_dir,
+        command_dir: &dir,
+    };
+    commands::run_script(&dir, &script_name, arg.as_deref(), &env)
 }
 
 /// Run a script co-located with the command YAML and return its output as a list of
@@ -339,13 +347,21 @@ fn run_script_action(
     command_dir: String,
     script_name: String,
     arg: Option<String>,
+    context: String,
+    phrase: String,
 ) -> Result<Vec<String>, String> {
     let config_dir = app
         .path()
         .app_config_dir()
         .map_err(|e| e.to_string())?;
     let dir = config_dir.join("commands").join(&command_dir);
-    commands::run_script_values(&dir, &script_name, arg.as_deref())
+    let env = commands::ScriptEnv {
+        context: &context,
+        phrase: &phrase,
+        config_dir: &config_dir,
+        command_dir: &dir,
+    };
+    commands::run_script_values(&dir, &script_name, arg.as_deref(), &env)
 }
 
 /// Dismiss the launcher intentionally (Escape key, hotkey while visible, tray Hide).

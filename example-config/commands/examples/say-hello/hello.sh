@@ -1,6 +1,8 @@
 #!/bin/sh
-# Example dynamic_list script for Ctx Launcher
-# Pass an optional argument to filter results
+# Example dynamic_list script for Nimble
+# All scripts receive NIMBLE_* environment variables automatically.
+# Available: NIMBLE_CONTEXT, NIMBLE_PHRASE, NIMBLE_CONFIG_DIR,
+#            NIMBLE_COMMAND_DIR, NIMBLE_OS, NIMBLE_VERSION
 QUERY="$1"
 
 if [ -z "$QUERY" ]; then

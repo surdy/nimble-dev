@@ -2,6 +2,43 @@
 
 Iterative implementation plan for Context Actions, from bare minimum working shell to full feature set. Each stage produces a working, committable increment.
 
+## Summary Table
+
+| Stage | Feature | Deliverable |
+|-------|---------|-------------|
+| 1 | Launcher window shell | Frameless window with input, closes on Escape |
+| 2 | Command data model | Typed schema + YAML file loading from platform config dir |
+| 3 | Partial matching & results UI | Live filtering, keyboard navigation, title/subtext display |
+| 4 | Action: Open URL | Opens URLs in browser, supports `{param}` substitution |
+| 5 | Action: Paste Text | Pastes text into previously focused application |
+| 6 | Global hotkey | System-wide shortcut to summon/dismiss launcher |
+| 7 ✅ | Live config reload | Hot-reload commands when `commands.yaml` is edited |
+| 8 ✅ | Bug fixes | Fix issues found during real-world use of stages 1–7 |
+| 9 ✅ | Enhancements | Quality-of-life improvements to the core command system |
+| 10 ✅ | App rename | Rename Contexts → Context Actions; update identifier, config dir, localStorage keys |
+| 11 ✅ | Documentation | User-facing docs: first run, core actions, tips & tricks, configuration, duplicates |
+| 12 ✅ | Action: Copy Text & Config Directory Restructure | `copy_text` action; commands moved to `commands/` subdir |
+| 13 ✅ | Backend testing | `cargo test` suite: YAML parsing, dedup, URL validation, param encoding, text sanitisation |
+| 14 ✅ | Action: Static List | Keyword-triggered inline list expansion from `lists/` config subdir |
+| 15 ✅ | Action: Dynamic List | Script-backed dynamic list; three argument modes (`none` / `optional` / `required`) |
+| 16 ✅ | Docs restructure & cleanup | Per-action pages in `basic/` and `advanced/`; onboarding gaps filled; stale content removed |
+| 17 ✅ | Action: Script Action | On-Enter script execution; result applied via `open_url`, `paste_text`, or `copy_text`; optional arg; prefix/suffix for list results |
+| 18 ✅ | Example config directory | `example-config/` in repo root — one file per action type, ready to copy |
+| 19a ✅ | Contexts: reserved namespace | Rust backend rejects `ctx`-prefixed YAML phrases; `ReservedPhraseWarning` added to load result |
+| 19b ✅ | Contexts: state & built-in commands | `activeContext` state; `ctx set / reset / show` built-in commands in frontend results list |
+| 19c ✅ | Contexts: context-aware matching | `effectiveInput = raw_input + " " + context`; filtering, list triggers, and param extraction use effective input |
+| 20 ✅ | Contexts: UI & tray | Context chip in launcher bar, tray label, localStorage persistence |
+| 21 ✅ | Settings file | `settings.yaml` for `hotkey`, `show_context_chip`, `allow_duplicates`; hotkey migrated from localStorage |
+| 22 ✅ | Housekeeping | App rename, MIT licence, roadmap, motivation doc, docs cleanup |
+| 23 ✅ | Cross-platform clipboard | `arboard` crate for Linux & Windows; `pbcopy` retained on macOS |
+| 24 ✅ | Linux focus tracking | `xdotool` capture/restore on X11; Wayland graceful fallback |
+| 25 ✅ | Windows focus, taskbar, seed | Win32 focus capture/restore; `skipTaskbar`; `hello.ps1` seed; `.ps1` invocation via PowerShell |
+| 26 ✅ | Cross-platform CI & packaging | GitHub Actions matrix (macOS/Linux/Windows); `.dmg`, `.flatpak`, `.msi` artefacts; per-platform build docs |
+| 27 ✅ | Co-located resources | **Breaking change:** static lists and scripts moved from `lists/` and `scripts/` to sit next to their command YAML |
+| 28 | Built-in script environment variables | Inject `NIMBLE_*` variables into every script execution path |
+| 29 | User-defined script variables | Add global and command-scoped user variables with deterministic precedence |
+| 30 | Script debugging and verbose logs | Add debug mode with `NIMBLE_DEBUG` and structured script diagnostics |
+
 ---
 
 ## Stage 1 — Launcher Window Shell ✅
@@ -907,41 +944,6 @@ effective_input = raw_input                         (context empty OR raw_input 
 
 ---
 
-## Summary Table
-
-| Stage | Feature | Deliverable |
-|-------|---------|-------------|
-| 1 | Launcher window shell | Frameless window with input, closes on Escape |
-| 2 | Command data model | Typed schema + YAML file loading from platform config dir |
-| 3 | Partial matching & results UI | Live filtering, keyboard navigation, title/subtext display |
-| 4 | Action: Open URL | Opens URLs in browser, supports `{param}` substitution |
-| 5 | Action: Paste Text | Pastes text into previously focused application |
-| 6 | Global hotkey | System-wide shortcut to summon/dismiss launcher |
-| 7 ✅ | Live config reload | Hot-reload commands when `commands.yaml` is edited |
-| 8 ✅ | Bug fixes | Fix issues found during real-world use of stages 1–7 |
-| 9 ✅ | Enhancements | Quality-of-life improvements to the core command system |
-| 10 ✅ | App rename | Rename Contexts → Context Actions; update identifier, config dir, localStorage keys |
-| 11 ✅ | Documentation | User-facing docs: first run, core actions, tips & tricks, configuration, duplicates |
-| 12 ✅ | Action: Copy Text & Config Directory Restructure | `copy_text` action; commands moved to `commands/` subdir |
-| 13 ✅ | Backend testing | `cargo test` suite: YAML parsing, dedup, URL validation, param encoding, text sanitisation |
-| 14 ✅ | Action: Static List | Keyword-triggered inline list expansion from `lists/` config subdir |
-| 15 ✅ | Action: Dynamic List | Script-backed dynamic list; three argument modes (`none` / `optional` / `required`) |
-| 16 ✅ | Docs restructure & cleanup | Per-action pages in `basic/` and `advanced/`; onboarding gaps filled; stale content removed |
-| 17 ✅ | Action: Script Action | On-Enter script execution; result applied via `open_url`, `paste_text`, or `copy_text`; optional arg; prefix/suffix for list results |
-| 18 ✅ | Example config directory | `example-config/` in repo root — one file per action type, ready to copy |
-| 19a ✅ | Contexts: reserved namespace | Rust backend rejects `ctx`-prefixed YAML phrases; `ReservedPhraseWarning` added to load result |
-| 19b ✅ | Contexts: state & built-in commands | `activeContext` state; `ctx set / reset / show` built-in commands in frontend results list |
-| 19c ✅ | Contexts: context-aware matching | `effectiveInput = raw_input + " " + context`; filtering, list triggers, and param extraction use effective input |
-| 20 ✅ | Contexts: UI & tray | Context chip in launcher bar, tray label, localStorage persistence |
-| 21 ✅ | Settings file | `settings.yaml` for `hotkey`, `show_context_chip`, `allow_duplicates`; hotkey migrated from localStorage |
-| 22 ✅ | Housekeeping | App rename, MIT licence, roadmap, motivation doc, docs cleanup |
-| 23 ✅ | Cross-platform clipboard | `arboard` crate for Linux & Windows; `pbcopy` retained on macOS |
-| 24 ✅ | Linux focus tracking | `xdotool` capture/restore on X11; Wayland graceful fallback |
-| 25 ✅ | Windows focus, taskbar, seed | Win32 focus capture/restore; `skipTaskbar`; `hello.ps1` seed; `.ps1` invocation via PowerShell |
-| 26 ✅ | Cross-platform CI & packaging | GitHub Actions matrix (macOS/Linux/Windows); `.dmg`, `.flatpak`, `.msi` artefacts; per-platform build docs |
-
----
-
 ## Stage 21 — Settings File ✅
 
 **Goal:** Persist application settings to a `settings.yaml` file in the app config directory, replacing the old `localStorage` hotkey storage. Gives users a human-editable config for the global hotkey, the context chip visibility, and deduplication behaviour.
@@ -1116,4 +1118,247 @@ Automated CI that builds, tests, and packages the app on macOS, Linux, and Windo
 - CI passes green on all three runners
 - Build artefacts (`.dmg`, `.AppImage`, `.msi`) are produced successfully
 - README documents how to build on each platform
+
+---
+
+## Stage 27 — Co-Located Resources ✅
+
+### Goal
+Eliminate the separate `lists/` and `scripts/` config subdirectories. Static list files and scripts now live **next to their command YAML** inside `commands/`, resolved via the command file's parent directory. This is a **breaking change** — existing users must reorganise their config directory.
+
+### Breaking change
+
+Before this stage, the config directory looked like:
+
+```
+Nimble/
+├── settings.yaml
+├── commands/
+│   └── examples/
+│       ├── show-team-emails.yaml
+│       ├── dynamic-list-example.yaml
+│       └── script-action-example.yaml
+├── lists/
+│   └── team-emails.yaml
+└── scripts/
+    ├── hello.sh
+    ├── team-emails.sh
+    └── timestamp.sh
+```
+
+After this stage:
+
+```
+Nimble/
+├── settings.yaml
+└── commands/
+    └── examples/
+        ├── show-team-emails/
+        │   ├── show-team-emails.yaml
+        │   └── team-emails.yaml
+        ├── say-hello/
+        │   ├── say-hello.yaml
+        │   └── hello.sh
+        ├── copy-uuid/
+        │   ├── copy-uuid.yaml
+        │   └── uuid.sh
+        └── open-google.yaml          # simple commands stay as standalone files
+```
+
+The `lists/` and `scripts/` top-level directories are **no longer used or watched**. Commands that reference a list or script must place those files in the same directory as the command YAML (or a subdirectory of it).
+
+### Advantages
+
+- **Self-contained commands:** A command and all its resources live in a single folder — easy to copy, share, back up, or delete as a unit.
+- **No naming collisions:** Two commands can use a script called `fetch.sh` without conflicting, since each resolves from its own directory.
+- **Simpler mental model:** Users don't need to know about three separate locations (`commands/`, `lists/`, `scripts/`). Everything lives under `commands/`.
+- **Easier sharing:** A command folder can be zipped and sent to another user — no need to remember to include files from two other directories.
+- **Reduced watcher scope:** Only one directory tree (`commands/`) needs to be watched for changes, not three.
+
+### Changes
+
+#### Rust backend (`commands.rs`)
+- Added `source_dir: String` field to the `Command` struct, populated at load time from the parent directory of the YAML file (relative to `commands/`).
+- `load_list()` now accepts `command_dir` parameter and resolves list files relative to `config_dir/commands/<command_dir>/` instead of `config_dir/lists/`.
+- `run_script()` and `run_script_values()` now accept `command_dir` parameter and resolve scripts relative to `config_dir/commands/<command_dir>/` instead of `config_dir/scripts/`.
+- Security: plain filename validation (no `/`, `\`, `..`) still enforced for list and script names.
+- Seed files reorganised: commands with scripts/lists are seeded into subdirectories (e.g., `commands/examples/say-hello/hello.sh` alongside `say-hello.yaml`).
+
+#### Rust backend (`lib.rs`)
+- `load_list`, `run_dynamic_list`, and `run_script_action` Tauri commands now accept a `command_dir: String` parameter, resolved as `config_dir/commands/<command_dir>/`.
+
+#### Watcher (`watcher.rs`)
+- Removed watching of `config_dir/lists/` and `config_dir/scripts/`.
+- Only `config_dir/commands/` is watched recursively.
+- Event filter updated to trigger on script file extensions (`.sh`, `.py`, `.js`, `.ps1`, `.bat`) in addition to `.yaml`/`.yml`.
+- Removed seed script constants (`HELLO_SH`, `HELLO_PS1`) — seed scripts are now handled by `commands.rs`.
+
+#### Frontend (`types.ts`, `+page.svelte`)
+- Added `source_dir: string` to the `Command` TypeScript interface.
+- All `invoke()` calls for `load_list`, `run_dynamic_list`, and `run_script_action` now pass `commandDir: command.source_dir` so the backend resolves resources from the correct directory.
+
+#### Docs
+- Updated `docs/using/advanced/static-list.md`, `dynamic-list.md`, `script-action.md`, `writing-scripts.md` to reflect co-located file resolution.
+- Updated `docs/using/config-directory.md` to remove `lists/` and `scripts/` sections; documented the new co-location pattern.
+- Updated `docs/using/configuring-commands.md` with the new directory layout.
+
+#### Example config (`example-config/`)
+- Removed `example-config/lists/` and `example-config/scripts/` directories.
+- Commands that use lists or scripts are now subdirectories containing both the YAML and the resource files.
+- Updated `example-config/README.md` to reflect the new structure.
+
+#### Backend tests
+- All existing tests updated to pass `command_dir` to `load_list`, `run_script`, and `run_script_values`.
+- Test fixtures reorganised to match co-located structure.
+- All 57 tests pass.
+
+### Done when ✅
+- `lists/` and `scripts/` top-level directories are no longer referenced by any code
+- Static list files resolve from the command YAML's parent directory
+- Scripts for `dynamic_list` and `script_action` resolve from the command YAML's parent directory
+- File watcher only watches `commands/` recursively
+- All 57 backend tests pass
+- Docs, examples, and seed files reflect the new co-located layout
+
+---
+
+## Stage 28 — Built-In Script Environment Variables
+
+### Goal
+Expose app-provided runtime context to all scripts (`dynamic_list` and `script_action`) through built-in environment variables, so scripts can read context, paths, and platform metadata without relying on positional arguments.
+
+### Proposed built-in variables
+
+- `NIMBLE_CONTEXT` — active context string (or empty)
+- `NIMBLE_PHRASE` — command phrase that triggered the script
+- `NIMBLE_CONFIG_DIR` — absolute app config directory path
+- `NIMBLE_COMMAND_DIR` — absolute directory containing the command YAML
+- `NIMBLE_OS` — `macos`, `linux`, or `windows`
+- `NIMBLE_VERSION` — app version
+
+### Tasks
+
+#### Backend script execution
+- Add a small helper in `src-tauri/src/commands.rs` to inject a map of built-in env vars into `std::process::Command` for both `run_script()` and `run_script_values()`.
+- Ensure Windows PowerShell execution path (`.ps1`) receives the same environment values as other executables.
+- Keep variable names uppercase with `NIMBLE_` prefix.
+
+#### Data flow
+- Extend Tauri command inputs (`run_dynamic_list`, `run_script_action`) so frontend can pass active context and triggering phrase to backend.
+- Thread these values into `commands::run_script()` / `commands::run_script_values()`.
+
+#### Safety and compatibility
+- Built-ins are informational only; no secret material is injected.
+- Preserve existing timeout, stderr logging, and output parsing behavior.
+- Built-in keys are reserved and non-overridable by user-defined env.
+
+#### Docs and examples
+- Add a section to `docs/using/advanced/writing-scripts.md` listing each built-in variable and an example script reading them.
+- Update `docs/using/advanced/dynamic-list.md` and `docs/using/advanced/script-action.md` with references to built-in env usage.
+
+### Done when
+- Every script invocation receives the same `NIMBLE_*` environment variables across macOS, Linux, and Windows
+- `dynamic_list` and `script_action` scripts can read active context and command metadata without extra args
+- Built-in variable behavior is documented in the advanced script docs
+
+---
+
+## Stage 29 — User-Defined Script Variables
+
+### Goal
+Allow users to define their own environment variables for scripts globally and per command scope, with explicit precedence and clear override behavior.
+
+### Scope model
+
+#### Global variables
+- Add optional `env.yaml` at config root: `Nimble/env.yaml`
+- File shape: flat map of `KEY: value` pairs (string values)
+
+#### Command-scoped variables
+- Support optional `env.yaml` in the command YAML directory (`source_dir/env.yaml`) only
+- No directory walking; only same-directory sidecar is considered
+- Support optional inline `env:` block in command YAML for command-specific overrides
+
+### Precedence order (lowest -> highest)
+
+```text
+System environment
+NIMBLE_* built-ins
+Global Nimble/env.yaml
+source_dir/env.yaml
+Command inline env:
+```
+
+Built-in `NIMBLE_*` keys remain reserved and cannot be overridden.
+
+### Tasks
+
+#### Backend loading and validation
+- Add helpers in `src-tauri/src/commands.rs` to load and merge user-defined env layers.
+- Validate keys: non-empty, portable format (`[A-Z_][A-Z0-9_]*`), and reject reserved prefix `NIMBLE_`.
+- Treat missing env files as empty; malformed files return clear, non-fatal errors (script call fails with message).
+
+#### Execution integration
+- Apply merged env layers to both `run_script()` and `run_script_values()`.
+- Ensure behavior is identical for `dynamic_list` and `script_action`.
+
+#### Docs and examples
+- Add `env.yaml` sections to `docs/using/config-directory.md` and `docs/using/advanced/writing-scripts.md`.
+- Add example command folders in `example-config/` demonstrating:
+  - global env only
+  - same-directory sidecar env
+  - inline `env:` override
+
+#### Tests
+- Unit tests for merge precedence and reserved-key rejection.
+- Tests confirming same-directory-only sidecar behavior (no parent traversal).
+- Tests that built-ins are still present and non-overridable after user env merge.
+
+### Done when
+- Users can define script variables globally and per-command scope
+- Precedence is deterministic and documented
+- Reserved `NIMBLE_*` names are protected
+- All script execution paths honor the same env merge rules
+
+---
+
+## Stage 30 — Script Debugging & Verbose Logs
+
+### Goal
+Introduce an explicit script debug mode with predictable diagnostics, including a built-in `NIMBLE_DEBUG` environment variable for scripts and improved launcher-side logging for script execution issues.
+
+### Scope
+
+- Add `NIMBLE_DEBUG=1` when debug mode is enabled.
+- Keep Stage 28 minimal set unchanged; `NIMBLE_DEBUG` is intentionally delivered in this stage.
+- Apply to both `dynamic_list` and `script_action` execution paths.
+
+### Tasks
+
+#### Settings and toggles
+- Add `script_debug: bool` to `settings.yaml` (default `false`).
+- Load this flag through existing settings flow and pass it into script execution calls.
+
+#### Environment variable behavior
+- Inject `NIMBLE_DEBUG=1` only when `script_debug` is enabled.
+- Omit `NIMBLE_DEBUG` entirely when debug mode is disabled (rather than setting `0`).
+
+#### Logging behavior
+- In debug mode, log script invocation metadata: command phrase, script path, arg mode, argument presence, and execution duration.
+- Keep stderr capture behavior, but include clearer labels and context for script failures/timeouts.
+- Ensure logs never include sensitive user-defined variable values.
+
+#### Docs
+- Update `docs/using/advanced/writing-scripts.md` with a debug section and examples (`if [ -n "$NIMBLE_DEBUG" ]; then ... fi`).
+- Document `script_debug` in `docs/using/config-directory.md` / `settings.yaml` reference.
+
+#### Tests
+- Unit tests verifying `NIMBLE_DEBUG` is set only when debug mode is true.
+- Tests ensuring debug toggle affects both `run_script()` and `run_script_values()` paths.
+
+### Done when
+- Users can enable script debug mode via settings
+- Scripts receive `NIMBLE_DEBUG=1` only in debug mode
+- Verbose script diagnostics are available without changing script behavior in normal mode
+
 

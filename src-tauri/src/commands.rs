@@ -316,6 +316,39 @@ pub fn load_list(command_dir: &Path, list_name: &str) -> Result<Vec<ListItem>, S
         .map_err(|e| format!("Could not parse list {:?}: {e}", path.display()))
 }
 
+// ── Script environment ─────────────────────────────────────────────────────────
+
+/// Runtime context injected as `NIMBLE_*` environment variables into every
+/// script subprocess. Built by the Tauri command layer and threaded into
+/// `run_script` / `run_script_values`.
+pub struct ScriptEnv<'a> {
+    /// Active context string (may be empty).
+    pub context: &'a str,
+    /// Command phrase that triggered the script.
+    pub phrase: &'a str,
+    /// Absolute path to the Nimble config root directory.
+    pub config_dir: &'a Path,
+    /// Absolute path to the directory containing the command YAML.
+    pub command_dir: &'a Path,
+}
+
+/// Inject `NIMBLE_*` built-in environment variables into a `Command` that is
+/// about to be spawned. Called once per script invocation.
+fn inject_builtin_env(cmd: &mut std::process::Command, env: &ScriptEnv<'_>) {
+    cmd.env("NIMBLE_CONTEXT", env.context)
+        .env("NIMBLE_PHRASE", env.phrase)
+        .env("NIMBLE_CONFIG_DIR", env.config_dir.to_string_lossy().as_ref())
+        .env("NIMBLE_COMMAND_DIR", env.command_dir.to_string_lossy().as_ref())
+        .env("NIMBLE_OS", if cfg!(target_os = "macos") {
+            "macos"
+        } else if cfg!(target_os = "windows") {
+            "windows"
+        } else {
+            "linux"
+        })
+        .env("NIMBLE_VERSION", env!("CARGO_PKG_VERSION"));
+}
+
 // ── Script runner ─────────────────────────────────────────────────────────────
 
 /// Run the script at `<command_dir>/<script_name>`, optionally passing
@@ -330,6 +363,7 @@ pub fn run_script(
     command_dir: &Path,
     script_name: &str,
     arg: Option<&str>,
+    env: &ScriptEnv<'_>,
 ) -> Result<Vec<ListItem>, String> {
     // Security: reject names that could escape the command directory.
     if script_name.contains('/') || script_name.contains('\\') || script_name.contains("..") {
@@ -357,6 +391,7 @@ pub fn run_script(
     if let Some(a) = arg {
         cmd.arg(a);
     }
+    inject_builtin_env(&mut cmd, env);
     cmd.stdout(std::process::Stdio::piped())
         .stderr(std::process::Stdio::piped());
 
@@ -413,6 +448,7 @@ pub fn run_script_values(
     command_dir: &Path,
     script_name: &str,
     arg: Option<&str>,
+    env: &ScriptEnv<'_>,
 ) -> Result<Vec<String>, String> {
     // Security: reject names that could escape the command directory.
     if script_name.contains('/') || script_name.contains('\\') || script_name.contains("..") {
@@ -440,6 +476,7 @@ pub fn run_script_values(
     if let Some(a) = arg {
         cmd.arg(a);
     }
+    inject_builtin_env(&mut cmd, env);
     cmd.stdout(std::process::Stdio::piped())
         .stderr(std::process::Stdio::piped());
 
@@ -875,22 +912,37 @@ mod tests {
 
     // ── run_script ────────────────────────────────────────────────────────────
 
+    fn test_env(dir: &TempDir) -> ScriptEnv<'static> {
+        // Leak the path so we get a 'static lifetime — acceptable in tests.
+        let config_dir: &'static Path = Box::leak(dir.path().to_path_buf().into_boxed_path());
+        let command_dir: &'static Path = config_dir;
+        ScriptEnv {
+            context: "test-context",
+            phrase: "test phrase",
+            config_dir,
+            command_dir,
+        }
+    }
+
     #[test]
     fn run_script_rejects_path_traversal_dotdot() {
         let dir = TempDir::new().unwrap();
-        assert!(run_script(dir.path(), "../secret.sh", None).is_err());
+        let env = test_env(&dir);
+        assert!(run_script(dir.path(), "../secret.sh", None, &env).is_err());
     }
 
     #[test]
     fn run_script_rejects_path_with_slash() {
         let dir = TempDir::new().unwrap();
-        assert!(run_script(dir.path(), "sub/file.sh", None).is_err());
+        let env = test_env(&dir);
+        assert!(run_script(dir.path(), "sub/file.sh", None, &env).is_err());
     }
 
     #[test]
     fn run_script_missing_script_returns_err() {
         let dir = TempDir::new().unwrap();
-        assert!(run_script(dir.path(), "nonexistent.sh", None).is_err());
+        let env = test_env(&dir);
+        assert!(run_script(dir.path(), "nonexistent.sh", None, &env).is_err());
     }
 
     #[cfg(unix)]
@@ -912,7 +964,8 @@ mod tests {
             "test.sh",
             "#!/bin/sh\necho '[{\"title\":\"A\"},{\"title\":\"B\",\"subtext\":\"sub\"}]'\n",
         );
-        let items = run_script(dir.path(), "test.sh", None).unwrap();
+        let env = test_env(&dir);
+        let items = run_script(dir.path(), "test.sh", None, &env).unwrap();
         assert_eq!(items.len(), 2);
         assert_eq!(items[0].title, "A");
         assert_eq!(items[1].subtext.as_deref(), Some("sub"));
@@ -923,7 +976,8 @@ mod tests {
     fn run_script_plain_text_returns_single_item() {
         let dir = TempDir::new().unwrap();
         make_script(&dir, "plain.sh", "#!/bin/sh\necho 'hello world'\n");
-        let items = run_script(dir.path(), "plain.sh", None).unwrap();
+        let env = test_env(&dir);
+        let items = run_script(dir.path(), "plain.sh", None, &env).unwrap();
         assert_eq!(items.len(), 1);
         assert_eq!(items[0].title, "hello world");
     }
@@ -933,7 +987,8 @@ mod tests {
     fn run_script_passes_arg_to_script() {
         let dir = TempDir::new().unwrap();
         make_script(&dir, "echo-arg.sh", "#!/bin/sh\necho \"$1\"\n");
-        let items = run_script(dir.path(), "echo-arg.sh", Some("myarg")).unwrap();
+        let env = test_env(&dir);
+        let items = run_script(dir.path(), "echo-arg.sh", Some("myarg"), &env).unwrap();
         assert_eq!(items.len(), 1);
         assert_eq!(items[0].title, "myarg");
     }
@@ -943,19 +998,22 @@ mod tests {
     #[test]
     fn run_script_values_rejects_path_traversal_dotdot() {
         let dir = TempDir::new().unwrap();
-        assert!(run_script_values(dir.path(), "../secret.sh", None).is_err());
+        let env = test_env(&dir);
+        assert!(run_script_values(dir.path(), "../secret.sh", None, &env).is_err());
     }
 
     #[test]
     fn run_script_values_rejects_path_with_slash() {
         let dir = TempDir::new().unwrap();
-        assert!(run_script_values(dir.path(), "sub/file.sh", None).is_err());
+        let env = test_env(&dir);
+        assert!(run_script_values(dir.path(), "sub/file.sh", None, &env).is_err());
     }
 
     #[test]
     fn run_script_values_missing_script_returns_err() {
         let dir = TempDir::new().unwrap();
-        assert!(run_script_values(dir.path(), "nonexistent.sh", None).is_err());
+        let env = test_env(&dir);
+        assert!(run_script_values(dir.path(), "nonexistent.sh", None, &env).is_err());
     }
 
     #[cfg(unix)]
@@ -967,7 +1025,8 @@ mod tests {
             "values.sh",
             "#!/bin/sh\necho '[\"alpha\",\"beta\",\"gamma\"]'\n",
         );
-        let values = run_script_values(dir.path(), "values.sh", None).unwrap();
+        let env = test_env(&dir);
+        let values = run_script_values(dir.path(), "values.sh", None, &env).unwrap();
         assert_eq!(values, vec!["alpha", "beta", "gamma"]);
     }
 
@@ -976,7 +1035,8 @@ mod tests {
     fn run_script_values_plain_text_returns_single_value() {
         let dir = TempDir::new().unwrap();
         make_script(&dir, "plain.sh", "#!/bin/sh\necho 'hello world'\n");
-        let values = run_script_values(dir.path(), "plain.sh", None).unwrap();
+        let env = test_env(&dir);
+        let values = run_script_values(dir.path(), "plain.sh", None, &env).unwrap();
         assert_eq!(values.len(), 1);
         assert_eq!(values[0], "hello world");
     }
@@ -986,7 +1046,8 @@ mod tests {
     fn run_script_values_passes_arg_to_script() {
         let dir = TempDir::new().unwrap();
         make_script(&dir, "echo-arg.sh", "#!/bin/sh\necho \"$1\"\n");
-        let values = run_script_values(dir.path(), "echo-arg.sh", Some("myvalue")).unwrap();
+        let env = test_env(&dir);
+        let values = run_script_values(dir.path(), "echo-arg.sh", Some("myvalue"), &env).unwrap();
         assert_eq!(values.len(), 1);
         assert_eq!(values[0], "myvalue");
     }
@@ -1135,5 +1196,118 @@ mod tests {
         let result = load_from_dir(dir.path(), true).unwrap();
         assert_eq!(result.commands.len(), 2, "both commands should load when allow_duplicates=true");
         assert!(result.duplicates.is_empty(), "no warnings when allow_duplicates=true");
+    }
+
+    // ── Built-in env var injection ───────────────────────────────────────────
+
+    #[cfg(unix)]
+    #[test]
+    fn run_script_injects_nimble_context() {
+        let dir = TempDir::new().unwrap();
+        make_script(&dir, "env.sh", "#!/bin/sh\necho \"$NIMBLE_CONTEXT\"\n");
+        let env = ScriptEnv {
+            context: "my-ctx",
+            phrase: "test phrase",
+            config_dir: dir.path(),
+            command_dir: dir.path(),
+        };
+        let items = run_script(dir.path(), "env.sh", None, &env).unwrap();
+        assert_eq!(items[0].title, "my-ctx");
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn run_script_injects_nimble_phrase() {
+        let dir = TempDir::new().unwrap();
+        make_script(&dir, "env.sh", "#!/bin/sh\necho \"$NIMBLE_PHRASE\"\n");
+        let env = ScriptEnv {
+            context: "",
+            phrase: "search contacts",
+            config_dir: dir.path(),
+            command_dir: dir.path(),
+        };
+        let items = run_script(dir.path(), "env.sh", None, &env).unwrap();
+        assert_eq!(items[0].title, "search contacts");
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn run_script_injects_nimble_os() {
+        let dir = TempDir::new().unwrap();
+        make_script(&dir, "env.sh", "#!/bin/sh\necho \"$NIMBLE_OS\"\n");
+        let env = test_env(&dir);
+        let items = run_script(dir.path(), "env.sh", None, &env).unwrap();
+        assert_eq!(items[0].title, "macos");
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn run_script_injects_nimble_version() {
+        let dir = TempDir::new().unwrap();
+        make_script(&dir, "env.sh", "#!/bin/sh\necho \"$NIMBLE_VERSION\"\n");
+        let env = test_env(&dir);
+        let items = run_script(dir.path(), "env.sh", None, &env).unwrap();
+        assert_eq!(items[0].title, env!("CARGO_PKG_VERSION"));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn run_script_injects_nimble_config_dir() {
+        let dir = TempDir::new().unwrap();
+        make_script(&dir, "env.sh", "#!/bin/sh\necho \"$NIMBLE_CONFIG_DIR\"\n");
+        let env = ScriptEnv {
+            context: "",
+            phrase: "test",
+            config_dir: dir.path(),
+            command_dir: dir.path(),
+        };
+        let items = run_script(dir.path(), "env.sh", None, &env).unwrap();
+        assert_eq!(items[0].title, dir.path().to_string_lossy());
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn run_script_injects_nimble_command_dir() {
+        let dir = TempDir::new().unwrap();
+        make_script(&dir, "env.sh", "#!/bin/sh\necho \"$NIMBLE_COMMAND_DIR\"\n");
+        let env = ScriptEnv {
+            context: "",
+            phrase: "test",
+            config_dir: dir.path(),
+            command_dir: dir.path(),
+        };
+        let items = run_script(dir.path(), "env.sh", None, &env).unwrap();
+        assert_eq!(items[0].title, dir.path().to_string_lossy());
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn run_script_values_injects_nimble_context() {
+        let dir = TempDir::new().unwrap();
+        make_script(&dir, "env.sh", "#!/bin/sh\necho \"$NIMBLE_CONTEXT\"\n");
+        let env = ScriptEnv {
+            context: "work",
+            phrase: "copy uuid",
+            config_dir: dir.path(),
+            command_dir: dir.path(),
+        };
+        let values = run_script_values(dir.path(), "env.sh", None, &env).unwrap();
+        assert_eq!(values[0], "work");
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn run_script_empty_context_injects_empty_string() {
+        let dir = TempDir::new().unwrap();
+        // Script outputs NIMBLE_CONTEXT surrounded by markers so we can detect empty
+        make_script(&dir, "env.sh", "#!/bin/sh\necho \"ctx=$NIMBLE_CONTEXT|\"\n");
+        let env = ScriptEnv {
+            context: "",
+            phrase: "test",
+            config_dir: dir.path(),
+            command_dir: dir.path(),
+        };
+        let items = run_script(dir.path(), "env.sh", None, &env).unwrap();
+        assert_eq!(items[0].title, "ctx=|");
     }
 }

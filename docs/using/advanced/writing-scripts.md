@@ -127,7 +127,49 @@ See [Dynamic List](dynamic-list.md) for the full YAML schema and argument mode r
    chmod +x ~/Library/Application\ Support/Nimble/commands/search-contacts/contacts.sh
    ```
 
-5. **Live reload** — editing any file in `scripts/` triggers a reload. If a dynamic list is currently displayed it re-runs automatically within the 300 ms debounce window.
+5. **Live reload** — editing any script file in `commands/` triggers a reload. If a dynamic list is currently displayed it re-runs automatically within the 300 ms debounce window.
+
+---
+
+## Built-in environment variables
+
+Nimble injects a set of `NIMBLE_*` environment variables into every script it runs. These are available to both `dynamic_list` and `script_action` scripts without any configuration.
+
+| Variable | Value | Example |
+|----------|-------|--------|
+| `NIMBLE_CONTEXT` | Active context string (empty if none) | `reddit` |
+| `NIMBLE_PHRASE` | Command phrase that triggered this script | `search contacts` |
+| `NIMBLE_CONFIG_DIR` | Absolute path to the Nimble config root | `/Users/you/Library/Application Support/Nimble` |
+| `NIMBLE_COMMAND_DIR` | Absolute path to the directory containing the command YAML | `/Users/you/Library/Application Support/Nimble/commands/search-contacts` |
+| `NIMBLE_OS` | Operating system: `macos`, `linux`, or `windows` | `macos` |
+| `NIMBLE_VERSION` | Nimble app version | `0.1.0` |
+
+### Usage examples
+
+**Shell:**
+```sh
+#!/bin/sh
+if [ "$NIMBLE_OS" = "macos" ]; then
+    open "https://example.com"
+fi
+echo "Running in context: $NIMBLE_CONTEXT"
+```
+
+**PowerShell:**
+```powershell
+if ($env:NIMBLE_OS -eq "windows") {
+    Write-Output "Windows detected"
+}
+```
+
+**Python:**
+```python
+import os
+context = os.environ.get("NIMBLE_CONTEXT", "")
+command_dir = os.environ["NIMBLE_COMMAND_DIR"]
+```
+
+These variables are always present and read-only. Scripts do not need to declare or request them.
 
 ---
 

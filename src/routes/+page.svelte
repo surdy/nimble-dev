@@ -146,7 +146,7 @@
       if (argMode === "none") {
         if (isExact) {
           activeListCmd = dynMatch;
-          invoke<ListItem[]>("run_dynamic_list", { commandDir, scriptName: config.script, arg: null })
+          invoke<ListItem[]>("run_dynamic_list", { commandDir, scriptName: config.script, arg: null, context: activeContext, phrase: dynMatch.phrase })
             .then(items => { listItems = items; selectedIndex = 0; })
             .catch(() => { listItems = []; });
         } else {
@@ -157,13 +157,13 @@
         activeListCmd = dynMatch;
         if (isExact) {
           // Immediate invocation — no suffix
-          invoke<ListItem[]>("run_dynamic_list", { commandDir, scriptName: config.script, arg: null })
+          invoke<ListItem[]>("run_dynamic_list", { commandDir, scriptName: config.script, arg: null, context: activeContext, phrase: dynMatch.phrase })
             .then(items => { listItems = items; selectedIndex = 0; })
             .catch(() => { listItems = []; });
         } else {
           // Suffix present — debounce re-invocation
           timer = setTimeout(() => {
-            invoke<ListItem[]>("run_dynamic_list", { commandDir, scriptName: config.script, arg: suffix })
+            invoke<ListItem[]>("run_dynamic_list", { commandDir, scriptName: config.script, arg: suffix, context: activeContext, phrase: dynMatch.phrase })
               .then(items => { listItems = items; selectedIndex = 0; })
               .catch(() => { listItems = []; });
           }, 200);
@@ -173,7 +173,7 @@
         if (suffix) {
           activeListCmd = dynMatch;
           timer = setTimeout(() => {
-            invoke<ListItem[]>("run_dynamic_list", { commandDir, scriptName: config.script, arg: suffix })
+            invoke<ListItem[]>("run_dynamic_list", { commandDir, scriptName: config.script, arg: suffix, context: activeContext, phrase: dynMatch.phrase })
               .then(items => { listItems = items; selectedIndex = 0; })
               .catch(() => { listItems = []; });
           }, 200);
@@ -350,6 +350,8 @@
         commandDir: cmd.source_dir,
         scriptName: cfg.script,
         arg: scriptArg,
+        context: activeContext,
+        phrase: cmd.phrase,
       });
 
       if (cfg.result_action === "open_url") {
@@ -493,7 +495,7 @@
           const typed = input.trim().toLowerCase();
           const phrase = activeListCmd.phrase.toLowerCase();
           const suffix = typed.startsWith(phrase + " ") ? typed.slice(phrase.length + 1).trim() : "";
-          invoke<ListItem[]>("run_dynamic_list", { commandDir: activeListCmd.source_dir, scriptName: config.script, arg: suffix || null })
+          invoke<ListItem[]>("run_dynamic_list", { commandDir: activeListCmd.source_dir, scriptName: config.script, arg: suffix || null, context: activeContext, phrase: activeListCmd.phrase })
             .then(items => { listItems = items; })
             .catch(() => { listItems = []; });
         }
