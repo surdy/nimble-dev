@@ -25,3 +25,4 @@ Welcome to the Nimble user documentation. Use the guides below to get up and run
 |-------|-------------|
 | [Tips & tricks](tips-and-tricks.md) | App deep links, parameterised web search, snippet patterns |
 | [Duplicate commands](duplicate-commands.md) | How duplicate phrases are detected and resolved |
+| [Copilot Agents](advanced/copilot-agents.md) | AI agents that help you create commands and write scripts |

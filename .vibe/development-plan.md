@@ -39,6 +39,7 @@ Iterative implementation plan for Context Actions, from bare minimum working she
 | 29 ✅ | User-defined script variables | Add global and command-scoped user variables with deterministic precedence |
 | 30 | Script debugging and verbose logs | Add debug mode with `NIMBLE_DEBUG` and structured script diagnostics |
 | 31 ✅ | External script/list paths | `${VAR}` substitution in `script:` / `list:` fields; `allow_external_paths` setting |
+| 32 ✅ | Copilot agents | `@nimble-command` and `@nimble-script` GitHub Copilot agents for command authoring |
 
 ---
 
@@ -1417,5 +1418,38 @@ Allow `script:` and `list:` fields to reference files outside the command direct
 - `${VAR}` tokens in `script:` and `list:` fields resolve correctly.
 - External paths are allowed by default and can be restricted via `allow_external_paths: false`.
 - 114 tests pass; no regressions.
+
+---
+
+## Stage 32 — Copilot Agents ✅
+
+### Goal
+Provide two specialised GitHub Copilot agents that help users create Nimble commands and write scripts directly from their editor, without needing to memorise the YAML schema or script output formats.
+
+### Agents
+
+#### `@nimble-command`
+- **Purpose:** Create, edit, and debug YAML command files
+- **Knowledge:** Full command schema, all six action types, environment variable layering, co-location rules, `${VAR}` substitution, context matching
+- **Constraints:** Only creates/edits YAML command files and list files; delegates to `@nimble-script` when a script is needed; never modifies Rust source or frontend code
+- **Location:** `.github/agents/nimble-command.agent.md`
+
+#### `@nimble-script`
+- **Purpose:** Write, debug, and improve scripts for `dynamic_list` and `script_action` commands
+- **Knowledge:** Output formats (JSON array for dynamic_list, JSON string array for script_action), argument passing by language, built-in `NIMBLE_*` env vars, timeout constraints, platform differences (shebang, chmod, PowerShell)
+- **Constraints:** Only creates/edits script files; never modifies YAML commands, env.yaml, or settings.yaml; never runs scripts with elevated privileges
+- **Location:** `.github/agents/nimble-script.agent.md`
+
+### Architecture decision
+A what-if analysis (`.vibe/what-ifs/command-authoring-agents/summary.md`) evaluated single-agent vs multi-agent approaches. Two focused agents were chosen over a single agent with mode routing — each agent has a clear, non-overlapping scope and can delegate to the other, keeping instructions concise and reliable.
+
+### Documentation
+- Added `docs/using/advanced/copilot-agents.md` with usage examples, agent boundaries, and tips
+- Updated `docs/using/advanced/README.md` and `docs/using/README.md` landing pages with links
+
+### Done when ✅
+- Both agent definition files exist in `.github/agents/`
+- Each agent covers its full domain (command schema / script formats) with examples and constraints
+- User-facing documentation describes how to invoke each agent and what it can do
 
 
