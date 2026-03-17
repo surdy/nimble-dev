@@ -27,18 +27,23 @@ def create_tray_icon_png(width, height, filename):
 
     s = width / 44.0
 
-    # Card 3 (back)
-    fill_rect(int(10 * s), int(27 * s), int(24 * s), int(5 * s), 0, 0, 0, 115)
-    # Card 2 (middle)
-    fill_rect(int(7 * s), int(21 * s), int(30 * s), int(6 * s), 0, 0, 0, 166)
-    # Card 1 (front, solid)
+    # Faint rounded-square background (alpha only — macOS template uses alpha as mask)
+    bg_r = 9.5 * s
+    for py in range(height):
+        for px in range(width):
+            def in_rounded_rect(px, py, left, top, w, h, r):
+                cx = max(left + r, min(px, left + w - r))
+                cy = max(top + r, min(py, top + h - r))
+                return (px - cx) ** 2 + (py - cy) ** 2 <= r ** 2
+            if in_rounded_rect(px, py, 0, 0, width, height, bg_r):
+                set_pixel(px, py, 0, 0, 0, 64)
+
+    # Card 3 (back) — medium alpha
+    fill_rect(int(10 * s), int(27 * s), int(24 * s), int(5 * s), 0, 0, 0, 128)
+    # Card 2 (middle) — higher alpha
+    fill_rect(int(7 * s), int(21 * s), int(30 * s), int(6 * s), 0, 0, 0, 178)
+    # Card 1 (front) — fully opaque, darkest
     fill_rect(int(4 * s), int(14 * s), int(36 * s), int(7 * s), 0, 0, 0, 255)
-    # Active dot
-    fill_circle(9 * s, 17.5 * s, 1.5 * s, 255, 255, 255, 255)
-    # Text line 1
-    fill_rect(int(13 * s), int(16 * s), int(14 * s), int(2 * s), 255, 255, 255, 230)
-    # Text line 2
-    fill_rect(int(29 * s), int(16 * s), int(7 * s), int(2 * s), 255, 255, 255, 128)
 
     def chunk(ctype, data):
         c = ctype + data
