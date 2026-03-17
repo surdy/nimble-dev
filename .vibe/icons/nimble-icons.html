@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nimble Icons</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #0f0f13;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif;
+      color: #fff;
+      padding: 48px 32px;
+    }
+    h1 {
+      text-align: center;
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: #666;
+      margin-bottom: 48px;
+    }
+    .grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 48px;
+      justify-content: center;
+    }
+    .card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+    .sizes {
+      display: flex;
+      flex-direction: row;
+      align-items: flex-end;
+      gap: 12px;
+    }
+    .sizes svg { display: block; }
+    .label {
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #555;
+      text-align: center;
+    }
+    .size-label {
+      font-size: 9px;
+      color: #444;
+      text-align: center;
+      margin-top: 4px;
+    }
+    .size-col { display: flex; flex-direction: column; align-items: center; }
+  </style>
+</head>
+<body>
+
+<h1>Nimble — Icon Concepts</h1>
+<div class="grid">
+
+
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       CONCEPT C: Void Spark
+       Dark background. A single thin-stroke command cursor line
+       with a vibrant electric-teal spark/flash at the insertion point.
+       Minimal. Almost typographic.
+  ═══════════════════════════════════════════════════════════════ -->
+  <div class="card">
+    <div class="sizes">
+
+      <!-- 512 -->
+      <div class="size-col">
+        <svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <radialGradient id="c-bg" cx="50%" cy="48%" r="55%">
+              <stop offset="0%" stop-color="#0e1a2b"/>
+              <stop offset="100%" stop-color="#060a10"/>
+            </radialGradient>
+            <linearGradient id="c-spark" x1="228" y1="196" x2="284" y2="316" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#00ffe0"/>
+              <stop offset="60%" stop-color="#00b4d8"/>
+              <stop offset="100%" stop-color="#0077b6"/>
+            </linearGradient>
+            <filter id="c-neon" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation="10" result="blur"/>
+              <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+            <filter id="c-softglow" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur stdDeviation="6"/>
+            </filter>
+          </defs>
+
+          <rect width="512" height="512" rx="112" fill="url(#c-bg)"/>
+
+          <!-- Subtle horizontal rule / divider line (command input field) -->
+          <line x1="80" y1="268" x2="432" y2="268" stroke="#1e3a5f" stroke-width="2"/>
+
+          <!-- Input area rounded rect (ghost) -->
+          <rect x="72" y="220" width="368" height="80" rx="16" fill="none" stroke="#1a3050" stroke-width="1.5" opacity="0.6"/>
+
+          <!-- Spark/bolt centered -->
+          <!-- Glow halo behind bolt -->
+          <ellipse cx="256" cy="256" rx="52" ry="68" fill="#00ffe0" opacity="0.07" filter="url(#c-softglow)"/>
+
+          <!-- The bolt shape: clean, chunky lightning bolt centered -->
+          <path
+            d="M 274 176 L 224 268 L 256 268 L 238 336 L 288 244 L 256 244 Z"
+            fill="url(#c-spark)"
+            filter="url(#c-neon)"
+          />
+          <!-- Inner bright core -->
+          <path
+            d="M 270 192 L 234 260 L 256 260 L 243 318 L 282 250 L 260 250 Z"
+            fill="white"
+            opacity="0.25"
+          />
+
+          <!-- Blinking cursor to the right of bolt -->
+          <rect x="300" y="244" width="4" height="26" rx="2" fill="#00ffe0" opacity="0.8"/>
+
+          <!-- Faint text lines to left suggesting typed text -->
+          <rect x="88" y="252" width="88" height="8" rx="4" fill="#1e4a70" opacity="0.7"/>
+
+        </svg>
+        <div class="size-label">512</div>
+      </div>
+
+      <!-- 128 -->
+      <div class="size-col">
+        <svg width="128" height="128" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <radialGradient id="c2-bg" cx="50%" cy="48%" r="55%">
+              <stop offset="0%" stop-color="#0e1a2b"/>
+              <stop offset="100%" stop-color="#060a10"/>
+            </radialGradient>
+            <linearGradient id="c2-spark" x1="228" y1="196" x2="284" y2="316" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#00ffe0"/>
+              <stop offset="60%" stop-color="#00b4d8"/>
+              <stop offset="100%" stop-color="#0077b6"/>
+            </linearGradient>
+            <filter id="c2-neon" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation="10" result="blur"/>
+              <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+          </defs>
+          <rect width="512" height="512" rx="112" fill="url(#c2-bg)"/>
+          <rect x="72" y="220" width="368" height="80" rx="16" fill="none" stroke="#1a3050" stroke-width="1.5" opacity="0.6"/>
+          <path d="M 274 176 L 224 268 L 256 268 L 238 336 L 288 244 L 256 244 Z" fill="url(#c2-spark)" filter="url(#c2-neon)"/>
+          <path d="M 270 192 L 234 260 L 256 260 L 243 318 L 282 250 L 260 250 Z" fill="white" opacity="0.25"/>
+          <rect x="300" y="244" width="4" height="26" rx="2" fill="#00ffe0" opacity="0.8"/>
+          <rect x="88" y="252" width="88" height="8" rx="4" fill="#1e4a70" opacity="0.7"/>
+        </svg>
+        <div class="size-label">128</div>
+      </div>
+
+      <!-- 32 -->
+      <div class="size-col">
+        <svg width="32" height="32" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <radialGradient id="c3-bg" cx="50%" cy="48%" r="55%">
+              <stop offset="0%" stop-color="#0e1a2b"/>
+              <stop offset="100%" stop-color="#060a10"/>
+            </radialGradient>
+          </defs>
+          <rect width="512" height="512" rx="112" fill="url(#c3-bg)"/>
+          <path d="M 274 176 L 224 268 L 256 268 L 238 336 L 288 244 L 256 244 Z" fill="#00ffe0"/>
+        </svg>
+        <div class="size-label">32</div>
+      </div>
+
+    </div>
+    <div class="label">C — Void Spark</div>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       CONCEPT D: Stacked Cards / Action Layers
+       Three stacked rounded rect "cards" (result rows).
+       Top card is lit with electric indigo accent on charcoal.
+       Minimal iconography: left dot indicator + text lines.
+       Clean macOS-utility feel.
+  ═══════════════════════════════════════════════════════════════ -->
+  <div class="card">
+    <div class="sizes">
+
+      <!-- 512 -->
+      <div class="size-col">
+        <svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="d-bg" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#1a1d28"/>
+              <stop offset="100%" stop-color="#0e1018"/>
+            </linearGradient>
+            <linearGradient id="d-card1" x1="56" y1="192" x2="456" y2="250" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#6366f1"/>
+              <stop offset="100%" stop-color="#4f46e5"/>
+            </linearGradient>
+            <filter id="d-shadow" x="-5%" y="-5%" width="110%" height="130%">
+              <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000" flood-opacity="0.4"/>
+            </filter>
+          </defs>
+
+          <rect width="512" height="512" rx="112" fill="url(#d-bg)"/>
+
+          <!-- Card 3 (back, smallest peek) -->
+          <rect x="100" y="328" width="312" height="44" rx="10" fill="#1e2230" opacity="0.5"/>
+          <rect x="120" y="342" width="80" height="7" rx="3.5" fill="#2d3550" opacity="0.6"/>
+          <rect x="210" y="342" width="52" height="7" rx="3.5" fill="#232a40" opacity="0.4"/>
+
+          <!-- Card 2 (middle) -->
+          <rect x="72" y="270" width="368" height="52" rx="11" fill="#252b3a" opacity="0.9" filter="url(#d-shadow)"/>
+          <!-- small dot indicator -->
+          <circle cx="96" cy="296" r="5" fill="#6366f1" opacity="0.55"/>
+          <rect x="112" y="289" width="96" height="8" rx="4" fill="#3d4462" opacity="0.7"/>
+          <rect x="218" y="289" width="64" height="8" rx="4" fill="#2d3452" opacity="0.5"/>
+          <!-- right pill badge -->
+          <rect x="376" y="287" width="48" height="16" rx="8" fill="#2d3452" opacity="0.5"/>
+          <rect x="384" y="292" width="32" height="6" rx="3" fill="#5258d4" opacity="0.5"/>
+
+          <!-- Card 1 (front, active) -->
+          <rect x="48" y="188" width="416" height="68" rx="14" fill="url(#d-card1)" filter="url(#d-shadow)"/>
+          <!-- inner top highlight -->
+          <rect x="48" y="188" width="416" height="2" rx="1" fill="white" opacity="0.2"/>
+
+          <!-- action dot (active state) -->
+          <circle cx="76" cy="222" r="7" fill="white" opacity="0.9"/>
+
+          <!-- Typed text lines -->
+          <rect x="96" y="212" width="156" height="10" rx="5" fill="white" opacity="0.95"/>
+          <rect x="262" y="212" width="80" height="10" rx="5" fill="white" opacity="0.4"/>
+
+          <!-- Right action indicator -->
+          <rect x="390" y="210" width="58" height="22" rx="11" fill="white" opacity="0.15"/>
+          <rect x="400" y="217" width="38" height="8" rx="4" fill="white" opacity="0.55"/>
+        </svg>
+        <div class="size-label">512</div>
+      </div>
+
+      <!-- 128 -->
+      <div class="size-col">
+        <svg width="128" height="128" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="d2-bg" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#1a1d28"/>
+              <stop offset="100%" stop-color="#0e1018"/>
+            </linearGradient>
+            <linearGradient id="d2-card1" x1="56" y1="192" x2="456" y2="250" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#6366f1"/>
+              <stop offset="100%" stop-color="#4f46e5"/>
+            </linearGradient>
+          </defs>
+          <rect width="512" height="512" rx="112" fill="url(#d2-bg)"/>
+          <rect x="100" y="328" width="312" height="44" rx="10" fill="#1e2230" opacity="0.5"/>
+          <rect x="72" y="270" width="368" height="52" rx="11" fill="#252b3a" opacity="0.9"/>
+          <circle cx="96" cy="296" r="5" fill="#6366f1" opacity="0.55"/>
+          <rect x="112" y="289" width="96" height="8" rx="4" fill="#3d4462" opacity="0.7"/>
+          <rect x="48" y="188" width="416" height="68" rx="14" fill="url(#d2-card1)"/>
+          <rect x="48" y="188" width="416" height="2" rx="1" fill="white" opacity="0.2"/>
+          <circle cx="76" cy="222" r="7" fill="white" opacity="0.9"/>
+          <rect x="96" y="212" width="156" height="10" rx="5" fill="white" opacity="0.95"/>
+          <rect x="262" y="212" width="80" height="10" rx="5" fill="white" opacity="0.4"/>
+        </svg>
+        <div class="size-label">128</div>
+      </div>
+
+      <!-- 32 -->
+      <div class="size-col">
+        <svg width="32" height="32" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="d3-bg" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#1a1d28"/>
+              <stop offset="100%" stop-color="#0e1018"/>
+            </linearGradient>
+          </defs>
+          <rect width="512" height="512" rx="112" fill="url(#d3-bg)"/>
+          <rect x="72" y="310" width="368" height="38" rx="8" fill="#252b3a" opacity="0.6"/>
+          <rect x="56" y="258" width="400" height="42" rx="9" fill="#1e2438" opacity="0.8"/>
+          <rect x="40" y="188" width="432" height="58" rx="12" fill="#6366f1"/>
+        </svg>
+        <div class="size-label">32</div>
+      </div>
+
+    </div>
+    <div class="label">D — Stacked Action Cards</div>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       CONCEPT D2: Stacked Cards — Bright Layers
+       Same layout, but cards 2 & 3 use high-contrast opaque fills
+       so they read clearly at 32px and 128px.
+  ═══════════════════════════════════════════════════════════════ -->
+  <div class="card">
+    <div class="sizes">
+
+      <!-- 512 -->
+      <div class="size-col">
+        <svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="dx-bg" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#1a1d28"/>
+              <stop offset="100%" stop-color="#0e1018"/>
+            </linearGradient>
+            <linearGradient id="dx-card1" x1="56" y1="192" x2="456" y2="250" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#818cf8"/>
+              <stop offset="100%" stop-color="#6366f1"/>
+            </linearGradient>
+            <filter id="dx-shadow" x="-5%" y="-5%" width="110%" height="130%">
+              <feDropShadow dx="0" dy="6" stdDeviation="10" flood-color="#000" flood-opacity="0.5"/>
+            </filter>
+          </defs>
+
+          <rect width="512" height="512" rx="112" fill="url(#dx-bg)"/>
+
+          <!-- Card 3 (back) — opaque, clearly lighter than BG -->
+          <rect x="96" y="322" width="320" height="46" rx="10" fill="#2a3156"/>
+          <!-- visible text stub -->
+          <rect x="116" y="338" width="104" height="7" rx="3.5" fill="#3d4880" opacity="0.9"/>
+          <rect x="230" y="338" width="60" height="7" rx="3.5" fill="#3d4880" opacity="0.6"/>
+
+          <!-- Card 2 (middle) — opaque mid-value indigo-blue -->
+          <rect x="72" y="264" width="368" height="52" rx="11" fill="#343c72" filter="url(#dx-shadow)"/>
+          <!-- accent dot -->
+          <circle cx="96" cy="290" r="5" fill="#818cf8" opacity="0.7"/>
+          <rect x="112" y="283" width="112" height="8" rx="4" fill="#4a5490" opacity="0.9"/>
+          <rect x="234" y="283" width="72" height="8" rx="4" fill="#3d4880" opacity="0.7"/>
+          <!-- pill -->
+          <rect x="376" y="281" width="48" height="16" rx="8" fill="#4a5490" opacity="0.6"/>
+
+          <!-- Card 1 (front, active) -->
+          <rect x="48" y="184" width="416" height="70" rx="14" fill="url(#dx-card1)" filter="url(#dx-shadow)"/>
+          <rect x="48" y="184" width="416" height="2" rx="1" fill="white" opacity="0.22"/>
+          <circle cx="76" cy="219" r="7" fill="white" opacity="0.9"/>
+          <rect x="96" y="209" width="164" height="10" rx="5" fill="white" opacity="0.95"/>
+          <rect x="270" y="209" width="80" height="10" rx="5" fill="white" opacity="0.4"/>
+          <rect x="390" y="208" width="58" height="22" rx="11" fill="white" opacity="0.15"/>
+          <rect x="400" y="214" width="38" height="8" rx="4" fill="white" opacity="0.55"/>
+        </svg>
+        <div class="size-label">512</div>
+      </div>
+
+      <!-- 128 -->
+      <div class="size-col">
+        <svg width="128" height="128" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="dx2-bg" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#1a1d28"/>
+              <stop offset="100%" stop-color="#0e1018"/>
+            </linearGradient>
+            <linearGradient id="dx2-card1" x1="56" y1="192" x2="456" y2="250" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#818cf8"/>
+              <stop offset="100%" stop-color="#6366f1"/>
+            </linearGradient>
+          </defs>
+          <rect width="512" height="512" rx="112" fill="url(#dx2-bg)"/>
+          <rect x="96" y="322" width="320" height="46" rx="10" fill="#2a3156"/>
+          <rect x="116" y="338" width="104" height="7" rx="3.5" fill="#3d4880" opacity="0.9"/>
+          <rect x="72" y="264" width="368" height="52" rx="11" fill="#343c72"/>
+          <circle cx="96" cy="290" r="5" fill="#818cf8" opacity="0.7"/>
+          <rect x="112" y="283" width="112" height="8" rx="4" fill="#4a5490" opacity="0.9"/>
+          <rect x="48" y="184" width="416" height="70" rx="14" fill="url(#dx2-card1)"/>
+          <rect x="48" y="184" width="416" height="2" rx="1" fill="white" opacity="0.22"/>
+          <circle cx="76" cy="219" r="7" fill="white" opacity="0.9"/>
+          <rect x="96" y="209" width="164" height="10" rx="5" fill="white" opacity="0.95"/>
+          <rect x="270" y="209" width="80" height="10" rx="5" fill="white" opacity="0.4"/>
+        </svg>
+        <div class="size-label">128</div>
+      </div>
+
+      <!-- 32 -->
+      <div class="size-col">
+        <svg width="32" height="32" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="dx3-bg" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#1a1d28"/>
+              <stop offset="100%" stop-color="#0e1018"/>
+            </linearGradient>
+          </defs>
+          <rect width="512" height="512" rx="112" fill="url(#dx3-bg)"/>
+          <!-- Card 3 — clearly visible -->
+          <rect x="88" y="318" width="336" height="48" rx="10" fill="#2a3156"/>
+          <!-- Card 2 — clearly visible -->
+          <rect x="64" y="262" width="384" height="52" rx="11" fill="#343c72"/>
+          <!-- Card 1 — active -->
+          <rect x="40" y="184" width="432" height="64" rx="13" fill="#6366f1"/>
+        </svg>
+        <div class="size-label">32</div>
+      </div>
+
+    </div>
+    <div class="label">D2 — Bright Layers</div>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       CONCEPT D3: Stacked Cards — Warm Neon
+       Fuchsia/violet top card, deep warm-dark layers.
+       Different energy — more vibrant, editorial.
+  ═══════════════════════════════════════════════════════════════ -->
+  <div class="card">
+    <div class="sizes">
+
+      <!-- 512 -->
+      <div class="size-col">
+        <svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <radialGradient id="dy-bg" cx="50%" cy="45%" r="62%">
+              <stop offset="0%" stop-color="#110b1c"/>
+              <stop offset="100%" stop-color="#080610"/>
+            </radialGradient>
+            <linearGradient id="dy-card1" x1="56" y1="184" x2="456" y2="254" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#c026d3"/>
+              <stop offset="100%" stop-color="#7c3aed"/>
+            </linearGradient>
+            <filter id="dy-glow" x="-8%" y="-8%" width="116%" height="130%">
+              <feGaussianBlur stdDeviation="16" result="blur"/>
+              <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+            <filter id="dy-shadow" x="-5%" y="-5%" width="110%" height="130%">
+              <feDropShadow dx="0" dy="6" stdDeviation="10" flood-color="#000" flood-opacity="0.5"/>
+            </filter>
+          </defs>
+
+          <rect width="512" height="512" rx="112" fill="url(#dy-bg)"/>
+
+          <!-- Card 3 (back) — warm dark aubergine, clearly readable -->
+          <rect x="96" y="322" width="320" height="46" rx="10" fill="#281630"/>
+          <rect x="116" y="338" width="96" height="7" rx="3.5" fill="#4a2060" opacity="0.9"/>
+          <rect x="222" y="338" width="60" height="7" rx="3.5" fill="#3a1850" opacity="0.7"/>
+
+          <!-- Card 2 (middle) — medium violet-plum -->
+          <rect x="72" y="264" width="368" height="52" rx="11" fill="#341848" filter="url(#dy-shadow)"/>
+          <circle cx="96" cy="290" r="5" fill="#c026d3" opacity="0.55"/>
+          <rect x="112" y="283" width="112" height="8" rx="4" fill="#5a2878" opacity="0.9"/>
+          <rect x="234" y="283" width="72" height="8" rx="4" fill="#4a2060" opacity="0.7"/>
+          <rect x="376" y="281" width="48" height="16" rx="8" fill="#4a2060" opacity="0.6"/>
+
+          <!-- Card 1 (front, active) — fuchsia glow -->
+          <rect x="48" y="184" width="416" height="70" rx="14" fill="#c026d3" opacity="0.18" filter="url(#dy-glow)"/>
+          <rect x="48" y="184" width="416" height="70" rx="14" fill="url(#dy-card1)" filter="url(#dy-shadow)"/>
+          <rect x="48" y="184" width="416" height="2" rx="1" fill="white" opacity="0.25"/>
+          <circle cx="76" cy="219" r="7" fill="white" opacity="0.9"/>
+          <rect x="96" y="209" width="164" height="10" rx="5" fill="white" opacity="0.95"/>
+          <rect x="270" y="209" width="80" height="10" rx="5" fill="white" opacity="0.4"/>
+          <rect x="390" y="208" width="58" height="22" rx="11" fill="white" opacity="0.15"/>
+          <rect x="400" y="214" width="38" height="8" rx="4" fill="white" opacity="0.55"/>
+        </svg>
+        <div class="size-label">512</div>
+      </div>
+
+      <!-- 128 -->
+      <div class="size-col">
+        <svg width="128" height="128" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <radialGradient id="dy2-bg" cx="50%" cy="45%" r="62%">
+              <stop offset="0%" stop-color="#110b1c"/>
+              <stop offset="100%" stop-color="#080610"/>
+            </radialGradient>
+            <linearGradient id="dy2-card1" x1="56" y1="184" x2="456" y2="254" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#c026d3"/>
+              <stop offset="100%" stop-color="#7c3aed"/>
+            </linearGradient>
+          </defs>
+          <rect width="512" height="512" rx="112" fill="url(#dy2-bg)"/>
+          <rect x="96" y="322" width="320" height="46" rx="10" fill="#281630"/>
+          <rect x="116" y="338" width="96" height="7" rx="3.5" fill="#4a2060" opacity="0.9"/>
+          <rect x="72" y="264" width="368" height="52" rx="11" fill="#341848"/>
+          <circle cx="96" cy="290" r="5" fill="#c026d3" opacity="0.55"/>
+          <rect x="112" y="283" width="112" height="8" rx="4" fill="#5a2878" opacity="0.9"/>
+          <rect x="48" y="184" width="416" height="70" rx="14" fill="url(#dy2-card1)"/>
+          <rect x="48" y="184" width="416" height="2" rx="1" fill="white" opacity="0.25"/>
+          <circle cx="76" cy="219" r="7" fill="white" opacity="0.9"/>
+          <rect x="96" y="209" width="164" height="10" rx="5" fill="white" opacity="0.95"/>
+          <rect x="270" y="209" width="80" height="10" rx="5" fill="white" opacity="0.4"/>
+        </svg>
+        <div class="size-label">128</div>
+      </div>
+
+      <!-- 32 -->
+      <div class="size-col">
+        <svg width="32" height="32" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <radialGradient id="dy3-bg" cx="50%" cy="45%" r="62%">
+              <stop offset="0%" stop-color="#110b1c"/>
+              <stop offset="100%" stop-color="#080610"/>
+            </radialGradient>
+          </defs>
+          <rect width="512" height="512" rx="112" fill="url(#dy3-bg)"/>
+          <rect x="88" y="318" width="336" height="48" rx="10" fill="#281630"/>
+          <rect x="64" y="262" width="384" height="52" rx="11" fill="#341848"/>
+          <rect x="40" y="184" width="432" height="64" rx="13" fill="#a21caf"/>
+        </svg>
+        <div class="size-label">32</div>
+      </div>
+
+    </div>
+    <div class="label">D3 — Warm Neon</div>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       CONCEPT D4: Stacked Cards — Tab Stack
+       Each card has a bold left-edge accent tab.
+       Instantly legible at smallest sizes; no text details needed.
+  ═══════════════════════════════════════════════════════════════ -->
+  <div class="card">
+    <div class="sizes">
+
+      <!-- 512 -->
+      <div class="size-col">
+        <svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="dz-bg" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#111520"/>
+              <stop offset="100%" stop-color="#090b12"/>
+            </linearGradient>
+            <linearGradient id="dz-tab1" x1="48" y1="184" x2="48" y2="254" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#a5b4fc"/>
+              <stop offset="100%" stop-color="#6366f1"/>
+            </linearGradient>
+            <filter id="dz-shadow" x="-5%" y="-5%" width="110%" height="130%">
+              <feDropShadow dx="0" dy="6" stdDeviation="10" flood-color="#000" flood-opacity="0.45"/>
+            </filter>
+            <filter id="dz-tabglow" x="-60%" y="-20%" width="220%" height="140%">
+              <feGaussianBlur stdDeviation="8" result="blur"/>
+              <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+          </defs>
+
+          <rect width="512" height="512" rx="112" fill="url(#dz-bg)"/>
+
+          <!-- Card 3 (back) — slate body + dim tab -->
+          <rect x="96" y="324" width="320" height="46" rx="10" fill="#1e2336"/>
+          <!-- left tab 3 -->
+          <rect x="96" y="324" width="10" height="46" rx="5" fill="#2d3785" opacity="0.8"/>
+          <!-- text stubs -->
+          <rect x="118" y="339" width="104" height="7" rx="3.5" fill="#2d3a5a" opacity="0.9"/>
+          <rect x="232" y="339" width="64" height="7" rx="3.5" fill="#263050" opacity="0.7"/>
+
+          <!-- Card 2 (middle) — mid body + brighter tab -->
+          <rect x="72" y="266" width="368" height="52" rx="11" fill="#232a3e" filter="url(#dz-shadow)"/>
+          <!-- left tab 2 -->
+          <rect x="72" y="266" width="12" height="52" rx="6" fill="#4a53c8"/>
+          <!-- text stubs -->
+          <rect x="96" y="284" width="128" height="9" rx="4.5" fill="#2d3a5a" opacity="0.9"/>
+          <rect x="234" y="284" width="80" height="9" rx="4.5" fill="#263050" opacity="0.7"/>
+          <!-- right pill -->
+          <rect x="378" y="282" width="46" height="16" rx="8" fill="#2d3785" opacity="0.6"/>
+
+          <!-- Card 1 (front, active) — charcoal body + vivid indigo tab -->
+          <rect x="48" y="184" width="416" height="70" rx="14" fill="#1e2438" filter="url(#dz-shadow)"/>
+          <!-- vivid tab glow -->
+          <rect x="48" y="184" width="16" height="70" rx="8" fill="url(#dz-tab1)" filter="url(#dz-tabglow)"/>
+          <!-- inner top edge line -->
+          <rect x="48" y="184" width="416" height="1.5" rx="0.75" fill="white" opacity="0.1"/>
+
+          <!-- text content on active card -->
+          <rect x="80" y="208" width="172" height="11" rx="5.5" fill="white" opacity="0.92"/>
+          <rect x="262" y="208" width="84" height="11" rx="5.5" fill="white" opacity="0.35"/>
+          <!-- cursor -->
+          <rect x="354" y="207" width="3" height="13" rx="1.5" fill="white" opacity="0.75"/>
+          <!-- right action pill -->
+          <rect x="392" y="206" width="56" height="22" rx="11" fill="#6366f1" opacity="0.25"/>
+          <rect x="400" y="212" width="40" height="9" rx="4.5" fill="#a5b4fc" opacity="0.7"/>
+        </svg>
+        <div class="size-label">512</div>
+      </div>
+
+      <!-- 128 -->
+      <div class="size-col">
+        <svg width="128" height="128" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="dz2-bg" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#111520"/>
+              <stop offset="100%" stop-color="#090b12"/>
+            </linearGradient>
+            <linearGradient id="dz2-tab1" x1="48" y1="184" x2="48" y2="254" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#a5b4fc"/>
+              <stop offset="100%" stop-color="#6366f1"/>
+            </linearGradient>
+          </defs>
+          <rect width="512" height="512" rx="112" fill="url(#dz2-bg)"/>
+          <rect x="96" y="324" width="320" height="46" rx="10" fill="#1e2336"/>
+          <rect x="96" y="324" width="10" height="46" rx="5" fill="#2d3785" opacity="0.8"/>
+          <rect x="118" y="339" width="104" height="7" rx="3.5" fill="#2d3a5a" opacity="0.9"/>
+          <rect x="72" y="266" width="368" height="52" rx="11" fill="#232a3e"/>
+          <rect x="72" y="266" width="12" height="52" rx="6" fill="#4a53c8"/>
+          <rect x="96" y="284" width="128" height="9" rx="4.5" fill="#2d3a5a" opacity="0.9"/>
+          <rect x="48" y="184" width="416" height="70" rx="14" fill="#1e2438"/>
+          <rect x="48" y="184" width="16" height="70" rx="8" fill="url(#dz2-tab1)"/>
+          <rect x="80" y="208" width="172" height="11" rx="5.5" fill="white" opacity="0.92"/>
+          <rect x="262" y="208" width="84" height="11" rx="5.5" fill="white" opacity="0.35"/>
+          <rect x="392" y="206" width="56" height="22" rx="11" fill="#6366f1" opacity="0.3"/>
+          <rect x="400" y="212" width="40" height="9" rx="4.5" fill="#a5b4fc" opacity="0.7"/>
+        </svg>
+        <div class="size-label">128</div>
+      </div>
+
+      <!-- 32 -->
+      <div class="size-col">
+        <svg width="32" height="32" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="dz3-bg" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#111520"/>
+              <stop offset="100%" stop-color="#090b12"/>
+            </linearGradient>
+          </defs>
+          <rect width="512" height="512" rx="112" fill="url(#dz3-bg)"/>
+          <!-- Card 3 — body + tab -->
+          <rect x="88" y="318" width="336" height="50" rx="10" fill="#1e2336"/>
+          <rect x="88" y="318" width="18" height="50" rx="9" fill="#2d3785"/>
+          <!-- Card 2 — body + tab -->
+          <rect x="64" y="260" width="384" height="54" rx="11" fill="#232a3e"/>
+          <rect x="64" y="260" width="20" height="54" rx="10" fill="#4a53c8"/>
+          <!-- Card 1 — body + vivid tab -->
+          <rect x="40" y="182" width="432" height="68" rx="13" fill="#1e2438"/>
+          <rect x="40" y="182" width="24" height="68" rx="12" fill="#818cf8"/>
+        </svg>
+        <div class="size-label">32</div>
+      </div>
+
+    </div>
+    <div class="label">D4 — Tab Stack</div>
+  </div>
+
+
+</div>
+
+<!-- ── Legend ────────────────────────────────────────────────────── -->
+<div style="margin-top: 56px; border-top: 1px solid #1a1a2e; padding-top: 32px;">
+  <table style="width: 100%; border-collapse: collapse; font-size: 12px; color: #888; max-width: 900px; margin: 0 auto;">
+    <thead>
+      <tr style="border-bottom: 1px solid #222;">
+        <th style="text-align:left; padding: 8px 12px; font-weight:600; color:#aaa; letter-spacing:.06em;">Concept</th>
+        <th style="text-align:left; padding: 8px 12px; font-weight:600; color:#aaa; letter-spacing:.06em;">Palette</th>
+        <th style="text-align:left; padding: 8px 12px; font-weight:600; color:#aaa; letter-spacing:.06em;">Key Idea</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr style="border-bottom:1px solid #161625">
+        <td style="padding:8px 12px; color:#eee; font-weight:500;">C — Void Spark</td>
+        <td style="padding:8px 12px;">Near-black + electric teal</td>
+        <td style="padding:8px 12px;">Input field + lone lightning bolt — minimal, neon, focused</td>
+      </tr>
+      <tr>
+        <td style="padding:8px 12px; color:#eee; font-weight:500;">D — Stacked Action Cards</td>
+        <td style="padding:8px 12px;">Charcoal + electric indigo</td>
+        <td style="padding:8px 12px;">Original — three result rows, top card lit with indigo accent</td>
+      </tr>
+      <tr style="border-bottom:1px solid #161625">
+        <td style="padding:8px 12px; color:#eee; font-weight:500;">D2 — Bright Layers</td>
+        <td style="padding:8px 12px;">Charcoal + indigo, high-contrast cards</td>
+        <td style="padding:8px 12px;">Cards 2 &amp; 3 use opaque lighter fills — clearly visible at all sizes</td>
+      </tr>
+      <tr style="border-bottom:1px solid #161625">
+        <td style="padding:8px 12px; color:#eee; font-weight:500;">D3 — Warm Neon</td>
+        <td style="padding:8px 12px;">Near-black + fuchsia/violet</td>
+        <td style="padding:8px 12px;">Fuchsia–violet top card on warm aubergine layers — vibrant energy</td>
+      </tr>
+      <tr>
+        <td style="padding:8px 12px; color:#eee; font-weight:500;">D4 — Tab Stack</td>
+        <td style="padding:8px 12px;">Charcoal + indigo tabs</td>
+        <td style="padding:8px 12px;">Bold left-edge accent tab on each card — icon-legible at any size</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+</body>
+</html>

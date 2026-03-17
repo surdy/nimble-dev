@@ -1,0 +1,53 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="45%" r="62%">
+      <stop offset="0%" stop-color="#110b1c"/>
+      <stop offset="100%" stop-color="#080610"/>
+    </radialGradient>
+    <linearGradient id="card1-fill" x1="112" y1="368" x2="912" y2="508" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#c026d3"/>
+      <stop offset="100%" stop-color="#7c3aed"/>
+    </linearGradient>
+    <filter id="card1-glow" x="-8%" y="-20%" width="116%" height="160%">
+      <feGaussianBlur stdDeviation="28" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="card-shadow" x="-5%" y="-5%" width="110%" height="140%">
+      <feDropShadow dx="0" dy="10" stdDeviation="18" flood-color="#000000" flood-opacity="0.55"/>
+    </filter>
+  </defs>
+
+  <!-- App background with rounded corners -->
+  <rect width="1024" height="1024" rx="224" fill="url(#bg)"/>
+
+  <!-- Card 3 — back, warm aubergine -->
+  <rect x="192" y="644" width="640" height="92" rx="20" fill="#281630"/>
+  <rect x="232" y="676" width="192" height="14" rx="7" fill="#4a2060" opacity="0.9"/>
+  <rect x="444" y="676" width="120" height="14" rx="7" fill="#3a1850" opacity="0.7"/>
+
+  <!-- Card 2 — middle, violet-plum -->
+  <rect x="144" y="528" width="736" height="104" rx="22" fill="#341848" filter="url(#card-shadow)"/>
+  <circle cx="192" cy="580" r="10" fill="#c026d3" opacity="0.55"/>
+  <rect x="216" y="566" width="224" height="16" rx="8" fill="#5a2878" opacity="0.9"/>
+  <rect x="452" y="566" width="144" height="16" rx="8" fill="#4a2060" opacity="0.7"/>
+  <rect x="752" y="562" width="96" height="32" rx="16" fill="#4a2060" opacity="0.6"/>
+
+  <!-- Card 1 — front, fuchsia glow layer -->
+  <rect x="96" y="368" width="832" height="140" rx="28" fill="#c026d3" opacity="0.15" filter="url(#card1-glow)"/>
+  <!-- Card 1 — front, solid gradient -->
+  <rect x="96" y="368" width="832" height="140" rx="28" fill="url(#card1-fill)" filter="url(#card-shadow)"/>
+  <!-- top-edge highlight -->
+  <rect x="96" y="368" width="832" height="3" rx="1.5" fill="white" opacity="0.25"/>
+
+  <!-- Active indicator dot -->
+  <circle cx="152" cy="438" r="14" fill="white" opacity="0.9"/>
+
+  <!-- Primary text line (selected result title) -->
+  <rect x="184" y="418" width="328" height="20" rx="10" fill="white" opacity="0.95"/>
+  <!-- Secondary text line (subtext / completion) -->
+  <rect x="524" y="418" width="160" height="20" rx="10" fill="white" opacity="0.40"/>
+
+  <!-- Right action pill -->
+  <rect x="780" y="416" width="116" height="44" rx="22" fill="white" opacity="0.15"/>
+  <rect x="800" y="428" width="76" height="16" rx="8" fill="white" opacity="0.55"/>
+</svg>
