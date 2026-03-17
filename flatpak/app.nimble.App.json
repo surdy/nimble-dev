@@ -1,5 +1,5 @@
 {
-  "app-id": "app.nimble.App",
+  "app-id": "io.switchpanel.nimble",
   "runtime": "org.gnome.Platform",
   "runtime-version": "45",
   "sdk": "org.gnome.Sdk",

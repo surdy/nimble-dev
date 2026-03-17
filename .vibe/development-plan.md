@@ -40,6 +40,7 @@ Iterative implementation plan for Context Actions, from bare minimum working she
 | 30 | Script debugging and verbose logs | Add debug mode with `NIMBLE_DEBUG` and structured script diagnostics |
 | 31 ✅ | External script/list paths | `${VAR}` substitution in `script:` / `list:` fields; `allow_external_paths` setting |
 | 32 ✅ | Copilot agents | `@nimble-command` and `@nimble-script` GitHub Copilot agents for command authoring |
+| 33 ✅ | Branding & app identity | D3 Warm Neon icon; `tauri icon` asset generation; bundle identifier `io.switchpanel.nimble` |
 
 ---
 
@@ -1451,5 +1452,31 @@ A what-if analysis (`.vibe/what-ifs/command-authoring-agents/summary.md`) evalua
 - Both agent definition files exist in `.github/agents/`
 - Each agent covers its full domain (command schema / script formats) with examples and constraints
 - User-facing documentation describes how to invoke each agent and what it can do
+
+---
+
+## Stage 33 — Branding & App Identity ✅
+
+**Goal:** Replace placeholder icons with the chosen D3 Warm Neon brand design and establish the final bundle identifier across all platform manifests.
+
+### Tasks
+- Move `nimble-icons.html` icon concepts file to `.vibe/icons/` for reference
+- Create `.vibe/icons/icon.svg` — 1024×1024 master SVG from the D3 Warm Neon concept (fuchsia→violet stacked action cards on deep aubergine background)
+- Run `tauri icon` to generate all platform assets from the master SVG:
+  - macOS: `icon.icns`
+  - Windows: `icon.ico`, `StoreLogo.png`, `Square*.png` (10 sizes for MSIX/Appx)
+  - Linux: `icon.png`, `32x32.png`, `64x64.png`, `128x128.png`, `128x128@2x.png`
+  - iOS: 18 `AppIcon-*.png` variants
+  - Android: `mipmap-*` foreground, round, and launcher PNGs
+- Update `tauri.conf.json`:
+  - Set `identifier` to `io.switchpanel.nimble`
+  - Add `64x64.png` to icon list
+- Update `flatpak/app.nimble.App.json` `app-id` to `io.switchpanel.nimble`
+
+### Done when ✅
+- `.vibe/icons/icon.svg` exists as the single source of truth for the app icon
+- All icons in `src-tauri/icons/` are regenerated from the D3 Warm Neon design
+- Bundle identifier is `io.switchpanel.nimble` in `tauri.conf.json` and `flatpak/*.json`
+- App builds and tests pass with the new identity
 
 
