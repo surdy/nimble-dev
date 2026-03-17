@@ -567,13 +567,22 @@ pub fn run() {
             // Start watching the commands subdirectory for live command reloads
             watcher::start(app.handle().clone(), config_dir.join("commands"), allow_duplicates);
 
-            let icon = app
-                .default_window_icon()
-                .cloned()
-                .expect("no default window icon configured");
+            // Load monochrome tray icon for macOS template rendering.
+            // The @2x variant is embedded at compile time for crisp Retina display.
+            // Falls back to the default app icon if decoding fails.
+            let tray_icon = {
+                let png_bytes = include_bytes!("../icons/tray-icon@2x.png");
+                tauri::image::Image::from_bytes(png_bytes)
+                    .unwrap_or_else(|_| {
+                        app.default_window_icon()
+                            .cloned()
+                            .expect("no default window icon configured")
+                    })
+            };
 
             TrayIconBuilder::new()
-                .icon(icon)
+                .icon(tray_icon)
+                .icon_as_template(true)
                 .menu(&menu)
                 .on_menu_event(|app, event| match event.id.as_ref() {
                     "show_hide" => {
