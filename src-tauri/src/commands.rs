@@ -845,16 +845,16 @@ pub fn load_from_dir(config_dir: &Path, allow_duplicates: bool) -> Result<LoadRe
             .to_string();
 
         match fs::read_to_string(&path) {
-            Err(e) => eprintln!("[ctx] could not read {}: {e}", path.display()),
+            Err(e) => eprintln!("[nimble] could not read {}: {e}", path.display()),
             Ok(yaml) => match serde_yaml::from_str::<Command>(&yaml) {
-                Err(e) => eprintln!("[ctx] could not parse {}: {e}", path.display()),
+                Err(e) => eprintln!("[nimble] could not parse {}: {e}", path.display()),
                 Ok(cmd) if !cmd.enabled => {} // disabled — silently skip
                 Ok(cmd) => {
                     let key = cmd.phrase.to_lowercase();
                     // Reserved namespace: reject any phrase that starts with `/`.
                     // These are reserved for built-in app commands (e.g. `/ctx set`, `/ctx reset`).
                     if key.starts_with('/') {
-                        eprintln!("[ctx] reserved phrase {:?} in {display}, skipping", cmd.phrase);
+                        eprintln!("[nimble] reserved phrase {:?} in {display}, skipping", cmd.phrase);
                         reserved.push(ReservedPhraseWarning {
                             phrase: cmd.phrase,
                             file: display,

@@ -99,7 +99,7 @@ fn restore_previous_app(win_id: String) {
     if std::env::var_os("WAYLAND_DISPLAY").is_some()
         && std::env::var_os("DISPLAY").is_none()
     {
-        eprintln!("[ctx] focus restore skipped: Wayland without XWayland bridge");
+        eprintln!("[nimble] focus restore skipped: Wayland without XWayland bridge");
         return;
     }
     use libxdo_sys::{xdo_focus_window, xdo_free, xdo_new, xdo_raise_window};
@@ -555,7 +555,7 @@ pub fn run() {
             let loaded_settings = settings::load(&config_dir);
             if let Some(ref hotkey) = loaded_settings.hotkey {
                 if let Err(e) = do_register_shortcut(app.handle(), hotkey) {
-                    eprintln!("[ctx] could not register hotkey from settings: {e}");
+                    eprintln!("[nimble] could not register hotkey from settings: {e}");
                 }
             }
             let allow_duplicates = loaded_settings.allow_duplicates;
