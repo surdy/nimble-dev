@@ -1,6 +1,10 @@
-# Nimble
+<p align="center">
+  <img src=".github/banner.svg" alt="Nimble — A fast, command-driven desktop launcher" width="100%" />
+</p>
 
-A fast, cross-platform desktop launcher driven entirely by commands — think Alfred or Raycast, built around multi-word phrase commands with real-time partial matching and extensibility through sandboxed scripts.
+<p align="center">
+  <em>A fast, cross-platform desktop launcher driven entirely by commands — think Alfred or Raycast, built around multi-word phrase commands with real-time partial matching and extensibility through sandboxed scripts.</em>
+</p>
 
 ---
 
