@@ -8,7 +8,7 @@ PackageLocale: en-US
 Publisher: Surdy
 PublisherUrl: https://github.com/surdy
 PackageName: Nimble
-PackageUrl: https://github.com/surdy/contexts-launcher
+PackageUrl: https://github.com/surdy/nimble
 License: MIT
 ShortDescription: A cross-platform command-driven desktop launcher
 Description: |-
