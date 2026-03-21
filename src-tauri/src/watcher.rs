@@ -33,18 +33,18 @@ pub fn start(app: AppHandle, commands_dir: PathBuf, allow_duplicates: bool) {
         ) {
             Ok(w) => w,
             Err(e) => {
-                eprintln!("[ctx] could not create file watcher: {e}");
+                eprintln!("[nimble] could not create file watcher: {e}");
                 return;
             }
         };
 
         if let Err(e) = watcher.watch(&commands_dir, RecursiveMode::Recursive) {
-            eprintln!("[ctx] could not watch commands dir: {e}");
+            eprintln!("[nimble] could not watch commands dir: {e}");
             return;
         }
 
         eprintln!(
-            "[ctx] watching for changes: {}",
+            "[nimble] watching for changes: {}",
             commands_dir.display()
         );
 
@@ -76,11 +76,11 @@ pub fn start(app: AppHandle, commands_dir: PathBuf, allow_duplicates: bool) {
             match commands::load_from_dir(&commands_dir, allow_duplicates) {
                 Ok(result) => {
                     if let Err(e) = app.emit(COMMANDS_RELOADED_EVENT, &result) {
-                        eprintln!("[ctx] could not emit reload event: {e}");
+                        eprintln!("[nimble] could not emit reload event: {e}");
                     }
                 }
                 Err(e) => {
-                    eprintln!("[ctx] reload failed: {e}");
+                    eprintln!("[nimble] reload failed: {e}");
                 }
             }
         }

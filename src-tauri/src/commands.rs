@@ -686,7 +686,7 @@ pub fn run_script(
 
     if !output.stderr.is_empty() {
         eprintln!(
-            "[ctx] script {script_ref:?} stderr: {}",
+            "[nimble] script {script_ref:?} stderr: {}",
             String::from_utf8_lossy(&output.stderr)
         );
     }
@@ -765,7 +765,7 @@ pub fn run_script_values(
 
     if !output.stderr.is_empty() {
         eprintln!(
-            "[ctx] script {script_ref:?} stderr: {}",
+            "[nimble] script {script_ref:?} stderr: {}",
             String::from_utf8_lossy(&output.stderr)
         );
     }
@@ -887,7 +887,7 @@ pub fn load_from_dir(config_dir: &Path, allow_duplicates: bool) -> Result<LoadRe
                     if !allow_duplicates {
                         if let Some(winner) = seen.get(&key) {
                             eprintln!(
-                                "[ctx] duplicate phrase {:?} in {display}, kept {winner}",
+                                "[nimble] duplicate phrase {:?} in {display}, kept {winner}",
                                 cmd.phrase
                             );
                             duplicates.push(DuplicateWarning {

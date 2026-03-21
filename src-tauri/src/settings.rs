@@ -56,14 +56,14 @@ pub fn load(config_dir: &Path) -> AppSettings {
     let content = match std::fs::read_to_string(&path) {
         Ok(c) => c,
         Err(e) => {
-            eprintln!("[ctx] could not read settings.yaml: {e}");
+            eprintln!("[nimble] could not read settings.yaml: {e}");
             return AppSettings::default();
         }
     };
     match serde_yaml::from_str::<AppSettings>(&content) {
         Ok(s) => s,
         Err(e) => {
-            eprintln!("[ctx] could not parse settings.yaml: {e}");
+            eprintln!("[nimble] could not parse settings.yaml: {e}");
             AppSettings::default()
         }
     }
