@@ -1,4 +1,4 @@
-# First Run
+# Getting Started
 
 When you launch Nimble for the first time you will see the onboarding screen. This only happens once — every subsequent launch goes straight to the background.
 
@@ -37,7 +37,7 @@ Press your shortcut at any time to summon the command bar. Press it again — or
 
 ## Changing your shortcut later
 
-Your shortcut is stored in `settings.yaml` inside the [config directory](config-directory.md). To change it, either:
+Your shortcut is stored in `settings.yaml` inside the [config directory](reference/config-directory.md). To change it, either:
 
 1. **Edit the file directly** — open `settings.yaml`, change the `hotkey:` value, then restart Nimble.
 2. **Re-trigger onboarding** — delete the `hotkey:` line from `settings.yaml` (or the entire file), then restart Nimble. The onboarding screen will appear again so you can choose a new combination.
@@ -77,4 +77,4 @@ action:
 
 Save the file. Within 300 ms Nimble reloads automatically. Invoke the launcher and start typing `open github` — the result appears as you type. Press `Enter` or click it to open the URL in your browser.
 
-That one file is all it takes. Every other action type (`paste_text`, `copy_text`, `static_list`, `dynamic_list`, `script_action`) follows the same pattern — just a different `action` block. See [Basic Functionality](basic/README.md) to continue.
+That one file is all it takes. Every other action type (`paste_text`, `copy_text`, `static_list`, `dynamic_list`, `script_action`) follows the same pattern — just a different `action` block. See [Actions](actions/README.md) to continue.

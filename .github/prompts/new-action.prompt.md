@@ -86,17 +86,17 @@ Confirm all tests still pass.
 
 Determine the classification from Step 0:
 
-**Basic action** → create `docs/using/basic/<action-name>.md`
+**Basic action** → create `docs/actions/<action-name>.md`
 - Cover: YAML schema (all fields), a minimal example, parameter behaviour if any, platform notes if any.
-- Add a row to `docs/using/basic/README.md` linking to the new page.
+- Add a row to `docs/actions/README.md` linking to the new page.
 
-**Advanced action** → create `docs/using/advanced/<action-name>.md`
+**Advanced action** → create `docs/actions/<action-name>.md`
 - Cover: YAML schema, when to use this vs simpler alternatives, a minimal example, argument modes if applicable, security considerations.
-- Add a row to `docs/using/advanced/README.md` linking to the new page.
+- Add a row to `docs/actions/README.md` linking to the new page.
 
 Also update:
-- `docs/using/configuring-commands.md` — add the new action type to the full YAML schema reference.
-- `docs/using/README.md` — update the Actions table description if the classification changes the summary line.
+- `docs/guides/configuring-commands.md` — add the new action type to the full YAML schema reference.
+- `docs/actions/README.md` — update the Actions table with the new action.
 - `README.md` — add the new action to the Built-in actions list in the Features section.
 
 ## Step 9 — Roadmap

@@ -92,13 +92,10 @@ Without this, paste commands write to the clipboard but skip the keystroke simul
 
 | Guide | Description |
 |-------|-------------|
-| [First run](docs/using/first-run.md) | Onboarding walkthrough and choosing your global shortcut |
-| [Basic functionality](docs/using/basic/README.md) | Open URL, Paste Text, Copy Text |
-| [Advanced features](docs/using/advanced/README.md) | Static List, Dynamic List, Writing Scripts, Contexts |
-| [Tips & tricks](docs/using/tips-and-tricks.md) | App deep links, web search via param passing, frequently-pasted snippets |
-| [Config directory structure](docs/using/config-directory.md) | Overview of the config directory layout and its subdirectories |
-| [Configuring commands](docs/using/configuring-commands.md) | YAML schema, enable/disable, directory layout, live reload |
-| [Duplicate commands](docs/using/duplicate-commands.md) | How duplicate phrases are detected, resolved, and surfaced |
+| [Getting started](docs/getting-started.md) | Onboarding walkthrough, choosing your shortcut, creating your first command |
+| [Actions](docs/actions/README.md) | All six action types: Open URL, Paste Text, Copy Text, Static List, Dynamic List, Script Action |
+| [Guides](docs/guides/README.md) | Configuring commands, writing scripts, contexts, Copilot agents |
+| [Reference](docs/reference/README.md) | Config directory structure, duplicate commands, tips & tricks |
 
 ---
 
@@ -119,7 +116,7 @@ action:
     url: https://github.com
 ```
 
-Invoke the launcher with your shortcut, start typing `open github`, and the result appears instantly. Press `Enter` to open the URL. That's it — every other action type follows the same pattern. See [Basic Functionality](docs/using/basic/README.md) for next steps.
+Invoke the launcher with your shortcut, start typing `open github`, and the result appears instantly. Press `Enter` to open the URL. That's it — every other action type follows the same pattern. See [Actions](docs/actions/README.md) for next steps.
 
 ---
 

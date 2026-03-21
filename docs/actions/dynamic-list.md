@@ -2,9 +2,9 @@
 
 Runs an external script and displays its output as a list of items the moment the phrase is matched. Like [Static List](static-list.md), no `Enter` is required to expand the list. Scripts can optionally accept a typed argument to filter or parameterise their output in real time.
 
-Scripts are co-located with their command YAML file in the same directory inside `commands/`. They can be any executable — shell scripts, Python programs, compiled binaries, etc. You can also reference external scripts using `${VAR}` substitution in the `script:` field — see [External scripts and lists](writing-scripts.md#external-scripts-and-lists).
+Scripts are co-located with their command YAML file in the same directory inside `commands/`. They can be any executable — shell scripts, Python programs, compiled binaries, etc. You can also reference external scripts using `${VAR}` substitution in the `script:` field — see [External scripts and lists](../guides/writing-scripts.md#external-scripts-and-lists).
 
-All scripts automatically receive [built-in `NIMBLE_*` environment variables](writing-scripts.md#built-in-environment-variables) with context, paths, and platform metadata. You can also define your own variables via [user-defined environment variables](writing-scripts.md#user-defined-environment-variables).
+All scripts automatically receive [built-in `NIMBLE_*` environment variables](../guides/writing-scripts.md#built-in-environment-variables) with context, paths, and platform metadata. You can also define your own variables via [user-defined environment variables](../guides/writing-scripts.md#user-defined-environment-variables).
 
 ---
 
@@ -71,7 +71,7 @@ action:
 | `optional` | Exact match (immediately) **or** phrase + space + suffix | No arg on exact match; suffix when present |
 | `required` | Only when a non-empty suffix follows the phrase | The typed suffix as its first argument |
 
-For `optional` and `required` modes the script is re-invoked as the user types, with a 200 ms debounce to prevent excessive calls. For how to use arguments inside a script, see [Writing Scripts](writing-scripts.md#accepting-an-argument).
+For `optional` and `required` modes the script is re-invoked as the user types, with a 200 ms debounce to prevent excessive calls. For how to use arguments inside a script, see [Writing Scripts](../guides/writing-scripts.md#accepting-an-argument).
 
 ---
 
@@ -99,4 +99,4 @@ When an item is selected, Nimble uses the item's **`subtext`** as the value for 
 | Select an item | Performs `item_action`, or dismisses if absent |
 | Script times out (> 5 s) | Empty list shown; no error surfaced to user |
 
-For how to write scripts and advanced examples see [Writing Scripts](writing-scripts.md).
+For how to write scripts and advanced examples see [Writing Scripts](../guides/writing-scripts.md).

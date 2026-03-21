@@ -18,7 +18,7 @@ Nimble is built around a single principle: **the fastest way to do something is 
 Common workflows — opening a frequently used URL, pasting a template, copying an account number — should take one or two keystrokes from anywhere on the system, not a sequence of window switches and clicks.
 
 ### Reduce context-switching overhead
-Nimble lets you define commands that encapsulate multi-step actions. Instead of clicking through several apps to accomplish something, you type a phrase and it's done. The [Contexts](using/advanced/context.md) feature extends this further: you can set an active context (e.g. a project name, a customer, a ticket) so that all subsequent commands are automatically scoped to it, without you having to retype that context for every action.
+Nimble lets you define commands that encapsulate multi-step actions. Instead of clicking through several apps to accomplish something, you type a phrase and it's done. The [Contexts](guides/contexts.md) feature extends this further: you can set an active context (e.g. a project name, a customer, a ticket) so that all subsequent commands are automatically scoped to it, without you having to retype that context for every action.
 
 ### Reduce distraction
 Every time you navigate to a browser tab, open Slack, or hunt through Finder, you're exposed to notifications, unread counts, and other triggers that can pull you off-task. Nimble keeps you in the keyboard and out of the GUI.

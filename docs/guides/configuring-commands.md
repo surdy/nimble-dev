@@ -2,7 +2,7 @@
 
 Commands are stored as individual YAML files inside the `commands/` subdirectory of the platform-specific config directory. Nimble watches this subdirectory recursively and reloads commands automatically whenever a file is added, changed, or removed — no restart required.
 
-For the overall config directory layout see [Config Directory Structure](config-directory.md).
+For the overall config directory layout see [Config Directory Structure](../reference/config-directory.md).
 
 ---
 
@@ -155,7 +155,7 @@ Events that trigger a reload:
 
 ## Supported URL schemes
 
-`open_url` accepts any URL that follows RFC 3986 — including `http://`, `https://`, `slack://`, `obsidian://`, `mailto:`, `tel:`, and other app deep-link schemes. See [Tips & Tricks](tips-and-tricks.md#app-deep-links) for examples.
+`open_url` accepts any URL that follows RFC 3986 — including `http://`, `https://`, `slack://`, `obsidian://`, `mailto:`, `tel:`, and other app deep-link schemes. See [Tips & Tricks](../reference/tips-and-tricks.md#app-deep-links) for examples.
 
 ---
 

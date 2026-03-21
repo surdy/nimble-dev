@@ -324,3 +324,24 @@ TSV. The decisive factor is that commas appear naturally in list data (names, UR
 ### Risks & pitfalls
 - Users may use spaces instead of tabs — could add a debug-level warning when a line has no tab but contains likely separator patterns
 - Format is locked to two columns — if list items ever need a third field, TSV becomes awkward (would need a format version bump)
+
+---
+
+## Docs restructure: actions/guides/reference over using/basic/advanced
+_Date: 2026-03-21_
+
+### Options evaluated
+**Option A — Keep `using/basic/` + `using/advanced/`**
+- Pros: no migration effort; existing links work
+- Cons: vague `using/` name; basic/advanced split groups docs by perceived difficulty rather than by content type; `advanced/` mixes action types (static-list, dynamic-list, script-action) with workflow guides (writing-scripts, contexts, copilot-agents); new users can't tell what's where without clicking into subdirectories
+
+**Option B — `actions/` + `guides/` + `reference/`**
+- Pros: clear taxonomy — all 6 action types in one flat directory; workflow docs separated from lookup material; eliminates the vague `using/` parent folder; scales cleanly as new docs are added
+- Cons: one-time migration effort; all cross-links must be updated; git history shows renames
+
+### Decision
+Option B. The new structure groups docs by *what they describe* (action types, workflow guides, reference material) rather than by an arbitrary skill-level label. This makes it immediately clear where to find or add any doc. The migration cost is one-time and fully mechanical (git mv preserves history).
+
+### Risks & pitfalls
+- External links (bookmarks, blog posts) pointing at old `docs/using/` paths will break — mitigated by the project being pre-1.0 with minimal external adoption
+- Future doc categories may need additional top-level folders — but the three-folder model covers the foreseeable scope well

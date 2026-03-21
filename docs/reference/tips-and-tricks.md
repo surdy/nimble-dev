@@ -271,4 +271,4 @@ The context supplies the *end* of a phrase; you type the beginning. For example,
 
 For a static list with phrase `team emails`, set context to `emails` and type `team` — effective input is `"team emails"` — the list auto-expands.
 
-For the full reference including the built-in `/ctx set` and `/ctx reset` commands see [Contexts](advanced/context.md).
+For the full reference including the built-in `/ctx set` and `/ctx reset` commands see [Contexts](../guides/contexts.md).

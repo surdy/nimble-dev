@@ -61,5 +61,5 @@ After saving or deleting, the live-reload watcher picks up the change within ~30
 The duplicate warning in the UI currently shows the count. To identify the specific files, check the Nimble log output (visible in the terminal if you launched Nimble from a shell, or in the Tauri dev console). Each ignored duplicate logs a message like:
 
 ```
-[ctx] duplicate phrase "open github": keeping snippets/open-github.yaml, ignoring work/open-github.yaml
+[nimble] duplicate phrase \"open github\": keeping snippets/open-github.yaml, ignoring work/open-github.yaml
 ```

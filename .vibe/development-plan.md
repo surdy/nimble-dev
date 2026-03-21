@@ -43,6 +43,7 @@ Iterative implementation plan for Context Actions, from bare minimum working she
 | 33 ✅ | Branding & app identity | D3 Warm Neon icon; `tauri icon` asset generation; bundle identifier `io.switchpanel.nimble` |
 | 34 ✅ | Agent spec refactor | Canonical `nimble-spec.yaml`; thin agent pointers; rule 12a |
 | 35 ✅ | Static list TSV format | **Breaking change:** list files switched from YAML to TSV for human editability |
+| 36 ✅ | Docs restructure | Replaced `using/basic/` + `using/advanced/` with `actions/`, `guides/`, `reference/` |
 
 ---
 
@@ -1584,3 +1585,76 @@ Bob Jones	bob@example.com
 - Seed files and example config use TSV
 - All docs and spec updated to reflect TSV format
 - 116 Rust tests pass
+
+---
+
+## Stage 36 — Docs Restructure ✅
+
+### Goal
+Replace the `docs/using/` directory (with its `basic/` and `advanced/` skill-level split) with a clearer taxonomy: `docs/actions/`, `docs/guides/`, `docs/reference/`. Make documentation easy to navigate for new users and clearly distinguish action type docs from workflow/feature docs.
+
+### Problem
+- The `using/` folder name was vague — users had to click into it to understand what it contained.
+- The `basic/` vs `advanced/` split grouped docs by perceived difficulty rather than by what they described. `advanced/` mixed action type references (static-list, dynamic-list, script-action) with workflow guides (writing-scripts, contexts, copilot-agents).
+- New users had no clear starting point that covered both onboarding and first command setup.
+
+### Changes
+
+#### New directory structure
+```
+docs/
+├── getting-started.md         ← renamed from using/first-run.md; covers onboarding + first command
+├── actions/                   ← all 6 action types in one flat directory
+│   ├── README.md              ← hub page: table of all 6 actions + execution methods
+│   ├── open-url.md
+│   ├── paste-text.md
+│   ├── copy-text.md
+│   ├── static-list.md
+│   ├── dynamic-list.md
+│   └── script-action.md
+├── guides/                    ← workflow/feature documentation
+│   ├── README.md              ← hub page: table of all guides
+│   ├── configuring-commands.md
+│   ├── writing-scripts.md
+│   ├── contexts.md            ← renamed from context.md
+│   └── copilot-agents.md
+├── reference/                 ← lookup material
+│   ├── README.md              ← hub page: table of all reference docs
+│   ├── config-directory.md
+│   ├── duplicate-commands.md
+│   └── tips-and-tricks.md
+├── development-setup.md       ← unchanged
+├── motivation.md              ← unchanged
+└── roadmap.md                 ← unchanged
+```
+
+#### Files moved (via `git mv` to preserve history)
+- `using/basic/{open-url,paste-text,copy-text}.md` → `actions/`
+- `using/advanced/{static-list,dynamic-list,script-action}.md` → `actions/`
+- `using/{configuring-commands}.md` → `guides/`
+- `using/advanced/{writing-scripts,context→contexts,copilot-agents}.md` → `guides/`
+- `using/{config-directory,tips-and-tricks,duplicate-commands}.md` → `reference/`
+- `using/first-run.md` → `getting-started.md` (at docs root)
+
+#### Files deleted
+- `docs/using/README.md`, `docs/using/basic/README.md`, `docs/using/advanced/README.md` (replaced by new hub pages)
+
+#### Files created
+- `docs/actions/README.md` — hub page listing all 6 action types
+- `docs/guides/README.md` — hub page listing all guides
+- `docs/reference/README.md` — hub page listing all reference docs
+
+#### Cross-links updated
+- All internal doc links updated to reflect new paths
+- Root `README.md` docs table updated
+- `.github/copilot-instructions.md` rules 6–8 updated
+- `.github/prompts/new-action.prompt.md` step 8 updated
+- `docs/motivation.md` context link updated
+- Stale `[ctx]` log prefix in `duplicate-commands.md` example updated to `[nimble]`
+
+### Done when ✅
+- All docs accessible at their new paths with no broken cross-links
+- Root README.md docs table reflects the new structure
+- Copilot instructions and prompt files reference the new paths
+- Old `docs/using/` directory fully removed
+- 116 Rust tests still pass (no code changes)
