@@ -41,6 +41,8 @@ Iterative implementation plan for Context Actions, from bare minimum working she
 | 31 ✅ | External script/list paths | `${VAR}` substitution in `script:` / `list:` fields; `allow_external_paths` setting |
 | 32 ✅ | Copilot agents | `@nimble-command` and `@nimble-script` GitHub Copilot agents for command authoring |
 | 33 ✅ | Branding & app identity | D3 Warm Neon icon; `tauri icon` asset generation; bundle identifier `io.switchpanel.nimble` |
+| 34 ✅ | Agent spec refactor | Canonical `nimble-spec.yaml`; thin agent pointers; rule 12a |
+| 35 ✅ | Static list TSV format | **Breaking change:** list files switched from YAML to TSV for human editability |
 
 ---
 
@@ -1510,3 +1512,75 @@ Introduced a layered discovery pattern:
 - Both agent files bootstrap from the spec instead of embedding schema inline
 - `copilot-instructions.md` includes a rule requiring spec updates on schema changes
 - All 114 Rust tests pass
+
+---
+
+## Stage 35 — Static List TSV Format ✅
+
+**Goal:** Change the static list file format from YAML to TSV (tab-separated values) for easier human editing. This is a breaking change — existing list files must be converted.
+
+### Motivation
+
+YAML list files (`- title: ... subtext: ...`) were verbose for what is essentially a two-column table. TSV eliminates all syntax overhead — one item per line, tab between columns. Additionally, co-located YAML list files caused parse-error noise in logs because the command loader tried to parse them as commands. TSV files use a `.tsv` extension, which the loader naturally skips.
+
+See the what-if analyses in `.vibe/what-ifs/` for the full decision process:
+- `command-filename-convention/` — why log noise is better solved by format separation than filename heuristics
+- `static-list-tsv-format/` — TSV vs YAML with extensibility analysis
+- `static-list-tsv-vs-csv/` — head-to-head TSV vs CSV; TSV wins because commas appear naturally in data
+
+### Changes
+
+#### New TSV list format
+```
+# Team email addresses
+Alice Smith	alice@example.com
+Bob Jones	bob@example.com
+Carol White	carol@example.com
+```
+
+Rules:
+- One item per line; tab separates title from optional subtext
+- Lines starting with `#` are comments; blank lines are ignored
+- No quoting or escaping needed — commas, quotes, and special characters in data just work
+- If a line has no tab, the entire line is the title (subtext is absent)
+
+#### Rust backend
+- `load_list()` — replaced `serde_yaml::from_str` with a new `parse_tsv_list()` function
+- `resolve_list_path()` — appends `.tsv` instead of `.yaml`; `${VAR}` paths auto-append `.tsv`
+- `parse_tsv_list()` — new function: splits lines on tab, skips `#` comments and blank lines
+- Seed file changed from `team-emails.yaml` (YAML) to `team-emails.tsv` (TSV)
+
+#### Tests
+- Existing list tests updated to use TSV content
+- Added: `load_list_skips_comments_and_blank_lines`, `load_list_title_with_comma_works`
+- `resolve_list_path` tests assert `.tsv` extension
+- 116 total tests (2 new), all passing
+
+#### Documentation
+- `docs/using/advanced/static-list.md` — format section rewritten for TSV
+- `docs/using/configuring-commands.md` — schema comment updated (`.tsv` extension)
+- `docs/using/config-directory.md` — example layout updated
+- `example-config/` — `team-emails.yaml` replaced with `team-emails.tsv`
+- `example-config/README.md` — directory tree updated
+- `.github/agents/nimble-spec.yaml` — `list_file_format`, `co_location`, changelog updated
+
+### Migration
+
+Existing YAML list files must be converted to TSV:
+```
+# Before (team-emails.yaml)
+- title: Alice Smith
+  subtext: alice@example.com
+- title: Bob Jones
+  subtext: bob@example.com
+
+# After (team-emails.tsv)
+Alice Smith	alice@example.com
+Bob Jones	bob@example.com
+```
+
+### Done when ✅
+- `load_list()` parses TSV format; `resolve_list_path()` resolves to `.tsv`
+- Seed files and example config use TSV
+- All docs and spec updated to reflect TSV format
+- 116 Rust tests pass

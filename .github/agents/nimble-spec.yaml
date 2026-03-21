@@ -102,13 +102,13 @@ action_types:
           text: hello@example.com
 
   static_list:
-    description: "Display a named YAML list of items inline."
+    description: "Display a named list of items inline from a TSV file."
     config:
       list:
         type: string
         required: true
         description: >
-          List filename without .yaml extension (co-located with command YAML),
+          List filename without .tsv extension (co-located with command YAML),
           or a ${VAR}-substituted path to an external list file.
       item_action:
         type: "enum: paste_text | copy_text | open_url"
@@ -118,15 +118,15 @@ action_types:
           Action performed when a list item is selected. If absent, selecting
           an item dismisses the launcher without further action.
     list_file_format: |
-      # Separate YAML file, array of objects:
-      - title: Alice Smith
-        subtext: alice@example.com
-      - title: Bob Jones
-        subtext: bob@example.com
+      # TSV file: one item per line, tab separates title from optional subtext.
+      # Lines starting with # are comments. Blank lines are ignored.
+      Alice Smith	alice@example.com
+      Bob Jones	bob@example.com
+      Carol White
     list_item_value: >
-      The item's subtext is used as the action value. Falls back to title
-      if subtext is absent.
-    co_location: "Command YAML + list YAML in the same directory."
+      The item's subtext (after the tab) is used as the action value.
+      Falls back to title if no tab/subtext is present.
+    co_location: "Command YAML + list TSV file in the same directory."
     example: |
       action:
         type: static_list
@@ -400,7 +400,7 @@ co_location:
       structure: |
         commands/show-team-emails/
           show-team-emails.yaml   ← command YAML
-          team-emails.yaml        ← list file
+          team-emails.tsv         ← list file (TSV)
     dynamic_list:
       structure: |
         commands/say-hello/
@@ -425,3 +425,7 @@ changelog:
     date: "2025-07-14"
     changes:
       - "Initial spec — all six action types, settings, env vars, contexts."
+  - version: 1
+    date: "2026-03-21"
+    changes:
+      - "Static list file format changed from YAML to TSV (.tsv extension)."

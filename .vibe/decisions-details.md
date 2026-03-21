@@ -299,3 +299,28 @@ Option B. `allow_external_paths: true` by default. External paths only activate 
 ### Risks & pitfalls
 - Path resolution uses `canonicalize()` for containment enforcement, which requires the file to exist; non-existent external paths are rejected by containment check
 - Users may be confused if `allow_external_paths: false` blocks a `${NIMBLE_COMMAND_DIR}/...` path that actually points inside the command dir (edge case with symlinks)
+
+---
+
+## Static list file format: TSV over YAML and CSV
+_Date: 2026-03-21_
+
+### Options evaluated
+**Option A — Keep YAML (status quo)**
+- Pros: consistent format across all config files; structured, extensible
+- Cons: verbose for two-column tabular data; `- title: ... subtext: ...` syntax is friction for non-technical users; co-located YAML list files cause parse-error noise when the command loader tries to parse them as commands
+
+**Option B — CSV**
+- Pros: widely understood; visible separator (commas)
+- Cons: commas appear naturally in list data (names like "Smith, Alice", URLs with query params) — forces quoting rules; escaping (`""`) adds cognitive load; undermines the goal of easy human editing
+
+**Option C — TSV**
+- Pros: no quoting or escaping needed; commas in data just work; direct paste from spreadsheets (Excel/Sheets copy as TSV); different extension (.tsv) eliminates YAML parse-error noise; extremely simple format
+- Cons: tabs are invisible in most editors; accidental spaces instead of tabs cause silent mis-parsing (line becomes title-only)
+
+### Decision
+TSV. The decisive factor is that commas appear naturally in list data (names, URLs), making CSV's quoting rules a constant friction. TSV has zero syntax to learn: "type title, press Tab, type subtext, press Enter." Invisible tabs are a manageable concern — modern editors show tab stops, and the failure mode (entire line becomes title, no subtext) is visible rather than silent corruption.
+
+### Risks & pitfalls
+- Users may use spaces instead of tabs — could add a debug-level warning when a line has no tab but contains likely separator patterns
+- Format is locked to two columns — if list items ever need a third field, TSV becomes awkward (would need a format version bump)

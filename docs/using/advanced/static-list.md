@@ -6,49 +6,46 @@ Displays a named list of items inline in the launcher the moment the typed phras
 
 ## Directory layout
 
-A `static_list` command requires two files — the command YAML and the list YAML — living together in the same subdirectory of `commands/`:
+A `static_list` command requires two files — the command YAML and the list TSV file — living together in the same subdirectory of `commands/`:
 
 ```
 commands/
   show-team-emails/
     show-team-emails.yaml      ← command YAML
-    team-emails.yaml           ← list file (referenced by name)
+    team-emails.tsv            ← list file (referenced by name)
 ```
 
-The command YAML references the list file by name (without the `.yaml` extension), or uses a `${VAR}`-substituted path for external lists (see [External scripts and lists](writing-scripts.md#external-scripts-and-lists)):
+The command YAML references the list file by name (without the `.tsv` extension), or uses a `${VAR}`-substituted path for external lists (see [External scripts and lists](writing-scripts.md#external-scripts-and-lists)):
 
 ```yaml
 action:
   type: static_list
   config:
-    list: team-emails          # resolves to team-emails.yaml in the same directory
+    list: team-emails          # resolves to team-emails.tsv in the same directory
 ```
 
 ---
 
 ## List file format
 
-Each list file is a YAML array of items with a required `title` and an optional `subtext`.
+List files use **TSV (tab-separated values)** format: one item per line, with a tab character separating the title from an optional subtext. Lines starting with `#` are comments. Blank lines are ignored.
 
-**`commands/show-team-emails/team-emails.yaml`:**
-```yaml
+**`commands/show-team-emails/team-emails.tsv`:**
+```
 # Team email addresses
-- title: Alice Smith
-  subtext: alice@example.com
-
-- title: Bob Jones
-  subtext: bob@example.com
-
-- title: Carol White
-  subtext: carol@example.com
+Alice Smith	alice@example.com
+Bob Jones	bob@example.com
+Carol White	carol@example.com
 ```
 
-| Field | Required | Notes |
-|-------|----------|-------|
-| `title` | ✅ | Displayed as the result title; used as the paste value if `subtext` is absent |
-| `subtext` | No | Secondary display line; also the value used when the item is selected |
+| Column | Required | Notes |
+|--------|----------|-------|
+| Title (before tab) | ✅ | Displayed as the result title; used as the paste value if no subtext |
+| Subtext (after tab) | No | Secondary display line; also the value used when the item is selected |
 
-Blank lines between items and `#` comments are valid YAML and are encouraged for readability.
+If a line has no tab character, the entire line is used as the title (subtext is absent).
+
+> **Tip:** You can paste directly from a spreadsheet — Excel and Google Sheets copy cell ranges as TSV by default.
 
 ---
 

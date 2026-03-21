@@ -248,16 +248,8 @@ action:
 "#,
     ),
     (
-        "examples/show-team-emails/team-emails.yaml",
-        r#"- title: Alice Smith
-  subtext: alice@example.com
-
-- title: Bob Jones
-  subtext: bob@example.com
-
-- title: Carol White
-  subtext: carol@example.com
-"#,
+        "examples/show-team-emails/team-emails.tsv",
+        "# Team email addresses\nAlice Smith\talice@example.com\nBob Jones\tbob@example.com\nCarol White\tcarol@example.com\n",
     ),
     (
         "examples/say-hello/say-hello.yaml",
@@ -300,18 +292,49 @@ static SEED_SCRIPTS: &[(&str, &str)] = &[
 
 // ── List loader ────────────────────────────────────────────────────────────────
 
-/// Load a list from the path resolved from the YAML `list:` field.
+/// Load a list from the path resolved from the `list:` field.
 ///
 /// `list_ref` is the raw value from the YAML. It may be a plain name
-/// (resolved to `<command_dir>/<list_ref>.yaml`) or contain `${VAR}` tokens.
+/// (resolved to `<command_dir>/<list_ref>.tsv`) or contain `${VAR}` tokens.
+///
+/// The file uses **TSV format**: one item per line, tab separates `title`
+/// from an optional `subtext`. Lines starting with `#` and blank lines are
+/// ignored.
 ///
 /// Returns `Err` if the path is unsafe, the file is missing, or parsing fails.
 pub fn load_list(command_dir: &Path, list_ref: &str, env: &ScriptEnv<'_>) -> Result<Vec<ListItem>, String> {
     let path = resolve_list_path(list_ref, command_dir, env)?;
-    let yaml = fs::read_to_string(&path)
+    let content = fs::read_to_string(&path)
         .map_err(|e| format!("Could not read list {:?}: {e}", path.display()))?;
-    serde_yaml::from_str::<Vec<ListItem>>(&yaml)
+    parse_tsv_list(&content)
         .map_err(|e| format!("Could not parse list {:?}: {e}", path.display()))
+}
+
+/// Parse a TSV string into a list of items.
+///
+/// Format: one item per line. A tab character separates `title` from an
+/// optional `subtext`. Lines starting with `#` (after trimming) and blank
+/// lines are skipped.
+fn parse_tsv_list(content: &str) -> Result<Vec<ListItem>, String> {
+    let mut items = Vec::new();
+    for line in content.lines() {
+        let trimmed = line.trim();
+        if trimmed.is_empty() || trimmed.starts_with('#') {
+            continue;
+        }
+        let (title, subtext) = if let Some(pos) = line.find('\t') {
+            let t = line[..pos].trim().to_string();
+            let s = line[pos + 1..].trim().to_string();
+            (t, if s.is_empty() { None } else { Some(s) })
+        } else {
+            (trimmed.to_string(), None)
+        };
+        if title.is_empty() {
+            continue;
+        }
+        items.push(ListItem { title, subtext });
+    }
+    Ok(items)
 }
 
 // ── Script environment ─────────────────────────────────────────────────────────
@@ -550,20 +573,20 @@ pub fn resolve_script_path(
 }
 
 /// Resolve a `list:` field value to an absolute path. Performs `${VAR}`
-/// substitution. Plain names (no separators, no `${`) get `.yaml` appended
-/// and resolve relative to `command_dir`. Paths ending in `.yaml`/`.yml` are
-/// used as-is; otherwise `.yaml` is appended.
+/// substitution. Plain names (no separators, no `${`) get `.tsv` appended
+/// and resolve relative to `command_dir`. Paths ending in `.tsv` are
+/// used as-is; otherwise `.tsv` is appended.
 pub fn resolve_list_path(
     raw: &str,
     command_dir: &Path,
     env: &ScriptEnv<'_>,
 ) -> Result<PathBuf, String> {
-    // Fast path: no ${…} tokens — use legacy co-located behaviour.
+    // Fast path: no ${…} tokens — use co-located behaviour.
     if !raw.contains("${") {
         if raw.contains('/') || raw.contains('\\') || raw.contains("..") {
             return Err(format!("Invalid list name: {raw:?}"));
         }
-        return Ok(command_dir.join(format!("{raw}.yaml")));
+        return Ok(command_dir.join(format!("{raw}.tsv")));
     }
 
     let config_str = env.config_dir.to_string_lossy();
@@ -575,11 +598,11 @@ pub fn resolve_list_path(
     resolved = resolved.replace("${NIMBLE_VERSION}", version);
     let resolved = substitute_vars(&resolved, env)?;
 
-    // Auto-append .yaml if the resolved path doesn't already have a yaml extension.
-    let resolved = if resolved.ends_with(".yaml") || resolved.ends_with(".yml") {
+    // Auto-append .tsv if the resolved path doesn't already have the extension.
+    let resolved = if resolved.ends_with(".tsv") {
         resolved
     } else {
-        format!("{resolved}.yaml")
+        format!("{resolved}.tsv")
     };
 
     let path = PathBuf::from(&resolved);
@@ -1055,7 +1078,7 @@ mod tests {
     }
 
     fn write_list(dir: &TempDir, name: &str, content: &str) {
-        let path = dir.path().join(format!("{name}.yaml"));
+        let path = dir.path().join(format!("{name}.tsv"));
         fs::write(path, content).unwrap();
     }
 
@@ -1065,7 +1088,7 @@ mod tests {
         write_list(
             &dir,
             "emails",
-            "- title: Alice\n  subtext: alice@example.com\n- title: Bob\n  subtext: bob@example.com\n",
+            "Alice\talice@example.com\nBob\tbob@example.com\n",
         );
         let env = test_env(&dir);
         let items = load_list(dir.path(), "emails", &env).unwrap();
@@ -1078,11 +1101,32 @@ mod tests {
     #[test]
     fn load_list_item_without_subtext() {
         let dir = TempDir::new().unwrap();
-        write_list(&dir, "names", "- title: Alice\n- title: Bob\n");
+        write_list(&dir, "names", "Alice\nBob\n");
         let env = test_env(&dir);
         let items = load_list(dir.path(), "names", &env).unwrap();
         assert_eq!(items.len(), 2);
         assert!(items[0].subtext.is_none());
+    }
+
+    #[test]
+    fn load_list_skips_comments_and_blank_lines() {
+        let dir = TempDir::new().unwrap();
+        write_list(&dir, "mixed", "# Header comment\nAlice\talice@example.com\n\n# Another comment\nBob\tbob@example.com\n");
+        let env = test_env(&dir);
+        let items = load_list(dir.path(), "mixed", &env).unwrap();
+        assert_eq!(items.len(), 2);
+        assert_eq!(items[0].title, "Alice");
+        assert_eq!(items[1].title, "Bob");
+    }
+
+    #[test]
+    fn load_list_title_with_comma_works() {
+        let dir = TempDir::new().unwrap();
+        write_list(&dir, "commas", "Smith, Alice\talice@example.com\n");
+        let env = test_env(&dir);
+        let items = load_list(dir.path(), "commas", &env).unwrap();
+        assert_eq!(items[0].title, "Smith, Alice");
+        assert_eq!(items[0].subtext.as_deref(), Some("alice@example.com"));
     }
 
     #[test]
@@ -2030,11 +2074,11 @@ mod tests {
     // ── resolve_list_path ───────────────────────────────────────────────────
 
     #[test]
-    fn resolve_list_path_plain_name_appends_yaml() {
+    fn resolve_list_path_plain_name_appends_tsv() {
         let dir = TempDir::new().unwrap();
         let env = test_env(&dir);
         let path = resolve_list_path("emails", dir.path(), &env).unwrap();
-        assert_eq!(path, dir.path().join("emails.yaml"));
+        assert_eq!(path, dir.path().join("emails.tsv"));
     }
 
     #[test]
@@ -2045,7 +2089,7 @@ mod tests {
     }
 
     #[test]
-    fn resolve_list_path_var_substitution_with_yaml_extension() {
+    fn resolve_list_path_var_substitution_with_tsv_extension() {
         let dir = TempDir::new().unwrap();
         let mut user_env = HashMap::new();
         user_env.insert("LISTS".to_string(), "/shared/lists".to_string());
@@ -2057,12 +2101,12 @@ mod tests {
             user_env: &user_env,
             allow_external_paths: true,
         };
-        let path = resolve_list_path("${LISTS}/team.yaml", dir.path(), &env).unwrap();
-        assert_eq!(path, PathBuf::from("/shared/lists/team.yaml"));
+        let path = resolve_list_path("${LISTS}/team.tsv", dir.path(), &env).unwrap();
+        assert_eq!(path, PathBuf::from("/shared/lists/team.tsv"));
     }
 
     #[test]
-    fn resolve_list_path_auto_appends_yaml_after_var() {
+    fn resolve_list_path_auto_appends_tsv_after_var() {
         let dir = TempDir::new().unwrap();
         let mut user_env = HashMap::new();
         user_env.insert("LISTS".to_string(), "/shared".to_string());
@@ -2075,7 +2119,7 @@ mod tests {
             allow_external_paths: true,
         };
         let path = resolve_list_path("${LISTS}/team", dir.path(), &env).unwrap();
-        assert_eq!(path, PathBuf::from("/shared/team.yaml"));
+        assert_eq!(path, PathBuf::from("/shared/team.tsv"));
     }
 
     #[test]

@@ -89,7 +89,7 @@ commands/
     legal-disclaimer.yaml
   show-team-emails/
     show-team-emails.yaml      ← static_list command
-    team-emails.yaml           ← list file, co-located with its command
+    team-emails.tsv            ← list file (TSV), co-located with its command
   say-hello/
     say-hello.yaml             ← dynamic_list command
     hello.sh                   ← script, co-located with its command

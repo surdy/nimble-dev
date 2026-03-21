@@ -29,7 +29,7 @@ example-config/
         ├── shared-greeting.yaml  # dynamic_list using ${NIMBLE_CONFIG_DIR} external script
         ├── show-team-emails/         # static_list — command + list co-located
         │   ├── show-team-emails.yaml
-        │   └── team-emails.yaml
+        │   └── team-emails.tsv
         ├── say-hello/                # dynamic_list — command + script co-located
         │   ├── say-hello.yaml
         │   └── hello.sh

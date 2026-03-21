@@ -63,7 +63,7 @@ action:
     text: <string>       # the text to copy to the clipboard
 
     # --- static_list ---
-    list: <string>       # name of the list file (without .yaml) co-located with the command,
+    list: <string>       # name of the list file (without .tsv) co-located with the command,
                          # or a ${VAR}-substituted path to an external list file
     item_action: paste_text | copy_text | open_url   # optional
 
