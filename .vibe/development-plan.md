@@ -1479,4 +1479,34 @@ A what-if analysis (`.vibe/what-ifs/command-authoring-agents/summary.md`) evalua
 - Bundle identifier is `io.switchpanel.nimble` in `tauri.conf.json` and `flatpak/*.json`
 - App builds and tests pass with the new identity
 
+---
 
+## Stage 34 — Agent Spec Refactor ✅
+
+**Goal:** Extract all schema knowledge embedded inline in the Copilot agent definitions into a single, canonical machine-readable spec file so that agents stay in sync with the codebase as the schema evolves.
+
+### Problem
+Both `nimble-command.agent.md` (~145 lines) and `nimble-script.agent.md` (~200 lines) contained full copies of the command YAML schema, action type details, environment variable tables, script output formats, and platform invocation rules. When the schema changed, every agent file had to be updated manually — a maintenance burden and a source of drift.
+
+### Solution
+Introduced a layered discovery pattern:
+
+1. **`nimble-spec.yaml`** — the single source of truth for the entire Nimble schema: all 6 action types with field definitions, the script interface (output formats, argument passing, timeout, platform invocation), the 6 built-in `NIMBLE_*` env vars, 3-layer user-defined env var precedence, settings schema, contexts, and co-location patterns. Includes a `changelog` section at the bottom so agents can detect drift.
+2. **`nimble-conventions.md`** — shared agent rules covering file placement, reserved phrases, testing requirements, agent boundaries, and the spec update process.
+3. **Thin agent pointers** — both agent `.md` files were refactored to remove all inline schema and replaced with a "Bootstrap" section that instructs the agent to read the spec file first before answering any questions.
+4. **Rule 12a in `copilot-instructions.md`** — enforces that any change to the command YAML schema, action types, settings, script interface, env var API, or context system must also update `nimble-spec.yaml` and add a changelog entry.
+
+### Files created
+- `.github/agents/nimble-spec.yaml` — canonical spec (v1)
+- `.github/agents/nimble-conventions.md` — shared agent conventions
+
+### Files modified
+- `.github/agents/nimble-command.agent.md` — removed ~120 lines of inline schema, added spec bootstrap
+- `.github/agents/nimble-script.agent.md` — removed ~150 lines of inline schema, added spec bootstrap
+- `.github/copilot-instructions.md` — added rule 12a (keep spec in sync)
+
+### Done when ✅
+- `nimble-spec.yaml` exists and covers all 6 action types, script interface, env vars, settings, and contexts
+- Both agent files bootstrap from the spec instead of embedding schema inline
+- `copilot-instructions.md` includes a rule requiring spec updates on schema changes
+- All 114 Rust tests pass
