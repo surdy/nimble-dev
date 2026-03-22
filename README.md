@@ -33,11 +33,6 @@ When you invoke the launcher and start typing, Nimble shows partial matches in r
 - **Static List** — display a named YAML list of items inline as soon as the phrase is typed; selecting an item can paste, copy, or open a URL
 - **Dynamic List** — run an external script and show its output as an inline list; supports `none`, `optional`, and `required` argument modes for real-time filtering
 
-### Script extensions
-- Associate commands with any executable (shell script, Python, Node.js, compiled binary, …)
-- Scripts return plain text or a structured JSON array (`title` + optional `subtext`)
-- All system actions flow through the launcher's built-in layer — scripts cannot directly modify the system
-
 ---
 
 ## Installation
