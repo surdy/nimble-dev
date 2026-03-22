@@ -1,0 +1,66 @@
+name: Sync to public repo
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  sync:
+    if: github.repository == 'surdy/nimble-private'
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout private repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          VER="${TAG#v}"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=$VER" >> "$GITHUB_OUTPUT"
+
+      - name: Clone public repo
+        run: |
+          git clone "https://x-access-token:${{ secrets.PUBLIC_REPO_PAT }}@github.com/surdy/nimble.git" /tmp/public-repo
+
+      - name: Sync files to public repo
+        run: |
+          cd /tmp/public-repo
+
+          # Clear existing files (safe on first run when repo is empty)
+          git rm -rf . 2>/dev/null || true
+
+          # Copy files from private repo, excluding private-only dirs
+          rsync -a --exclude='.git' \
+                   --exclude='.vibe' \
+                   --exclude='bootstrap' \
+                   --exclude='.github/agents' \
+                   --exclude='.github/chatmodes' \
+                   --exclude='.github/prompts' \
+                   --exclude='.github/copilot-instructions.md' \
+                   --exclude='.github/workflows/sync-public.yml' \
+                   "$GITHUB_WORKSPACE/" /tmp/public-repo/
+
+          # Stage all changes
+          git add -A
+
+      - name: Commit, tag, and push
+        run: |
+          cd /tmp/public-repo
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Skip if nothing changed
+          if git diff --cached --quiet; then
+            echo "No changes to sync — skipping."
+            exit 0
+          fi
+
+          git commit -m "Release ${{ steps.version.outputs.version }}"
+          git tag "${{ steps.version.outputs.tag }}"
+          git push origin main --tags

@@ -345,3 +345,29 @@ Option B. The new structure groups docs by *what they describe* (action types, w
 ### Risks & pitfalls
 - External links (bookmarks, blog posts) pointing at old `docs/using/` paths will break — mitigated by the project being pre-1.0 with minimal external adoption
 - Future doc categories may need additional top-level folders — but the three-folder model covers the foreseeable scope well
+
+---
+
+## Private/public repo split with tag-triggered sync
+_Date: 2026-03-22_
+
+### Options evaluated
+**Option A — `git subtree` / `git filter-repo`**
+- Pros: preserves git history in the public repo; standard git tooling
+- Cons: risk of leaking private history (commit messages, file paths); complex to configure exclusions; filter-repo rewrites history making it hard to do incremental updates; subtree merges create noisy history
+
+**Option B — File-copy-and-squash via rsync in CI**
+- Pros: deterministic one-commit-per-release output; zero risk of private history leaking; simple exclusion list via rsync flags; public repo stays clean (one commit = one release); easy to reason about and debug
+- Cons: public repo has no granular commit history (by design — this is desired behaviour for this use case)
+
+**Option C — Separate codebases with manual cherry-picks**
+- Pros: full control over what goes public
+- Cons: unsustainable maintenance burden; drift between repos; human error risk
+
+### Decision
+Option B (file-copy-and-squash). The public repo is a distribution channel, not a development repo. One commit per release is the desired outcome — clean, auditable, and zero risk of leaking private development history or decision logs. The sync workflow uses rsync with explicit exclusions and runs only on `v*` tag pushes in the private repo.
+
+### Risks & pitfalls
+- PAT token rotation: the `PUBLIC_REPO_PAT` secret must be refreshed before expiry (fine-grained tokens have a max lifetime); set a calendar reminder
+- Exclusion list drift: if new private-only directories are added (e.g. internal docs), they must be added to the rsync exclusion list in `sync-public.yml`
+- First-run edge case: the `git rm -rf .` step is guarded with `|| true` to handle the initial push to an empty public repo

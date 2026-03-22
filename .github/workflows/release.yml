@@ -11,6 +11,7 @@ env:
 jobs:
   # ── Build binaries on each platform ───────────────────────────────────────
   build:
+    if: github.repository == 'surdy/nimble'
     strategy:
       fail-fast: false
       matrix:
@@ -117,6 +118,7 @@ jobs:
 
   # ── Publish GitHub Release + update Homebrew tap + submit WinGet PR ────────
   publish:
+    if: github.repository == 'surdy/nimble'
     needs: build
     runs-on: ubuntu-22.04
     permissions:
