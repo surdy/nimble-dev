@@ -182,19 +182,62 @@ jobs:
           git diff --cached --quiet || git commit -m "chore: update nimble to ${VER}"
           git push origin main
 
-      - name: Submit WinGet PR
+      - name: Update WinGet manifest
         run: |
           TAG=${{ github.ref_name }}
           VER=${TAG#v}
           MSI_NAME=$(basename "${{ steps.sha.outputs.msi_path }}")
           MSI_URL="https://github.com/surdy/nimble/releases/download/${TAG}/${MSI_NAME}"
+          MSI_SHA="${{ steps.sha.outputs.msi_sha }}"
 
-          # Install wingetcreate (.NET tool)
-          dotnet tool install --global wingetcreate 2>/dev/null || true
-          export PATH="$PATH:$HOME/.dotnet/tools"
+          eval "$(ssh-agent -s)"
+          echo "${{ secrets.WINGET_DEPLOY_KEY }}" | ssh-add -
+          git clone git@github.com:surdy/winget-pkgs.git /tmp/winget-pkgs
+          cd /tmp/winget-pkgs
 
-          wingetcreate update Surdy.Nimble \
-            --version "${VER}" \
-            --urls "${MSI_URL}" \
-            --submit \
-            --token "${{ secrets.WINGET_PAT }}"
+          MANIFEST_DIR="manifests/s/Surdy/Nimble/${VER}"
+          mkdir -p "${MANIFEST_DIR}"
+
+          cat > "${MANIFEST_DIR}/Surdy.Nimble.yaml" <<EOF
+          PackageIdentifier: Surdy.Nimble
+          PackageVersion: ${VER}
+          DefaultLocale: en-US
+          ManifestType: version
+          ManifestVersion: 1.6.0
+          EOF
+
+          cat > "${MANIFEST_DIR}/Surdy.Nimble.locale.en-US.yaml" <<EOF
+          PackageIdentifier: Surdy.Nimble
+          PackageVersion: ${VER}
+          PackageLocale: en-US
+          Publisher: Surdy
+          PublisherUrl: https://github.com/surdy
+          PackageName: Nimble
+          PackageUrl: https://github.com/surdy/nimble
+          License: MIT
+          ShortDescription: A cross-platform command-driven desktop launcher
+          Tags:
+            - launcher
+            - productivity
+            - keyboard
+          ManifestType: defaultLocale
+          ManifestVersion: 1.6.0
+          EOF
+
+          cat > "${MANIFEST_DIR}/Surdy.Nimble.installer.yaml" <<EOF
+          PackageIdentifier: Surdy.Nimble
+          PackageVersion: ${VER}
+          InstallerType: wix
+          Installers:
+            - Architecture: x64
+              InstallerUrl: ${MSI_URL}
+              InstallerSha256: ${MSI_SHA}
+          ManifestType: installer
+          ManifestVersion: 1.6.0
+          EOF
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .
+          git diff --cached --quiet || git commit -m "chore: update nimble to ${VER}"
+          git push origin main
