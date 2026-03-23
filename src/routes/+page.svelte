@@ -54,6 +54,19 @@
   const MAX_RESULTS = 8;
   const ROW_H = 56; // px per result row
 
+  // Human-readable badge label for each action type
+  function actionBadge(type: string): string {
+    switch (type) {
+      case "open_url":       return "URL";
+      case "paste_text":     return "Paste";
+      case "copy_text":      return "Copy";
+      case "static_list":    return "List";
+      case "dynamic_list":   return "List";
+      case "script_action":  return "Script";
+      default:               return "";
+    }
+  }
+
   // When a context is active and the user is not typing a / command, append
   // the context to raw input so commands are matched against the full phrase.
   // Requires non-empty raw input: an empty input must always produce no results,
@@ -540,11 +553,14 @@
   </div>
 {:else}
   <!-- ── Launcher bar ───────────────────────────────────────────────────── -->
-  <div class="launcher">
+  <!-- svelte-ignore a11y_no_static_element_interactions -->
+  <div class="launcher" data-tauri-drag-region>
     <div class="input-row">
+      <span class="prompt-glyph">»</span>
       <input
         bind:this={inputEl}
         bind:value={input}
+        onmousedown={() => appWindow.startDragging()}
         type="text"
         placeholder={activeContext && showContextChip ? "…" : "Type a command…"}
         autocomplete="off"
@@ -586,10 +602,12 @@
               onmousedown={(e) => { e.preventDefault(); selectedIndex = i; }}
               onclick={() => executeListItem(item)}
             >
-              <span class="result-title">{item.title}</span>
-              {#if item.subtext}
-                <span class="result-subtext">{item.subtext}</span>
-              {/if}
+              <div class="result-content">
+                <span class="result-title">{item.title}</span>
+                {#if item.subtext}
+                  <span class="result-subtext">{item.subtext}</span>
+                {/if}
+              </div>
             </div>
           {/each}
         {:else if allFiltered.length === 0}
@@ -611,16 +629,21 @@
               onmousedown={(e) => { e.preventDefault(); selectedIndex = i; }}
               onclick={() => executeCommand(cmd)}
             >
-              <span class="result-title">{cmd.title}</span>
-              <span class="result-subtext">
-                {#if ctxSetValue}
-                  → set context to "{ctxSetValue}"
-                {:else if isParamMode}
-                  {cmd.phrase}<span class="param-hint"> → {paramText}</span>
-                {:else}
-                  {hl.before}<mark>{hl.match}</mark>{hl.after}
-                {/if}
-              </span>
+              <div class="result-content">
+                <span class="result-title">{cmd.title}</span>
+                <span class="result-subtext">
+                  {#if ctxSetValue}
+                    → set context to "{ctxSetValue}"
+                  {:else if isParamMode}
+                    {cmd.phrase}<span class="param-hint"> → {paramText}</span>
+                  {:else}
+                    {hl.before}<mark>{hl.match}</mark>{hl.after}
+                  {/if}
+                </span>
+              </div>
+              {#if actionBadge(cmd.action.type)}
+                <span class="action-badge">{actionBadge(cmd.action.type)}</span>
+              {/if}
             </div>
           {/each}
         {/if}
@@ -642,9 +665,15 @@
 
   /* ── Launcher bar ────────────────────────────────────────────────────── */
   .launcher {
-    background: rgba(28, 28, 30, 0.95);
+    background: rgba(28, 28, 30, 0.82);
+    -webkit-backdrop-filter: blur(40px) saturate(1.8);
+    backdrop-filter: blur(40px) saturate(1.8);
     border-radius: 12px;
-    box-shadow: 0 24px 64px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.08);
+    box-shadow:
+      0 0 0 1px rgba(255,255,255,.1),
+      0 1px 3px rgba(0,0,0,.2),
+      0 8px 24px rgba(0,0,0,.35),
+      0 24px 64px rgba(0,0,0,.5);
     overflow: hidden;
   }
 
@@ -653,6 +682,16 @@
     display: flex;
     align-items: center;
     padding: 0 16px 0 0;
+    gap: 0;
+  }
+
+  .prompt-glyph {
+    font-size: 20px;
+    color: rgba(245,245,247,.3);
+    flex-shrink: 0;
+    margin-left: 20px;
+    line-height: 1;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   }
 
   input {
@@ -663,7 +702,7 @@
     color: #f5f5f7;
     font-size: 18px;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    padding: 20px 24px;
+    padding: 20px 12px 20px 12px;
     outline: none;
     caret-color: #0a84ff;
   }
@@ -790,16 +829,27 @@
 
   .result-row {
     display: flex;
-    flex-direction: column;
-    gap: 3px;
-    padding: 10px 16px;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px 10px 16px;
     border-radius: 8px;
     cursor: default;
-    transition: background .1s;
+    transition: background .12s, transform .12s;
+    border-left: 3px solid transparent;
+  }
+
+  .result-content {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    flex: 1;
+    min-width: 0;
   }
 
   .result-row.selected {
-    background: rgba(255,255,255,.09);
+    background: rgba(255,255,255,.08);
+    border-left-color: #0a84ff;
+    transform: scale(1.005);
   }
 
   .result-title {
@@ -870,4 +920,25 @@
   }
 
   .warnings-dismiss:hover { color: #ff9f0a; }
+
+  /* ── Action-type badge ────────────────────────────────────────────────── */
+  .action-badge {
+    font-size: 10px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-weight: 500;
+    color: rgba(245,245,247,.35);
+    background: rgba(255,255,255,.06);
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 4px;
+    padding: 2px 6px;
+    flex-shrink: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .result-row.selected .action-badge {
+    color: rgba(245,245,247,.5);
+    background: rgba(255,255,255,.1);
+  }
+
 </style>

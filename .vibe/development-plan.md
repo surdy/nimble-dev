@@ -44,6 +44,7 @@ Iterative implementation plan for Context Actions, from bare minimum working she
 | 34 ✅ | Agent spec refactor | Canonical `nimble-spec.yaml`; thin agent pointers; rule 12a |
 | 35 ✅ | Static list TSV format | **Breaking change:** list files switched from YAML to TSV for human editability |
 | 36 ✅ | Docs restructure | Replaced `using/basic/` + `using/advanced/` with `actions/`, `guides/`, `reference/` |
+| 37 ✅ | UI polish & window dragging | Draggable window; backdrop blur; layered shadows; prompt glyph; accent selection indicator; action-type badges |
 
 ---
 
@@ -1658,3 +1659,47 @@ docs/
 - Copilot instructions and prompt files reference the new paths
 - Old `docs/using/` directory fully removed
 - 116 Rust tests still pass (no code changes)
+
+---
+
+## Stage 37 — UI Polish & Window Dragging ✅
+
+**Goal:** Make the launcher visually refined and allow the user to reposition the window on screen.
+
+### Changes
+
+#### Window dragging
+- Added `data-tauri-drag-region` to the `.launcher` container for non-interactive areas
+- Added `onmousedown={() => appWindow.startDragging()}` on the `<input>` element so clicking and holding on the input initiates a native drag
+- Added `core:window:allow-start-dragging` permission to Tauri capabilities
+
+#### Prompt glyph
+- Replaced bare text input with a `»` (double chevron) glyph on the left of the input row, conveying "command input ready"
+- Evaluated alternatives: magnifying glass, hummingbird, diamond, `>_` prompt — settled on double chevron for its minimal, clean feel
+
+#### Backdrop blur (vibrancy)
+- `.launcher` background opacity reduced from `0.95` to `0.82`
+- Added `-webkit-backdrop-filter: blur(40px) saturate(1.8)` for frosted-glass effect on macOS
+
+#### Layered shadow stack
+- Replaced single heavy shadow with a 3-layer stack: subtle border (`0 0 0 1px`), mid-spread (`0 8px 24px`), deep ambient (`0 24px 64px`)
+
+#### Accent selection indicator
+- Selected result rows show a 3px left border in accent blue (`#0a84ff`) instead of only a white-overlay background
+
+#### Action-type badges
+- Each command result row displays a small uppercase pill on the right: `URL`, `Paste`, `Copy`, `List`, or `Script`
+- Badge styling adjusts slightly when the row is selected
+
+#### Subtle row scale
+- Selected rows receive `transform: scale(1.005)` for a hint of physical lift
+
+#### Footer hint bar (added then removed)
+- Briefly added a `↵ Run  ⇥ Complete  ⎋ Close` footer bar
+- Removed after review: hints were inaccurate in list mode (Return selects a list item, not "Run") and added visual noise without enough value
+
+### Done when ✅
+- Window is draggable by clicking and holding the input area or any non-interactive launcher region
+- Launcher displays prompt glyph, frosted-glass background, layered shadows, accent selection border, action badges, and subtle row scale
+- No footer hint bar is shown
+- 116 Rust tests still pass
