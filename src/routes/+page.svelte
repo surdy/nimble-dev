@@ -3,7 +3,7 @@
   import { invoke } from "@tauri-apps/api/core";
   import { getCurrentWindow, LogicalSize } from "@tauri-apps/api/window";
   import { listen } from "@tauri-apps/api/event";
-  import type { AppSettings, Command, CommandsPayload, DuplicateWarning, ListItem, ReservedPhraseWarning } from "$lib/types";
+  import type { Action, AppSettings, Command, CommandsPayload, DuplicateWarning, ListItem, ReservedPhraseWarning } from "$lib/types";
 
   // ── State ──────────────────────────────────────────────────────────────
   let input = $state("");
@@ -37,12 +37,44 @@
     {
       phrase: "/ctx set",
       title: activeContext ? `Change context (current: "${activeContext}")` : "Set context",
+      env: {}, source_dir: "",
       action: { type: "builtin", config: { action: "ctx_set" } },
     },
     {
       phrase: "/ctx reset",
       title: "Reset context",
+      env: {}, source_dir: "",
       action: { type: "builtin", config: { action: "ctx_reset" } },
+    },
+    {
+      phrase: "/nimble docs agents",
+      title: "How to deploy Copilot agents to your project",
+      env: {}, source_dir: "",
+      action: { type: "builtin", config: { action: "docs_open", url: "https://github.com/surdy/nimble/blob/main/docs/guides/deploying-agents.md" } },
+    },
+    {
+      phrase: "/nimble docs commands",
+      title: "How to configure YAML commands",
+      env: {}, source_dir: "",
+      action: { type: "builtin", config: { action: "docs_open", url: "https://github.com/surdy/nimble/blob/main/docs/guides/configuring-commands.md" } },
+    },
+    {
+      phrase: "/nimble docs scripts",
+      title: "How to write scripts for dynamic lists and script actions",
+      env: {}, source_dir: "",
+      action: { type: "builtin", config: { action: "docs_open", url: "https://github.com/surdy/nimble/blob/main/docs/guides/writing-scripts.md" } },
+    },
+    {
+      phrase: "/nimble docs actions",
+      title: "All six action types — open_url, paste_text, copy_text, static_list, dynamic_list, script_action",
+      env: {}, source_dir: "",
+      action: { type: "builtin", config: { action: "docs_open", url: "https://github.com/surdy/nimble/blob/main/docs/actions/README.md" } },
+    },
+    {
+      phrase: "/nimble docs contexts",
+      title: "Contexts — scoped matching with /ctx set and /ctx reset",
+      env: {}, source_dir: "",
+      action: { type: "builtin", config: { action: "docs_open", url: "https://github.com/surdy/nimble/blob/main/docs/guides/contexts.md" } },
     },
   ]);
 
@@ -55,7 +87,9 @@
   const ROW_H = 56; // px per result row
 
   // Human-readable badge label for each action type
-  function actionBadge(type: string): string {
+  function actionBadge(cmd: { action: Action }): string {
+    const type = cmd.action.type;
+    if (type === "builtin" && cmd.action.config.action === "docs_open") return "Docs";
     switch (type) {
       case "open_url":       return "URL";
       case "paste_text":     return "Paste";
@@ -400,6 +434,10 @@
         activeContext = "";
         input = "";
         // do NOT dismiss
+      } else if (builtinAction === "docs_open" && cmd.action.config.url) {
+        await invoke("open_url", { url: cmd.action.config.url, param: null });
+        input = "";
+        dismissWithFocusRestore();
       }
     }
   }
@@ -641,8 +679,8 @@
                   {/if}
                 </span>
               </div>
-              {#if actionBadge(cmd.action.type)}
-                <span class="action-badge">{actionBadge(cmd.action.type)}</span>
+              {#if actionBadge(cmd)}
+                <span class="action-badge">{actionBadge(cmd)}</span>
               {/if}
             </div>
           {/each}
