@@ -5,6 +5,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.2.1] — 2026-03-25
+
+### Changed
+- **Longest phrase wins → sort, not filter** — overlapping commands now both appear in results, with the longer phrase sorted first as the default Enter target; shorter-phrase commands remain accessible via arrow keys
+
+### Fixed
+- **Scrollbar visibility** — increased scrollbar thumb opacity from 20% to 45% so it is visible against the dark background
+
 ## [0.2.0] — 2026-03-25
 
 ### Added
