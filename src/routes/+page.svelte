@@ -81,6 +81,7 @@
   // List expansion state — populated when input exactly matches a static_list phrase
   let listItems = $state<ListItem[]>([]);
   let activeListCmd = $state<Command | null>(null);
+  let resultsEl: HTMLDivElement | undefined = $state();
 
   // ── Filtering & navigation ─────────────────────────────────────────────
   const MAX_RESULTS = 8;
@@ -122,7 +123,6 @@
             // OR param mode: user has typed the full phrase + space + param text
             return phrase.includes(typed) || typed.startsWith(phrase + " ");
           })
-          .slice(0, MAX_RESULTS)
   );
 
   // Built-in / commands filtered by the current raw input (only when input starts with "/")
@@ -149,6 +149,14 @@
   $effect(() => {
     void allFiltered;
     selectedIndex = 0;
+  });
+
+  // Scroll the selected row into view when navigating with arrow keys
+  $effect(() => {
+    if (resultsEl) {
+      const row = resultsEl.children[selectedIndex] as HTMLElement | undefined;
+      row?.scrollIntoView({ block: "nearest" });
+    }
   });
 
   // Detect exact-phrase match for static_list / dynamic_list commands and load items.
@@ -247,7 +255,7 @@
     const contentHeight = !hasQuery ? 0
       : showingList ? Math.min(listItems.length, MAX_RESULTS) * ROW_H
       : allFiltered.length === 0 ? 44          // "no results" row
-      : allFiltered.length * ROW_H;
+      : Math.min(allFiltered.length, MAX_RESULTS) * ROW_H;
     appWindow.setSize(new LogicalSize(640, 64 + warnExtra + contentHeight));
   });
 
@@ -628,7 +636,7 @@
     {/if}
 
     {#if input.trim() !== ""}
-      <div class="results">
+      <div class="results" bind:this={resultsEl}>
         {#if showingList}
           {#each listItems as item, i}
             <!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -863,6 +871,20 @@
     display: flex;
     flex-direction: column;
     gap: 2px;
+    max-height: calc(8 * 56px);
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,255,255,.2) transparent;
+  }
+
+  .results::-webkit-scrollbar { width: 6px; }
+  .results::-webkit-scrollbar-track { background: transparent; }
+  .results::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,.2);
+    border-radius: 3px;
+  }
+  .results::-webkit-scrollbar-thumb:hover {
+    background: rgba(255,255,255,.35);
   }
 
   .result-row {
