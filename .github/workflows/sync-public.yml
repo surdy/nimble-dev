@@ -38,7 +38,6 @@ jobs:
           rsync -a --exclude='.git' \
                    --exclude='.vibe' \
                    --exclude='bootstrap' \
-                   --exclude='.github/agents' \
                    --exclude='.github/chatmodes' \
                    --exclude='.github/prompts' \
                    --exclude='.github/copilot-instructions.md' \

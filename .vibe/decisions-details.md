@@ -371,3 +371,33 @@ Option B (file-copy-and-squash). The public repo is a distribution channel, not 
 - PAT token rotation: the `PUBLIC_REPO_PAT` secret must be refreshed before expiry (fine-grained tokens have a max lifetime); set a calendar reminder
 - Exclusion list drift: if new private-only directories are added (e.g. internal docs), they must be added to the rsync exclusion list in `sync-public.yml`
 - First-run edge case: the `git rm -rf .` step is guarded with `|| true` to handle the initial push to an empty public repo
+
+---
+
+## Copilot skill over agents for command/script authoring
+_Date: 2026-03-25_
+
+### Options evaluated
+**Option A — Keep two specialist agents + conventions file**
+- Pros: focused scope per agent; tool restrictions via frontmatter; subagent delegation between command and script agents
+- Cons: `nimble-conventions.md` in `.github/agents/` appears as a phantom agent in the picker; `spec_version` must be manually synced across three files; users must know which agent to invoke; end-to-end tasks require two separate prompts or delegation
+
+**Option B — Single orchestrator agent + two specialists**
+- Pros: single entry point for users; orchestrator enforces boundaries and routes work
+- Cons: adds a third agent file; more maintenance; specialists still need conventions separately
+
+**Option C — Prompt files (`.prompt.md` slash commands)**
+- Pros: version-locked to code; no phantom agent; no prompt pollution (on-demand only)
+- Cons: no tool restrictions; no subagent delegation; less discoverable than agents; user must invoke manually
+
+**Option D — Single Copilot skill (`.github/skills/nimble-authoring/SKILL.md`)**
+- Pros: no phantom agent (skills don't appear in agent picker); on-demand loading (no prompt pollution); version-locked to code; auto-invocation based on description matching; handles both command and script authoring in one pass; fewer files to maintain (1 SKILL.md replaces 3 files); simpler deployment for other repos (2 files instead of 4)
+- Cons: no tool restrictions (skill runs with whatever tools the active agent has); no persistent persona across turns; less visible in UI than agent picker entries
+
+### Decision
+Option D (single skill). The phantom agent problem was the trigger — `nimble-conventions.md` appeared as an invocable agent despite being shared reference text. Evaluating alternatives surfaced that a skill provides on-demand, version-locked, auto-invoked authoring help with the fewest files and zero UI pollution. The loss of tool restrictions and subagent delegation is acceptable because the skill's instructions provide sufficient guardrails, and handling both domains in one pass is actually preferred for end-to-end tasks.
+
+### Risks & pitfalls
+- Skill auto-matching depends on the description quality; if it fails to activate, users must know its name
+- No tool restrictions means the skill could theoretically modify Rust or frontend code if instructions are not followed; the SKILL.md constraints section mitigates this
+- Other repos that previously deployed the four agent files need to migrate to the two-file skill layout

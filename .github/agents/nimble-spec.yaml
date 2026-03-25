@@ -2,7 +2,7 @@
 # ═══════════════════════════════════════════════════════════════════════
 # This is the single source of truth for Nimble's command schema,
 # script interface, settings, and environment variable API.
-# All Copilot agents and documentation should derive schema knowledge
+# All Copilot skills and documentation should derive schema knowledge
 # from this file.
 #
 # Last updated: 2026-03-25

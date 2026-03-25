@@ -1,60 +1,54 @@
-# Deploying Copilot Agents
+# Deploying the Nimble Authoring Skill
 
-Nimble ships two [GitHub Copilot agents](copilot-agents.md) — `@nimble-command` and `@nimble-script` — that help you create commands and write scripts from natural language. The agent definitions live in the Nimble repository under `.github/agents/`.
+Nimble ships a [Copilot skill](copilot-agents.md) — **nimble-authoring** — that helps you create commands and write scripts from natural language. The skill definition lives in the Nimble repository under `.github/skills/nimble-authoring/`.
 
-To use them in **your own project**, copy the agent files into your workspace.
+To use it in **your own project**, copy the skill files into your workspace.
 
 ---
 
 ## Quick setup
 
-1. **Clone or download** the four agent files from the [Nimble repository](https://github.com/surdy/nimble/tree/main/.github/agents):
+1. **Clone or download** the two files from the [Nimble repository](https://github.com/surdy/nimble/tree/main/.github/):
 
    ```
-   .github/agents/
-   ├── nimble-spec.yaml           ← canonical schema (single source of truth)
-   ├── nimble-command.agent.md    ← YAML command author agent
-   ├── nimble-script.agent.md     ← script writer agent
-   └── nimble-conventions.md      ← shared rules and boundaries
+   .github/
+   ├── agents/
+   │   └── nimble-spec.yaml                  ← canonical schema (source of truth)
+   └── skills/
+       └── nimble-authoring/
+           └── SKILL.md                      ← skill definition
    ```
 
-2. **Place them** in your project's `.github/agents/` directory:
+2. **Place them** in your project:
 
    ```bash
-   mkdir -p .github/agents
-   curl -sL https://raw.githubusercontent.com/surdy/nimble/main/.github/agents/nimble-spec.yaml      -o .github/agents/nimble-spec.yaml
-   curl -sL https://raw.githubusercontent.com/surdy/nimble/main/.github/agents/nimble-command.agent.md -o .github/agents/nimble-command.agent.md
-   curl -sL https://raw.githubusercontent.com/surdy/nimble/main/.github/agents/nimble-script.agent.md  -o .github/agents/nimble-script.agent.md
-   curl -sL https://raw.githubusercontent.com/surdy/nimble/main/.github/agents/nimble-conventions.md   -o .github/agents/nimble-conventions.md
+   mkdir -p .github/agents .github/skills/nimble-authoring
+   curl -sL https://raw.githubusercontent.com/surdy/nimble/main/.github/agents/nimble-spec.yaml                -o .github/agents/nimble-spec.yaml
+   curl -sL https://raw.githubusercontent.com/surdy/nimble/main/.github/skills/nimble-authoring/SKILL.md       -o .github/skills/nimble-authoring/SKILL.md
    ```
 
-3. **Open the project** in VS Code (or any editor with Copilot agent support).
+3. **Open the project** in VS Code (or any editor with Copilot skill support).
 
-4. **Use the agents** — in Copilot Chat, type `@nimble-command` or `@nimble-script` followed by your request.
+4. **Use the skill** — in Copilot Chat, describe what you want to build. The skill activates automatically when your request matches Nimble command or script authoring.
 
 ---
 
 ## What you get
 
-| Agent | What it does |
-|-------|-------------|
-| `@nimble-command` | Creates, edits, and debugs YAML command files for all six action types |
-| `@nimble-script` | Writes, debugs, and improves shell/Python/Node.js/PowerShell scripts |
+The skill handles both command YAML authoring and script writing in a single workflow. It reads `nimble-spec.yaml` as its source of truth — it never relies on memorised schema. When the spec evolves, pull the latest files to stay in sync.
 
-Both agents read `nimble-spec.yaml` as their source of truth — they never rely on memorised schema. When the spec evolves, pull the latest files to stay in sync.
+## Keeping the skill up to date
 
-## Keeping agents up to date
+Compare `spec_version` in your local `nimble-spec.yaml` with the latest in the Nimble repository. When a new spec version is released, re-download both files.
 
-Each agent file contains a `spec_version` field in its frontmatter. Compare it with `spec_version` in `nimble-spec.yaml` to check for drift. When a new spec version is released, re-download the files to get the latest schema knowledge.
+## Where the skill works
 
-## Where agents work
-
-- **VS Code** — Copilot Chat panel (`@nimble-command ...`)
-- **GitHub.com** — Copilot Chat on any repository containing the agent files
-- **Copilot CLI** — agents are available as custom agents when working in a directory with `.github/agents/`
+- **VS Code** — Copilot Chat panel (skill auto-activates)
+- **GitHub.com** — Copilot Chat on any repository containing the skill files
+- **Copilot CLI** — available when working in a directory with `.github/skills/nimble-authoring/`
 
 ## See also
 
-- [Copilot Agents overview](copilot-agents.md) — what the agents can do and example prompts
+- [Copilot Skill overview](copilot-agents.md) — what the skill can do and example prompts
 - [Configuring Commands](configuring-commands.md) — the YAML schema reference
 - [Writing Scripts](writing-scripts.md) — script output formats, env vars, and debugging
