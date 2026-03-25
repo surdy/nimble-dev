@@ -895,17 +895,17 @@
     max-height: calc(8 * 56px);
     overflow-y: auto;
     scrollbar-width: thin;
-    scrollbar-color: rgba(255,255,255,.2) transparent;
+    scrollbar-color: rgba(255,255,255,.45) transparent;
   }
 
   .results::-webkit-scrollbar { width: 6px; }
   .results::-webkit-scrollbar-track { background: transparent; }
   .results::-webkit-scrollbar-thumb {
-    background: rgba(255,255,255,.2);
+    background: rgba(255,255,255,.45);
     border-radius: 3px;
   }
   .results::-webkit-scrollbar-thumb:hover {
-    background: rgba(255,255,255,.35);
+    background: rgba(255,255,255,.65);
   }
 
   .result-row {
