@@ -45,6 +45,7 @@ Iterative implementation plan for Context Actions, from bare minimum working she
 | 35 ✅ | Static list TSV format | **Breaking change:** list files switched from YAML to TSV for human editability |
 | 36 ✅ | Docs restructure | Replaced `using/basic/` + `using/advanced/` with `actions/`, `guides/`, `reference/` |
 | 37 ✅ | UI polish & window dragging | Draggable window; backdrop blur; layered shadows; prompt glyph; accent selection indicator; action-type badges |
+| 38 ✅ | Spec & agent versioning | Independent integer `spec_version` for spec and agents; broadened bump rules; published to public repo |
 
 ---
 
@@ -1706,21 +1707,21 @@ docs/
 
 ---
 
-## Stage 38 — Spec & Agent Versioning
+## Stage 38 — Spec & Agent Versioning ✅
 
 **Goal:** Introduce independent versioning for `nimble-spec.yaml` and agent files so the schema/API contract is explicitly tracked separately from the app version.
 
-### Tasks
+### Changes
 
-- [ ] Fix existing changelog: the TSV format change entry should be `version: 2`, not a duplicate `version: 1`
-- [ ] Add `spec_version` field to `nimble-command.agent.md` and `nimble-script.agent.md` frontmatter
-- [ ] Broaden bump rules in `copilot-instructions.md` rule 12a: bump on any additive schema change (new action types, env vars, config fields), not just removals/type changes
-- [ ] Update `nimble-conventions.md` to reflect the broadened bump rules
-- [ ] Add a sync-check note: when spec version bumps, all `.agent.md` files must be reviewed and their `spec_version` updated
-- [ ] Verify all agents reference the current spec version after changes
+- Fixed changelog: TSV format change entry bumped to `version: 2` (was duplicate `version: 1`)
+- Added `spec_version: 2` to `nimble-command.agent.md` and `nimble-script.agent.md` frontmatter
+- Broadened bump rules in `copilot-instructions.md` rule 12a: now covers additive changes (new action types, env vars, config fields), not just removals/type changes
+- Updated `nimble-conventions.md` with expanded bump criteria and agent sync requirement
+- Published spec and agents to public repo (`surdy/nimble`)
 
 ### Done when ✅
 - `nimble-spec.yaml` changelog has unique version numbers per entry
 - Both agent files declare `spec_version` in frontmatter matching the current spec
 - Bump rules cover additive changes, not just breaking ones
 - Conventions doc and copilot instructions are updated
+- Spec and agents published to public repo
