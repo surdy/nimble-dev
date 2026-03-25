@@ -1703,3 +1703,24 @@ docs/
 - Launcher displays prompt glyph, frosted-glass background, layered shadows, accent selection border, action badges, and subtle row scale
 - No footer hint bar is shown
 - 116 Rust tests still pass
+
+---
+
+## Stage 38 — Spec & Agent Versioning
+
+**Goal:** Introduce independent versioning for `nimble-spec.yaml` and agent files so the schema/API contract is explicitly tracked separately from the app version.
+
+### Tasks
+
+- [ ] Fix existing changelog: the TSV format change entry should be `version: 2`, not a duplicate `version: 1`
+- [ ] Add `spec_version` field to `nimble-command.agent.md` and `nimble-script.agent.md` frontmatter
+- [ ] Broaden bump rules in `copilot-instructions.md` rule 12a: bump on any additive schema change (new action types, env vars, config fields), not just removals/type changes
+- [ ] Update `nimble-conventions.md` to reflect the broadened bump rules
+- [ ] Add a sync-check note: when spec version bumps, all `.agent.md` files must be reviewed and their `spec_version` updated
+- [ ] Verify all agents reference the current spec version after changes
+
+### Done when ✅
+- `nimble-spec.yaml` changelog has unique version numbers per entry
+- Both agent files declare `spec_version` in frontmatter matching the current spec
+- Bump rules cover additive changes, not just breaking ones
+- Conventions doc and copilot instructions are updated

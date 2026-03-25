@@ -33,7 +33,7 @@ single source of truth and is updated as the app evolves.
 
 | Agent | Owns | Does NOT touch |
 |-------|------|----------------|
-| `@nimble-command` | Command YAML, list YAML, env.yaml | Scripts, Rust code, frontend code |
+| `@nimble-command` | Command YAML, list TSV, env.yaml | Scripts, Rust code, frontend code |
 | `@nimble-script` | Script files (sh, py, js, ps1) | Command YAML, env.yaml, settings.yaml, Rust/frontend code |
 
 When a task spans both domains, `@nimble-command` delegates script work to

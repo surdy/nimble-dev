@@ -5,16 +5,16 @@
 # All Copilot agents and documentation should derive schema knowledge
 # from this file.
 #
-# Last updated: 2025-07-14
-# Spec version: 1
+# Last updated: 2026-03-25
+# Spec version: 2
 
-spec_version: 1
+spec_version: 2
 
 # ── Config directory locations ──────────────────────────────────────────
 config_dirs:
-  macos: "~/Library/Application Support/Nimble/"
-  linux: "$XDG_CONFIG_HOME/Nimble/ (fallback: ~/.config/Nimble/)"
-  windows: "%APPDATA%\\Nimble\\"
+  macos: "~/Library/Application Support/io.switchpanel.nimble/"
+  linux: "$XDG_CONFIG_HOME/io.switchpanel.nimble/ (fallback: ~/.config/io.switchpanel.nimble/)"
+  windows: "%APPDATA%\\io.switchpanel.nimble\\"
 
 config_structure:
   settings.yaml: "Application settings (hotkey, show_context_chip, etc.)"
@@ -217,7 +217,7 @@ action_selection_guide:
     key_config: "text:"
   - intent: "Show a pickable list of static items"
     action: static_list
-    key_config: "list: + separate list YAML file"
+    key_config: "list: + separate list TSV file"
   - intent: "Run a script and show results as a list"
     action: dynamic_list
     key_config: "script: + arg: mode"
@@ -297,10 +297,10 @@ environment_variables:
         example: "search contacts"
       NIMBLE_CONFIG_DIR:
         description: "Absolute path to the Nimble config root directory."
-        example: "/Users/you/Library/Application Support/Nimble"
+        example: "/Users/you/Library/Application Support/io.switchpanel.nimble"
       NIMBLE_COMMAND_DIR:
         description: "Absolute path to the directory containing the command YAML."
-        example: "/Users/you/Library/Application Support/Nimble/commands/search-contacts"
+        example: "/Users/you/Library/Application Support/io.switchpanel.nimble/commands/search-contacts"
       NIMBLE_OS:
         description: "Operating system identifier."
         values: ["macos", "linux", "windows"]
@@ -315,7 +315,7 @@ environment_variables:
     precedence_layers:
       - layer: 1
         name: Global
-        location: "Nimble/env.yaml (config root)"
+        location: "io.switchpanel.nimble/env.yaml (config root)"
         scope: "All commands"
       - layer: 2
         name: Sidecar
@@ -425,7 +425,10 @@ changelog:
     date: "2025-07-14"
     changes:
       - "Initial spec — all six action types, settings, env vars, contexts."
-  - version: 1
-    date: "2026-03-21"
+  - version: 2
+    date: "2026-03-25"
     changes:
       - "Static list file format changed from YAML to TSV (.tsv extension)."
+      - "Config directory paths updated to use bundle identifier (io.switchpanel.nimble)."
+      - "Fixed action_selection_guide static_list entry to reference TSV not YAML."
+      - "NIMBLE_CONFIG_DIR and NIMBLE_COMMAND_DIR examples updated to match actual paths."
