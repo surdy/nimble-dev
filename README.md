@@ -102,7 +102,7 @@ Without this, paste commands write to the clipboard but skip the keystroke simul
 |-------|-------------|
 | [Getting started](docs/getting-started.md) | Onboarding walkthrough, choosing your shortcut, creating your first command |
 | [Actions](docs/actions/README.md) | All six action types: Open URL, Paste Text, Copy Text, Static List, Dynamic List, Script Action |
-| [Guides](docs/guides/README.md) | Configuring commands, writing scripts, contexts, Copilot agents |
+| [Guides](docs/guides/README.md) | Configuring commands, writing scripts, contexts, Copilot skill |
 | [Reference](docs/reference/README.md) | Config directory structure, duplicate commands, tips & tricks |
 
 ---

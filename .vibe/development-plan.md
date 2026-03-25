@@ -47,6 +47,7 @@ Iterative implementation plan for Context Actions, from bare minimum working she
 | 37 ✅ | UI polish & window dragging | Draggable window; backdrop blur; layered shadows; prompt glyph; accent selection indicator; action-type badges |
 | 38 ✅ | Spec & agent versioning | Independent integer `spec_version` for spec and agents; broadened bump rules; published to public repo |
 | 39 ✅ | `/nimble docs` built-in command | Five doc topics open in browser; deploying-agents guide; `docs_open` builtin action type |
+| 40 ✅ | Agents-to-skill pivot | Replaced two Copilot agents + conventions file with single `nimble-authoring` skill; co-located spec; renamed docs |
 
 ---
 
@@ -1751,3 +1752,31 @@ docs/
 - `svelte-check` passes with zero errors
 - 116 Rust tests pass
 - Deploying-agents guide published to public repo
+
+---
+
+## Stage 40 — Agents-to-Skill Pivot ✅
+
+**Goal:** Replace the two specialist Copilot agents (`@nimble-command`, `@nimble-script`) and the shared `nimble-conventions.md` with a single `nimble-authoring` skill, eliminating phantom agent entries in the picker, spec-version sync overhead, and the need for users to choose between agents.
+
+### Changes
+
+- Created `.github/skills/nimble-authoring/SKILL.md` — unified skill covering command YAML authoring, script writing, and conventions
+- Deleted `nimble-command.agent.md`, `nimble-script.agent.md`, `nimble-conventions.md` from `.github/agents/`
+- Moved `nimble-spec.yaml` from `.github/agents/` to `.github/skills/nimble-authoring/` for co-location
+- Removed now-empty `.github/agents/` directory
+- Renamed `docs/guides/copilot-agents.md` → `docs/guides/copilot-skill.md`
+- Renamed `docs/guides/deploying-agents.md` → `docs/guides/deploying-skill.md`
+- Updated all cross-references: SKILL.md, copilot-instructions.md, README.md, guides README, deploying-skill.md, roadmap.md, `+page.svelte`
+- Updated `/docs` built-in command: phrase changed from `/docs agents` to `/docs skill`
+- Updated `sync-public.yml` to no longer exclude `.github/agents/` (directory removed)
+- Logged decision in `.vibe/decisions.md` and `.vibe/decisions-details.md`
+
+### Done when ✅
+- No agent files remain in `.github/agents/` (directory removed)
+- `nimble-spec.yaml` co-located with `SKILL.md` in `.github/skills/nimble-authoring/`
+- `nimble-conventions` no longer appears in the agent picker
+- Docs pages renamed and all internal links resolve correctly
+- `/docs skill` built-in command opens the deploying-skill guide
+- 116 Rust tests pass
+- Decision logged

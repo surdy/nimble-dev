@@ -1,6 +1,6 @@
 # Deploying the Nimble Authoring Skill
 
-Nimble ships a [Copilot skill](copilot-agents.md) — **nimble-authoring** — that helps you create commands and write scripts from natural language. The skill definition lives in the Nimble repository under `.github/skills/nimble-authoring/`.
+Nimble ships a [Copilot skill](copilot-skill.md) — **nimble-authoring** — that helps you create commands and write scripts from natural language. The skill definition lives in the Nimble repository under `.github/skills/nimble-authoring/`.
 
 To use it in **your own project**, copy the skill files into your workspace.
 
@@ -12,19 +12,18 @@ To use it in **your own project**, copy the skill files into your workspace.
 
    ```
    .github/
-   ├── agents/
-   │   └── nimble-spec.yaml                  ← canonical schema (source of truth)
    └── skills/
        └── nimble-authoring/
+           ├── nimble-spec.yaml              ← canonical schema (source of truth)
            └── SKILL.md                      ← skill definition
    ```
 
 2. **Place them** in your project:
 
    ```bash
-   mkdir -p .github/agents .github/skills/nimble-authoring
-   curl -sL https://raw.githubusercontent.com/surdy/nimble/main/.github/agents/nimble-spec.yaml                -o .github/agents/nimble-spec.yaml
-   curl -sL https://raw.githubusercontent.com/surdy/nimble/main/.github/skills/nimble-authoring/SKILL.md       -o .github/skills/nimble-authoring/SKILL.md
+   mkdir -p .github/skills/nimble-authoring
+   curl -sL https://raw.githubusercontent.com/surdy/nimble/main/.github/skills/nimble-authoring/nimble-spec.yaml  -o .github/skills/nimble-authoring/nimble-spec.yaml
+   curl -sL https://raw.githubusercontent.com/surdy/nimble/main/.github/skills/nimble-authoring/SKILL.md          -o .github/skills/nimble-authoring/SKILL.md
    ```
 
 3. **Open the project** in VS Code (or any editor with Copilot skill support).
@@ -49,6 +48,6 @@ Compare `spec_version` in your local `nimble-spec.yaml` with the latest in the N
 
 ## See also
 
-- [Copilot Skill overview](copilot-agents.md) — what the skill can do and example prompts
+- [Copilot Skill overview](copilot-skill.md) — what the skill can do and example prompts
 - [Configuring Commands](configuring-commands.md) — the YAML schema reference
 - [Writing Scripts](writing-scripts.md) — script output formats, env vars, and debugging

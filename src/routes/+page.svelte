@@ -47,10 +47,10 @@
       action: { type: "builtin", config: { action: "ctx_reset" } },
     },
     {
-      phrase: "/docs agents",
-      title: "How to deploy Copilot agents to your project",
+      phrase: "/docs skill",
+      title: "How to deploy the Copilot skill to your project",
       env: {}, source_dir: "",
-      action: { type: "builtin", config: { action: "docs_open", url: "https://github.com/surdy/nimble/blob/main/docs/guides/deploying-agents.md" } },
+      action: { type: "builtin", config: { action: "docs_open", url: "https://github.com/surdy/nimble/blob/main/docs/guides/deploying-skill.md" } },
     },
     {
       phrase: "/docs commands",

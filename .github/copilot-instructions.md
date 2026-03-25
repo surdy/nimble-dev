@@ -65,11 +65,10 @@ All system actions the launcher can perform:
 - `src/` — SvelteKit frontend source
 - `src-tauri/` — Rust/Tauri backend source
 - `.vibe/` — decision logs (see rule 12 below)
-- `.github/agents/` — the canonical `nimble-spec.yaml`
-- `.github/skills/nimble-authoring/` — Copilot skill for command and script authoring
+- `.github/skills/nimble-authoring/` — Copilot skill for command and script authoring (`SKILL.md` + `nimble-spec.yaml`)
 
 ## Spec Rules
-12a. **Keep `.github/agents/nimble-spec.yaml` in sync with the codebase.** Whenever a change is made to the command YAML schema, action types, settings schema, script interface, environment variable API, or context system, update the spec file to reflect the change. Add a changelog entry at the bottom with the date and a one-line description. Bump `spec_version` when: a field is removed/renamed, a type or semantics change, a new action type is added, a new env var is added, a new config field is added, or the script interface changes.
+12a. **Keep `.github/skills/nimble-authoring/nimble-spec.yaml` in sync with the codebase.** Whenever a change is made to the command YAML schema, action types, settings schema, script interface, environment variable API, or context system, update the spec file to reflect the change. Add a changelog entry at the bottom with the date and a one-line description. Bump `spec_version` when: a field is removed/renamed, a type or semantics change, a new action type is added, a new env var is added, a new config field is added, or the script interface changes.
 
 ## Decision Logging Rules
 12. **Log every meaningful trade-off or technology decision to `.vibe/decisions-details.md` and `.vibe/decisions.md`.** This applies to any choice where two or more reasonable approaches were considered — library selection, architectural patterns, API design, UI/UX trade-offs, security model choices, performance strategies, etc. **Also log any reversal**: when the user questions a previous decision and we switch to a different approach, record it as a dedicated entry (or amend the original entry) explaining what triggered the reversal and why the new route was chosen.
