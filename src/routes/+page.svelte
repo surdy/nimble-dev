@@ -123,18 +123,15 @@
             // OR param mode: user has typed the full phrase + space + param text
             return phrase.includes(typed) || typed.startsWith(phrase + " ");
           });
-          // Longest-phrase-wins: when two commands both match in param mode and
-          // one phrase is a prefix of the other, keep only the longer phrase.
-          return matches.filter(cmd => {
-            const phrase = cmd.phrase.toLowerCase();
-            const inParamMode = typed.startsWith(phrase + " ");
-            if (!inParamMode) return true; // discovery match — always keep
-            return !matches.some(other => {
-              const op = other.phrase.toLowerCase();
-              return op.length > phrase.length
-                && typed.startsWith(op + " ")
-                && op.startsWith(phrase + " ");
-            });
+          // Longest-phrase-wins: when multiple commands match in param mode,
+          // sort the longer phrase first so it is the default Enter target.
+          return matches.slice().sort((a, b) => {
+            const ap = a.phrase.toLowerCase();
+            const bp = b.phrase.toLowerCase();
+            const aParam = typed.startsWith(ap + " ");
+            const bParam = typed.startsWith(bp + " ");
+            if (aParam && bParam) return bp.length - ap.length;
+            return 0;
           });
         })()
   );
@@ -148,16 +145,13 @@
             const phrase = cmd.phrase.toLowerCase();
             return phrase.includes(typed) || typed.startsWith(phrase + " ");
           });
-          return matches.filter(cmd => {
-            const phrase = cmd.phrase.toLowerCase();
-            const inParamMode = typed.startsWith(phrase + " ");
-            if (!inParamMode) return true;
-            return !matches.some(other => {
-              const op = other.phrase.toLowerCase();
-              return op.length > phrase.length
-                && typed.startsWith(op + " ")
-                && op.startsWith(phrase + " ");
-            });
+          return matches.slice().sort((a, b) => {
+            const ap = a.phrase.toLowerCase();
+            const bp = b.phrase.toLowerCase();
+            const aParam = typed.startsWith(ap + " ");
+            const bParam = typed.startsWith(bp + " ");
+            if (aParam && bParam) return bp.length - ap.length;
+            return 0;
           });
         })()
       : []

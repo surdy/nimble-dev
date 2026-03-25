@@ -57,9 +57,9 @@ command_schema:
     - "Phrases starting with / are reserved — the loader rejects them."
     - >-
       Longest phrase wins: when two commands match in param mode and one
-      phrase is a prefix of the other (e.g. 'open' vs 'open google'), only
-      the longer phrase is shown. Shorter-phrase commands are hidden to
-      avoid ambiguous argument splitting.
+      phrase is a prefix of the other (e.g. 'ae' vs 'ae email'), the
+      longer phrase is sorted first so it becomes the default Enter
+      target. Both commands remain visible in the results list.
 
 # ── Action types ────────────────────────────────────────────────────────
 action_types:

@@ -167,7 +167,7 @@ Phrases that start with `/` are reserved for built-in app commands (e.g. `/ctx s
 
 ## Longest phrase wins
 
-When two commands have phrases where one is a prefix of the other (e.g. `open` and `open google`), a conflict can occur once the user has typed enough to match both in "param mode" — meaning the full phrase plus additional text. In this case, the **longest matching phrase always wins** and the shorter-phrase command is hidden from results.
+When two commands have phrases where one is a prefix of the other (e.g. `open` and `open google`), a conflict can occur once the user has typed enough to match both in "param mode" — meaning the full phrase plus additional text. In this case, the **longest matching phrase is sorted first** so it becomes the default action when you press Enter. Both commands remain visible — you can still arrow-down to the shorter-phrase command if that's what you intended.
 
 **Example:** Given two commands:
 
@@ -178,12 +178,10 @@ phrase: open
 phrase: open google
 ```
 
-| User types | Shown commands | Reason |
+| User types | Result order | Reason |
 |---|---|---|
-| `ope` | A (`open`) + B (`open google`) | Both match via partial/discovery |
-| `open` | A (`open`) + B (`open google`) | Both match via partial/discovery |
-| `open goo` | A (`open`, arg mode) + B (`open google`, discovery) | A is in param mode but B has not fully matched yet |
-| `open google` | A (`open`, arg mode) + B (`open google`, exact) | B is an exact match, A is in param mode — both shown |
-| `open google maps` | B (`open google`, arg = `maps`) | B wins — longer phrase. A (`open`, arg = `google maps`) is hidden |
+| `ope` | A, B (discovery order) | Both match via partial/discovery — no reordering |
+| `open goo` | A first (param mode), B (discovery) | Only A is in param mode |
+| `open google maps` | **B first** (`open google`, arg = `maps`), then A (`open`, arg = `google maps`) | Both in param mode — longer phrase sorted first |
 
-This ensures the most specific command is always selected when the user has committed to typing past the longer phrase.
+This ensures the most specific command is the default Enter target when the user has typed past the longer phrase.
