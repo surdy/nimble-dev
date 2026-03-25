@@ -732,15 +732,14 @@
 
   /* ── Launcher bar ────────────────────────────────────────────────────── */
   .launcher {
-    background: rgba(28, 28, 30, 0.82);
+    background: rgba(28, 28, 30, 0.92);
     -webkit-backdrop-filter: blur(40px) saturate(1.8);
     backdrop-filter: blur(40px) saturate(1.8);
+    border: 1.5px solid rgba(255,255,255,.45);
     border-radius: 12px;
     box-shadow:
-      0 0 0 1px rgba(255,255,255,.1),
-      0 1px 3px rgba(0,0,0,.2),
-      0 8px 24px rgba(0,0,0,.35),
-      0 24px 64px rgba(0,0,0,.5);
+      0 8px 32px rgba(0,0,0,.5),
+      0 24px 64px rgba(0,0,0,.4);
     overflow: hidden;
   }
 
