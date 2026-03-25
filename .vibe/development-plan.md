@@ -46,6 +46,7 @@ Iterative implementation plan for Context Actions, from bare minimum working she
 | 36 ✅ | Docs restructure | Replaced `using/basic/` + `using/advanced/` with `actions/`, `guides/`, `reference/` |
 | 37 ✅ | UI polish & window dragging | Draggable window; backdrop blur; layered shadows; prompt glyph; accent selection indicator; action-type badges |
 | 38 ✅ | Spec & agent versioning | Independent integer `spec_version` for spec and agents; broadened bump rules; published to public repo |
+| 39 ✅ | `/nimble docs` built-in command | Five doc topics open in browser; deploying-agents guide; `docs_open` builtin action type |
 
 ---
 
@@ -1725,3 +1726,28 @@ docs/
 - Bump rules cover additive changes, not just breaking ones
 - Conventions doc and copilot instructions are updated
 - Spec and agents published to public repo
+
+---
+
+## Stage 39 — `/nimble docs` Built-in Command ✅
+
+**Goal:** Give users an in-launcher way to open documentation pages in the browser, starting with a deploying-agents guide for Copilot agent setup.
+
+### Changes
+
+- Added `docs_open` action variant to `BuiltinConfig` in `types.ts` (with optional `url` field)
+- Added five `/nimble docs` built-in commands: `agents`, `commands`, `scripts`, `actions`, `contexts`
+- Each opens the corresponding GitHub docs page in the default browser and dismisses the launcher
+- Added `Action` import to `+page.svelte` for type-safe badge function
+- Refactored `actionBadge()` to accept a `Command`-shaped object (shows "Docs" badge for docs commands)
+- Fixed pre-existing `svelte-check` error: added missing `env` and `source_dir` fields to all built-in commands
+- Created `docs/guides/deploying-agents.md` — step-by-step guide with `curl` commands
+- Updated `docs/guides/README.md` to link the new guide
+- Published deploying-agents guide and updated README to public repo
+
+### Done when ✅
+- Typing `/nimble` shows all five docs commands with "Docs" badge
+- Selecting a docs command opens the corresponding page in the browser
+- `svelte-check` passes with zero errors
+- 116 Rust tests pass
+- Deploying-agents guide published to public repo
