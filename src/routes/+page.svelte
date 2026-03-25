@@ -115,24 +115,51 @@
   const filtered = $derived(
     effectiveInput === ""
       ? []
-      : commands
-          .filter(cmd => {
+      : (() => {
+          const typed = effectiveInput.toLowerCase();
+          const matches = commands.filter(cmd => {
             const phrase = cmd.phrase.toLowerCase();
-            const typed  = effectiveInput.toLowerCase();
             // Standard partial/substring match (discovery while typing)
             // OR param mode: user has typed the full phrase + space + param text
             return phrase.includes(typed) || typed.startsWith(phrase + " ");
-          })
+          });
+          // Longest-phrase-wins: when two commands both match in param mode and
+          // one phrase is a prefix of the other, keep only the longer phrase.
+          return matches.filter(cmd => {
+            const phrase = cmd.phrase.toLowerCase();
+            const inParamMode = typed.startsWith(phrase + " ");
+            if (!inParamMode) return true; // discovery match — always keep
+            return !matches.some(other => {
+              const op = other.phrase.toLowerCase();
+              return op.length > phrase.length
+                && typed.startsWith(op + " ")
+                && op.startsWith(phrase + " ");
+            });
+          });
+        })()
   );
 
   // Built-in / commands filtered by the current raw input (only when input starts with "/")
   const filteredBuiltins: Command[] = $derived(
     input.trim().startsWith("/")
-      ? builtinCommands.filter(cmd => {
-          const phrase = cmd.phrase.toLowerCase();
-          const typed  = input.trim().toLowerCase();
-          return phrase.includes(typed) || typed.startsWith(phrase + " ");
-        })
+      ? (() => {
+          const typed = input.trim().toLowerCase();
+          const matches = builtinCommands.filter(cmd => {
+            const phrase = cmd.phrase.toLowerCase();
+            return phrase.includes(typed) || typed.startsWith(phrase + " ");
+          });
+          return matches.filter(cmd => {
+            const phrase = cmd.phrase.toLowerCase();
+            const inParamMode = typed.startsWith(phrase + " ");
+            if (!inParamMode) return true;
+            return !matches.some(other => {
+              const op = other.phrase.toLowerCase();
+              return op.length > phrase.length
+                && typed.startsWith(op + " ")
+                && op.startsWith(phrase + " ");
+            });
+          });
+        })()
       : []
   );
 

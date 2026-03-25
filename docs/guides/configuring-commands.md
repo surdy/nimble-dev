@@ -162,3 +162,28 @@ Events that trigger a reload:
 ## Reserved phrase prefix
 
 Phrases that start with `/` are reserved for built-in app commands (e.g. `/ctx set`, `/ctx reset`). Any command file whose `phrase` starts with `/` will be rejected at load time and a warning will appear in the launcher. Rename the phrase to avoid the conflict.
+
+---
+
+## Longest phrase wins
+
+When two commands have phrases where one is a prefix of the other (e.g. `open` and `open google`), a conflict can occur once the user has typed enough to match both in "param mode" — meaning the full phrase plus additional text. In this case, the **longest matching phrase always wins** and the shorter-phrase command is hidden from results.
+
+**Example:** Given two commands:
+
+```yaml
+# Command A
+phrase: open
+# Command B
+phrase: open google
+```
+
+| User types | Shown commands | Reason |
+|---|---|---|
+| `ope` | A (`open`) + B (`open google`) | Both match via partial/discovery |
+| `open` | A (`open`) + B (`open google`) | Both match via partial/discovery |
+| `open goo` | A (`open`, arg mode) + B (`open google`, discovery) | A is in param mode but B has not fully matched yet |
+| `open google` | A (`open`, arg mode) + B (`open google`, exact) | B is an exact match, A is in param mode — both shown |
+| `open google maps` | B (`open google`, arg = `maps`) | B wins — longer phrase. A (`open`, arg = `google maps`) is hidden |
+
+This ensures the most specific command is always selected when the user has committed to typing past the longer phrase.
