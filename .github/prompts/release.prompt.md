@@ -53,7 +53,12 @@ Once the user gives the go-ahead:
 3. Stage all changes: `git add -A`
 4. Commit: `git commit -m "chore: release v<version>"`
 5. Tag: `git tag v<version>`
-6. Push: `git push --follow-tags`
-7. If the tag already existed on remote, delete and re-push it.
+6. Push commit and tag separately (lightweight tags are skipped by `--follow-tags`):
+   ```
+   git push
+   git push origin v<version>
+   ```
+7. Verify the tag exists on remote: `git ls-remote --tags origin | grep v<version>`
+8. If the tag already existed on remote, delete and re-push it.
 
 Report the final commit hash and tag.
