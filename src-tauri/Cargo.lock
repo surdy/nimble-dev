@@ -2344,6 +2344,7 @@ name = "nimble"
 version = "0.4.0"
 dependencies = [
  "arboard",
+ "core-graphics 0.25.0",
  "enigo",
  "libxdo-sys",
  "notify",
